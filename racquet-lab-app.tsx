@@ -1,0 +1,1750 @@
+import React, { useState, useMemo } from "react";
+import {
+  ChevronDown, AlertTriangle, Sparkles, BarChart3,
+  Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
+  Settings2, User, CheckCircle2, ArrowRight
+} from "lucide-react";
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  ResponsiveContainer, PolarRadiusAxis
+} from "recharts";
+
+// ---------------------------------------------------------------------------
+// MATERIAL DATABASE
+// ---------------------------------------------------------------------------
+
+const CORE_MATERIALS = [
+  { id: "eva-soft", label: "EVA Foam — Soft", density: "20-25 kg/m³", power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Lower density, higher compressibility. Best shock absorption and largest forgiving sweet spot. Ball compresses into the core longer, which softens power but is gentler on the arm.", bestFor: "Beginners, recreational players, arm/elbow sensitivity" },
+  { id: "eva-medium", label: "EVA Foam — Medium", density: "25-30 kg/m³", power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "Balanced compression and rebound. The most common core choice because it doesn't strongly favor power or control.", bestFor: "Intermediate, all-round players" },
+  { id: "eva-hard", label: "EVA Foam — Hard", density: "30-40 kg/m³", power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Denser foam resists compression, so swing energy transfers to the ball almost instantly. Stiffer feel, less forgiving off-center, transmits more vibration.", bestFor: "Advanced players, aggressive baseline and smash-heavy styles" },
+  { id: "foam-pe", label: "Polyethylene Core Foam", density: "lower than EVA", power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Softer and more elastic than EVA. Comfortable with strong vibration absorption, but compresses more and wears faster.", bestFor: "Entry-level rackets, players prioritizing arm comfort over power" },
+  { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "varies by zone", power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Combines two foam densities in one core — softer near the throat, firmer toward the head — for different feel on fast vs. slow shots.", bestFor: "Players who want different feel on offense vs. defense" },
+];
+
+const FACE_MATERIALS = [
+  { id: "fiberglass", label: "Fiberglass", power: 2, control: 4, comfort: 5, durability: 2, cost: "Low", note: "More elastic and forgiving than carbon, with a pronounced spring effect. Lower cost and weight, standard for entry-level rackets.", bestFor: "Beginners, comfort-first builds" },
+  { id: "carbon-3k", label: "Carbon Fiber — 3K", power: 5, control: 3, comfort: 2, durability: 5, cost: "Mid", note: "3,000 filaments per tow, tubular weave. Most describe 3K as the stiffest, most direct, most powerful weave. Source disagreement exists — verify against your supplier's data sheet.", bestFor: "Advanced/aggressive players prioritizing power" },
+  { id: "carbon-12k", label: "Carbon Fiber — 12K", power: 4, control: 4, comfort: 3, durability: 4, cost: "Mid", note: "12,000 filaments per tow. Widely described as the versatile middle ground — softer-flexing than 3K with a bit more ball release.", bestFor: "All-round players, the most common spec" },
+  { id: "carbon-18k", label: "Carbon Fiber — 18K / TeXtreme", power: 3, control: 5, comfort: 4, durability: 4, cost: "High", note: "Higher filament count, flat-tape construction. More flexible and comfortable than 3K, better vibration filtering.", bestFor: "Defensive/control players, arm-sensitive players" },
+  { id: "graphene", label: "Graphene-Enhanced", power: 5, control: 3, comfort: 2, durability: 4, cost: "Very high", note: "Thin, lightweight, very strong carbon allotrope blended into a carbon layup. Adds stiffness and structural reinforcement for power transfer.", bestFor: "Premium offensive rackets" },
+  { id: "kevlar-reinforced", label: "Kevlar-Reinforced", power: 4, control: 4, comfort: 2, durability: 5, cost: "High", note: "Kevlar used as structural reinforcement for frame durability and impact resistance. Suits attacking players more than touch players.", bestFor: "Durability-focused builds, hard consistent hitters" },
+];
+
+const FRAME_MATERIALS = [
+  { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", note: "Flexes more under load, absorbing impact and improving comfort at some cost to stability on heavy shots." },
+  { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", note: "Lighter and stiffer than fiberglass, with greater shock resistance and a longer effective lifespan." },
+  { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid", stiffness: 3, weightImpact: "Mid", note: "Carbon for strength, fiberglass for flex — improves shock absorption versus pure carbon while keeping more stiffness than pure fiberglass." },
+  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability." },
+];
+
+const SURFACE_TEXTURES = [
+  { id: "smooth", label: "Smooth Face", spin: 1, note: "Minimal texture. Lower spin generation, more neutral, predictable ball exit." },
+  { id: "rough", label: "Rough / Textured Face", spin: 4, note: "Increased surface friction for more spin on slice and topspin shots, at a small cost to flat-shot ball speed." },
+  { id: "3d-print", label: "3D-Printed Grip Pattern", spin: 5, note: "Raised micro-texture printed onto the face for maximum ball grip and spin potential." },
+];
+
+const GRIP_MATERIALS = [
+  { id: "pu-grip", label: "Polyurethane (PU) Overgrip", tack: 3, vibrationDamp: 2, note: "Standard adherent coating, balances tack and durability. The default choice across most price points." },
+  { id: "eva-grip", label: "EVA Cushioned Grip", tack: 3, vibrationDamp: 4, note: "Softer EVA in the grip itself adds cushioning, reducing vibration transmitted to the hand." },
+  { id: "anti-shock-grip", label: "Anti-Shock / Viscoelastic Grip", tack: 2, vibrationDamp: 5, note: "Viscoelastic layer factory-integrated into the handle, absorbs a large majority of shock energy before it reaches the hand. Best for injury-prone players." },
+  { id: "textured-grip", label: "Textured / Perforated Grip", tack: 5, vibrationDamp: 2, note: "Maximizes hold in sweaty conditions via surface texture or perforation. Trades away some cushioning." },
+];
+
+const GRIP_SHAPES = [
+  { id: "octagonal", label: "Octagonal (Standard)", sides: 8, note: "Eight flat facets give tactile reference for hand position and racket face angle. The industry-standard handle cross-section." },
+  { id: "hexagonal", label: "Hexagonal (Hesacore-type)", sides: 6, note: "Honeycomb-pattern grip over the standard handle. Marketed for a larger contact area against the palm and reduced vibration transfer." },
+];
+
+const SHAPES = [
+  { id: "round", label: "Round", balanceRange: "low (closer to handle)", sweetSpot: "Large, centered", power: 2, control: 5, forgiveness: 5, note: "Mass sits closer to the handle and face center. Largest, most centrally located sweet spot. Most maneuverable, most forgiving on off-center contact.", bestFor: "Beginners, defensive players, net play, arm/shoulder load" },
+  { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, ~25.6–26.2 cm", sweetSpot: "Medium, shifted slightly up", power: 4, control: 4, forgiveness: 3, note: "Structural compromise between round and diamond. Mass shifts upward, raising the power ceiling while keeping a usably wide hitting area.", bestFor: "Intermediate to advanced all-round players" },
+  { id: "diamond", label: "Diamond", balanceRange: "high, above 26.3 cm", sweetSpot: "Small, positioned high", power: 5, control: 2, forgiveness: 1, note: "Mass concentrated toward the top of the face, maximizing swing inertia and smash potential. Smallest sweet spot, least forgiving.", bestFor: "Advanced attacking players with consistent, high-technique contact" },
+];
+
+const BRIDGE_TYPES = [
+  { id: "open", label: "Open Bridge", note: "Wider gap at the throat with one or more crossbars spanning it. Generally reduces racket weight slightly and can ease swing speed." },
+  { id: "closed", label: "Closed Bridge", note: "Solid filled throat section. Typically adds stability and torsional stiffness at a slight weight cost." },
+];
+
+const BEAM_COUNT_OPTIONS = [
+  { id: 1, label: "1 Beam", note: "A single central strut. Simplest open-bridge design." },
+  { id: 2, label: "2 Beams", note: "Two struts — the most common vertical configuration, or a full X-brace in diagonal orientation." },
+  { id: 3, label: "3 Beams", note: "Three struts for maximum throat reinforcement. Only available in vertical orientation." },
+];
+
+const BEAM_ORIENTATIONS = [
+  { id: "vertical", label: "Vertical", note: "Struts run head-to-handle, splitting the throat gap into separate openings side by side. Favors lighter feel and easier swing speed." },
+  { id: "horizontal", label: "Horizontal", note: "Flat crossbars span side-to-side. Adds resistance to the frame splaying open laterally under load." },
+  { id: "diagonal", label: "Diagonal (X-brace)", note: "Angled struts brace the opening, forming a triangulated structure. Manufacturer claims center on torsional rigidity and reduced vibration." },
+];
+
+const HOLE_COUNT_OPTIONS = [
+  { id: "none", label: "None (0)", rows: 0, cols: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
+  { id: "minimal", label: "Minimal (1–10)", rows: 3, cols: 3, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
+  { id: "low", label: "Low (~30–40)", rows: 5, cols: 4, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
+  { id: "standard", label: "Standard (~50–60)", rows: 7, cols: 5, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
+  { id: "high", label: "High (~70–80)", rows: 8, cols: 6, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
+];
+
+const HOLE_PATTERN_STYLES = [
+  { id: "centered", label: "Concentrated Center", note: "Holes clustered near the face center enlarge and soften the sweet spot in the area players hit most often." },
+  { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the usable face. The most common pattern on all-round rackets." },
+  { id: "edge", label: "Concentrated Edges", note: "Holes pushed toward the outer face, keeping the center stiffer and more direct — for precision-oriented players." },
+];
+
+// ---------------------------------------------------------------------------
+// COMPUTATION FUNCTIONS
+// ---------------------------------------------------------------------------
+
+function computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) {
+  let stability = 0.5;
+  stability += (frame.stiffness - 3) * 0.06;
+  stability += (face.durability - 3) * 0.03;
+  stability += (6 - core.comfort) * 0.015;
+  if (bridgeId === "closed") stability += 0.12;
+  else if (beamOrientation === "diagonal") stability += 0.1;
+  else if (beamOrientation === "horizontal") stability += 0.04;
+  stability += ((widthMm - 230) / 30) * 0.05;
+  if (weightG !== undefined) stability += ((weightG - 365) / 15) * 0.07;
+  return Math.max(0.15, Math.min(0.95, stability));
+}
+
+function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth }) {
+  const baseYFrac = shape === "round" ? 0.56 : shape === "diamond" ? 0.36 : 0.48;
+  const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
+  const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
+  const y = topY + headHeight * yFrac;
+  const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG });
+  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : 40;
+  const stabilityScale = 0.78 + stability * 0.5;
+  let r = baseR * stabilityScale;
+  const holeBoost = { none: 0.85, minimal: 0.9, low: 0.97, standard: 1.0, high: 1.08 }[holeCountId] ?? 1.0;
+  r *= holeBoost;
+  if (holePatternId === "centered") r *= 1.1;
+  else if (holePatternId === "edge") r *= 0.92;
+  r = Math.max(20, Math.min(72, r));
+  return { y, r, stability };
+}
+
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }) {
+  const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
+  const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
+  const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
+  add("power", shape.power); add("control", shape.control); add("sweetSpot", shape.forgiveness);
+  add("power", core.power); add("control", core.control); add("comfort", core.comfort); add("sweetSpot", core.sweetSpot); add("durability", core.durability);
+  add("power", face.power); add("control", face.control); add("comfort", face.comfort); add("durability", face.durability);
+  add("durability", frame.stiffness >= 4 ? 5 : frame.stiffness); add("comfort", 6 - frame.stiffness);
+  add("spin", surface.spin);
+  add("comfort", grip.vibrationDamp);
+  if (bridgeId === "closed") { add("control", 4); add("durability", 4); add("comfort", 3); }
+  else if (beamOrientation === "diagonal") { add("control", 4); add("durability", 4); add("comfort", 3); }
+  const holeEffect = { none: { power: 5, control: 4, comfort: 1, sweetSpot: 1 }, minimal: { power: 5, control: 4, comfort: 2, sweetSpot: 2 }, low: { power: 4, control: 4, comfort: 3, sweetSpot: 3 }, standard: { power: 3, control: 3, comfort: 3, sweetSpot: 3 }, high: { power: 2, control: 3, comfort: 4, sweetSpot: 4 } }[holeCountId];
+  if (holeEffect) { add("power", holeEffect.power); add("control", holeEffect.control); add("comfort", holeEffect.comfort); add("sweetSpot", holeEffect.sweetSpot); }
+  if (holePatternId === "centered") add("sweetSpot", 4);
+  else if (holePatternId === "edge") add("sweetSpot", 2);
+  if (weightG !== undefined) {
+    if (weightG >= 374) { add("power", 4); add("control", 2); add("comfort", 2); }
+    else if (weightG >= 362) { add("power", 3); add("control", 3); add("comfort", 3); }
+    else { add("power", 2); add("control", 4); add("comfort", 4); }
+  }
+  if (balanceCm !== undefined) {
+    if (balanceCm >= 26.5) { add("power", 4); add("control", 2); }
+    else if (balanceCm >= 25.3) { add("power", 3); add("control", 3); }
+    else { add("power", 2); add("control", 4); }
+  }
+  if (widthMm !== undefined) {
+    if (widthMm >= 250) add("sweetSpot", 4);
+    else if (widthMm >= 230) add("sweetSpot", 3);
+    else add("sweetSpot", 2);
+  }
+  if (thicknessMm !== undefined) {
+    if (thicknessMm >= 37) { add("power", 3); add("comfort", 2); }
+    else if (thicknessMm >= 33) { add("power", 3); add("comfort", 3); }
+    else { add("power", 2); add("comfort", 4); }
+  }
+  const out: any = {};
+  ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
+    out[k] = n[k] ? Math.round((s[k] / n[k]) * 10) / 10 : 0;
+  });
+  out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// SMART FINDER RECOMMENDATION ENGINE
+// Consumes the full expanded answer set (background, body, style/goals,
+// feel preference, and — for advanced players — precision/role/brand-tech
+// questions) and returns a complete spec. Each rule below is grounded in
+// the sourced material gathered for this tool (crossover-skill patterns,
+// arm-strain/grip literature, shape-balance-sweetspot relationships,
+// court-position demands, and the three vibration-damping mechanisms).
+// ---------------------------------------------------------------------------
+
+function recommendSpec(answers) {
+  const {
+    level, style, priority, armSensitive,
+    // Section 1 — background
+    racquetBackground, frequency,
+    // Section 2 — body & physical history
+    handSize, injuryHistory, availablePower,
+    // Section 3 — play style & goals
+    netInstinct, goal, spinInterest,
+    // Section 4 — feel fork
+    feelPreference,
+    // Section 5 — constraints
+    sessionLength,
+    // Advanced-only (Section A-D)
+    courtPosition, pointStyle, biggestWeapon,
+    hasModifications, modPlacement, feelSensitivity, techFeel,
+  } = answers;
+
+  // --- Baseline from level (existing logic, preserved) ---
+  let shapeId = "teardrop", coreId = "eva-medium", faceId = "carbon-12k",
+    frameId = "hybrid-frame", surfaceId = "rough", gripId = "pu-grip",
+    gripShapeId = "octagonal";
+  let weightG = 365, balanceCm = 25.8, gripCircMm = 38;
+
+  if (level === "beginner") {
+    shapeId = "round"; coreId = "eva-soft"; faceId = "fiberglass";
+    frameId = "fiberglass-frame"; gripId = "eva-grip"; weightG = 358; balanceCm = 25.2;
+  } else if (level === "advanced") {
+    coreId = "eva-hard"; faceId = "carbon-3k"; frameId = "carbon-frame"; weightG = 372;
+  }
+
+  // --- Style (existing) ---
+  if (style === "power") {
+    shapeId = level === "beginner" ? "teardrop" : "diamond";
+    coreId = level === "beginner" ? "eva-medium" : "eva-hard";
+    faceId = level === "beginner" ? "carbon-12k" : "carbon-3k";
+    balanceCm = Math.max(balanceCm, 26.6);
+  } else if (style === "control") {
+    shapeId = "round"; faceId = level === "advanced" ? "carbon-18k" : "fiberglass"; coreId = "eva-soft";
+    balanceCm = Math.min(balanceCm, 25.2);
+  } else if (style === "allround") {
+    shapeId = "teardrop"; faceId = "carbon-12k"; coreId = "eva-medium";
+  }
+
+  // --- Priority (existing) ---
+  if (priority === "comfort" || armSensitive === "yes") {
+    coreId = "eva-soft";
+    if (level !== "beginner") faceId = "carbon-18k";
+    gripId = "anti-shock-grip";
+    if (shapeId === "diamond") shapeId = "teardrop";
+    weightG = Math.min(weightG, 362);
+  }
+  if (priority === "durability") {
+    frameId = "carbon-frame";
+    faceId = faceId === "fiberglass" ? "carbon-12k" : faceId;
+  }
+  if (priority === "spin") surfaceId = "3d-print";
+
+  // --- Section 1: racquet-sport background ---
+  // Tennis crossover players tend to over-power shots and fight an
+  // instinct to keep attacking all point; a forgiving shape helps offset
+  // a habit they're still unlearning. Squash crossover already has
+  // strong net reflexes/close-quarter control, so a less forgiving sweet
+  // spot is less of a liability. No racquet-sport background correlates
+  // with better attack/defense "flow" and no bad habits, so technique-
+  // limiting choices matter less for them.
+  if (racquetBackground === "tennis" && shapeId === "diamond") {
+    shapeId = "teardrop"; // offsets the over-power instinct while they adjust
+  }
+  if (racquetBackground === "squash" && shapeId === "round" && style !== "control") {
+    shapeId = "teardrop"; // their net instincts can handle a smaller sweet spot sooner
+  }
+
+  // --- Frequency ---
+  // Overuse/arm-strain risk compounds with play frequency — lean every
+  // comfort tradeoff safer as frequency increases.
+  if (frequency === "multiple-weekly") {
+    weightG = Math.min(weightG, 368);
+    if (gripId === "pu-grip") gripId = "eva-grip";
+  }
+
+  // --- Section 2: body & physical history ---
+  // Grip circumference: narrow hands need a narrower grip to avoid
+  // overreach on wrist snap; large hands need more circumference to avoid
+  // excess squeeze force. Sourced directly from grip-fit/arm-strain
+  // literature, not inferred from any demographic proxy.
+  if (handSize === "small") gripCircMm = 36;
+  else if (handSize === "large") gripCircMm = 40;
+  else gripCircMm = 38;
+
+  // Injury history is the strongest single signal in the literature for
+  // weight/balance/core/grip-material tradeoffs — it overrides style
+  // preference when ongoing/diagnosed.
+  if (injuryHistory === "ongoing") {
+    coreId = "eva-soft";
+    frameId = frameId === "carbon-frame" ? "hybrid-frame" : frameId;
+    gripId = "anti-shock-grip";
+    weightG = Math.min(weightG, 358);
+    balanceCm = Math.min(balanceCm, 25.2);
+    if (shapeId === "diamond") shapeId = "teardrop";
+  } else if (injuryHistory === "mild") {
+    gripId = gripId === "pu-grip" ? "eva-grip" : gripId;
+    weightG = Math.min(weightG, 365);
+  }
+
+  // Available power: a direct, self-reported substitute for the
+  // strength/power variable that a demographic question would only
+  // approximate. Players who "have to work for pace" benefit from a
+  // higher-balance build that helps generate it; naturally powerful
+  // players can trade some of that for control instead.
+  if (availablePower === "limited") {
+    balanceCm = Math.max(balanceCm, 26.0);
+    if (shapeId === "round" && style !== "control") shapeId = "teardrop";
+  } else if (availablePower === "powerful") {
+    balanceCm = Math.min(balanceCm, 25.8);
+  }
+
+  // --- Section 3: play style & goals ---
+  // Forced-scenario net instinct is a more reliable read on control-vs-
+  // power orientation than abstract self-rating.
+  if (netInstinct === "block") {
+    shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
+  } else if (netInstinct === "winner") {
+    balanceCm = Math.max(balanceCm, 26.3);
+  }
+
+  if (goal === "consistency") {
+    shapeId = "round";
+  } else if (goal === "power") {
+    if (availablePower !== "limited") shapeId = level === "beginner" ? "teardrop" : "diamond";
+    balanceCm = Math.max(balanceCm, 26.4);
+  } else if (goal === "defense") {
+    shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
+    balanceCm = Math.min(balanceCm, 25.4);
+  } else if (goal === "versatility") {
+    shapeId = "teardrop";
+  }
+
+  if (spinInterest === "high") {
+    surfaceId = "3d-print";
+  } else if (spinInterest === "some" && surfaceId === "smooth") {
+    surfaceId = "rough";
+  }
+
+  // --- Section 4: the feel fork ---
+  // Directly operationalizes the comfort/control surface-texture
+  // tradeoff: a smoother, "held" feel pairs with comfort-oriented core
+  // dampening; a grippier, faster-release feel pairs with a textured
+  // surface even at some cost to forgiveness.
+  if (feelPreference === "smooth") {
+    surfaceId = surfaceId === "3d-print" ? "rough" : "smooth";
+  } else if (feelPreference === "grippy") {
+    surfaceId = "rough";
+  }
+
+  // --- Section 5: constraints ---
+  if (sessionLength === "long") {
+    gripId = gripId === "pu-grip" ? "eva-grip" : gripId;
+    weightG = Math.min(weightG, 366);
+  }
+
+  // --- Advanced-only sections ---
+  if (level === "advanced") {
+    // Court position: right/drive prioritizes consistency and depth
+    // control; left/reves handles more overheads and glass-rebound
+    // finishing, which benefits from more leverage.
+    if (courtPosition === "drive") {
+      shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
+    } else if (courtPosition === "reves") {
+      balanceCm = Math.max(balanceCm, 26.2);
+    }
+
+    if (pointStyle === "finisher") {
+      balanceCm = Math.max(balanceCm, 26.5);
+    } else if (pointStyle === "builder") {
+      shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
+    }
+
+    // Biggest weapon is a sharper signal than general style — tune the
+    // specific shot rather than a vague power/control axis.
+    if (biggestWeapon === "smash") {
+      shapeId = "diamond"; balanceCm = Math.max(balanceCm, 26.6);
+    } else if (biggestWeapon === "bandeja") {
+      shapeId = "teardrop";
+    } else if (biggestWeapon === "lob") {
+      shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
+      balanceCm = Math.min(balanceCm, 25.6);
+    } else if (biggestWeapon === "volley") {
+      shapeId = "round";
+    } else if (biggestWeapon === "depth") {
+      shapeId = "round"; balanceCm = Math.min(balanceCm, 25.4);
+    }
+
+    // Players who already tune weight/balance manually, or who notice
+    // small changes instantly, get nudged toward the precision end of
+    // the existing sliders rather than a broad default — the engine
+    // still returns a single point estimate, but biases it toward
+    // whichever extreme their stated sensitivity implies, since they're
+    // the ones equipped to fine-tune further from there themselves.
+    if (hasModifications === "added-weight") {
+      if (modPlacement === "head") balanceCm = Math.max(balanceCm, 26.5);
+      else if (modPlacement === "handle") {
+        weightG = Math.max(weightG, 370);
+        balanceCm = Math.min(balanceCm, 25.4);
+      }
+    }
+
+    // Brand-tech feel preference maps to the same three mechanisms from
+    // the Q7 follow-up: core dampening pairs with a softer core + smoother
+    // face; frame/bridge reinforcement pairs with a stiffer frame; grip
+    // damping pairs with an anti-shock grip material, leaving core/frame
+    // free to stay performance-oriented.
+    if (techFeel === "core") {
+      coreId = "eva-soft";
+      if (surfaceId === "3d-print") surfaceId = "rough";
+    } else if (techFeel === "frame") {
+      frameId = "carbon-frame";
+    } else if (techFeel === "grip") {
+      gripId = "anti-shock-grip";
+    }
+  }
+
+  return { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, weightG, balanceCm, gripCircMm };
+}
+
+
+
+// ---------------------------------------------------------------------------
+// DIMENSION EXPLANATIONS
+// ---------------------------------------------------------------------------
+
+function explainLength(mm) {
+  if (mm >= 450) return "At the long end — maximum reach on serves and overheads. Costs some maneuverability in fast net exchanges.";
+  if (mm >= 430) return "Mid-to-long range. Keeps most reach and leverage while trimming a little swing weight.";
+  return "Shorter end. Easier to whip through fast exchanges and volleys, at the cost of some reach.";
+}
+function explainWidth(mm, shapeId) {
+  if (mm >= 250) return "Near the 260mm legal max. Widest practical hitting area, enlarging the sweet spot.";
+  if (mm >= 230) return "Mid-range width. Reasonable balance between sweet-spot size and compact feel.";
+  return "Narrower head. Smaller hitting area — more compact and maneuverable.";
+}
+function explainThickness(mm) {
+  if (mm >= 37) return "Near the 38mm legal max — maximizes face stiffness for direct power transfer.";
+  if (mm >= 33) return "Slightly below the 38mm standard. Marginally softer, more comfortable feel.";
+  return "Noticeably thinner — softer feel and easier handling, less face stiffness for power.";
+}
+function explainWeight(g) {
+  if (g >= 374) return "Heavy — more mass behind the ball. Extra power and stability, but slower to redirect.";
+  if (g >= 362) return "Mid-weight. The most common range — balance between power, stability, and maneuverability.";
+  return "Light — faster reactions and less arm fatigue. Less raw mass behind smashes.";
+}
+function explainBalance(cm, shapeId) {
+  if (cm >= 26.5) return "Head-heavy — more leverage on smashes. Harder to redirect quickly on defense.";
+  if (cm >= 25.3) return "Neutral balance. A working compromise — enough leverage without sacrificing speed.";
+  return "Head-light — faster to move and redirect, gentler on the arm. Less natural leverage on smashes.";
+}
+function explainGripCirc(mm) {
+  if (mm >= 40) return "Wide grip — more stable on powerful shots, restricts wrist snap.";
+  if (mm >= 37) return "Mid-range. Close to what most factory grips ship at before overgrip.";
+  return "Narrow grip — frees wrist snap for spin and reflex volleys. Tighter squeeze required on power shots.";
+}
+function sweetSpotPosLabel(shapeId, balanceCm) {
+  const sw = shapeId === "round" ? "low / centered" : shapeId === "diamond" ? "high, near the tip" : "mid-face";
+  const bw = balanceCm >= 26.5 ? "shifted up by high balance" : balanceCm < 25.3 ? "pulled down by low balance" : "near shape baseline";
+  return `${sw} — ${bw}`;
+}
+
+// ---------------------------------------------------------------------------
+// SVG PATH HELPERS
+// ---------------------------------------------------------------------------
+
+function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight) {
+  const ww = halfWidthMax, t = topY, b = topY + headHeight;
+  if (shape === "round") {
+    const mid = t + headHeight * 0.5;
+    return `M ${cx} ${t} C ${cx+ww*0.74} ${t}, ${cx+ww} ${t+headHeight*0.22}, ${cx+ww} ${mid} C ${cx+ww} ${b-headHeight*0.22}, ${cx+ww*0.74} ${b}, ${cx} ${b} C ${cx-ww*0.74} ${b}, ${cx-ww} ${b-headHeight*0.22}, ${cx-ww} ${mid} C ${cx-ww} ${t+headHeight*0.22}, ${cx-ww*0.74} ${t}, ${cx} ${t} Z`;
+  }
+  if (shape === "diamond") {
+    const mid = t + headHeight * 0.32;
+    return `M ${cx} ${t+6} C ${cx+ww*0.32} ${t-2}, ${cx+ww*0.78} ${t+headHeight*0.05}, ${cx+ww*0.94} ${mid-headHeight*0.05} C ${cx+ww*1.02} ${mid+headHeight*0.02}, ${cx+ww*0.86} ${mid+headHeight*0.14}, ${cx+ww*0.7} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.7} ${b-headHeight*0.12} C ${cx-ww*0.86} ${mid+headHeight*0.14}, ${cx-ww*1.02} ${mid+headHeight*0.02}, ${cx-ww*0.94} ${mid-headHeight*0.05} C ${cx-ww*0.78} ${t+headHeight*0.05}, ${cx-ww*0.32} ${t-2}, ${cx} ${t+6} Z`;
+  }
+  const mid = t + headHeight * 0.42;
+  return `M ${cx} ${t} C ${cx+ww*0.86} ${t+2}, ${cx+ww} ${mid-headHeight*0.18}, ${cx+ww*0.95} ${mid} C ${cx+ww*0.88} ${b-headHeight*0.2}, ${cx+ww*0.46} ${b-4}, ${cx} ${b} C ${cx-ww*0.46} ${b-4}, ${cx-ww*0.88} ${b-headHeight*0.2}, ${cx-ww*0.95} ${mid} C ${cx-ww} ${mid-headHeight*0.18}, ${cx-ww*0.86} ${t+2}, ${cx} ${t} Z`;
+}
+
+const FACE_TINT = { fiberglass:"#F2EFE6","carbon-3k":"#E9E8E5","carbon-12k":"#ECEBE7","carbon-18k":"#EEEDE9",graphene:"#E5E4E1","kevlar-reinforced":"#F5EDD3" };
+const FACE_HATCH = { fiberglass:false,"carbon-3k":true,"carbon-12k":true,"carbon-18k":true,graphene:true,"kevlar-reinforced":false };
+const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-hard":"#D2CBB5","foam-pe":"#EDEAE0","hybrid-core":"#E3DCC8" };
+
+// ---------------------------------------------------------------------------
+// RACQUET SVG COMPONENTS
+// ---------------------------------------------------------------------------
+
+function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holeCountId, gripShapeId }) {
+  const STROKE = "#1A1A1A";
+  const tFrac = (thicknessMm - 28) / (38 - 28);
+  const bodyThickness = 16 + tFrac * 20;
+  const faceTint = FACE_TINT[faceId] || "#EDECE8";
+  const coreTint = PROFILE_CORE_TINT[coreObj?.id] || "#E3DCC8";
+  const frameTint = frameObj?.id?.includes("carbon") ? "#1F1F24" : "#2B2A26";
+  const startX = 30, midY = 210;
+  const headLen = 130 + ((widthMm - 200) / 60) * 20;
+  const throatLen = 60;
+  const handleLen = 70 + ((lengthMm - 400) / 55) * 30;
+  const headEndX = startX + headLen, throatEndX = headEndX + throatLen, handleEndX = throatEndX + handleLen;
+  const headThick = bodyThickness, throatThick = bodyThickness * 0.55, handleThick = bodyThickness * 0.62;
+  const topAt = (x) => {
+    if (x <= headEndX) { const t = (x - startX) / headLen; const round = Math.min(1, t / 0.12); return midY - (headThick / 2) * round; }
+    if (x <= throatEndX) { const t = (x - headEndX) / throatLen; return midY - (headThick/2) + t*(headThick/2 - throatThick/2); }
+    return midY - throatThick/2 + ((handleThick - throatThick)/2) * Math.min(1, (x-throatEndX)/10);
+  };
+  const botAt = (x) => midY*2 - topAt(x);
+  const sampleXs: number[] = [];
+  for (let x = startX; x <= handleEndX; x += 4) sampleXs.push(x);
+  const topPts = sampleXs.map(x=>`${x},${topAt(x).toFixed(1)}`).join(" L ");
+  const botPts = sampleXs.slice().reverse().map(x=>`${x},${botAt(x).toFixed(1)}`).join(" L ");
+  const silhouette = `M ${topPts} L ${handleEndX},${midY-handleThick/2} L ${handleEndX},${midY+handleThick/2} L ${botPts} Z`;
+  const faceSkinPx = 2.5;
+  const holeCount = { none:0, minimal:3, low:5, standard:7, high:10 }[holeCountId] ?? 7;
+  const holeXs: number[] = [];
+  for (let i = 0; i < holeCount; i++) { const t = holeCount > 1 ? i/(holeCount-1) : 0.5; holeXs.push(startX + headLen*0.12 + t*headLen*0.74); }
+  const handleGripStartX = throatEndX;
+  return (
+    <svg viewBox="0 0 420 320" width="100%" height="100%" style={{display:"block"}}>
+      <defs>
+        <linearGradient id="profileSheen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFF" stopOpacity="0.25"/>
+          <stop offset="45%" stopColor="#FFF" stopOpacity="0"/>
+          <stop offset="100%" stopColor="#000" stopOpacity="0.06"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx={(startX+handleEndX)/2+6} cy={midY+headThick/2+16} rx={(handleEndX-startX)/2.1} ry={8} fill="#000" opacity="0.07"/>
+      <path d={silhouette} fill={faceTint} stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+      <path d={`M ${startX+headLen*0.06},${midY-headThick/2+faceSkinPx} L ${throatEndX},${midY-throatThick/2+faceSkinPx} L ${throatEndX},${midY+throatThick/2-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-faceSkinPx} Z`} fill={coreTint} opacity="0.85"/>
+      <path d={`M ${startX},${midY-headThick*0.18} Q ${startX-6},${midY} ${startX},${midY+headThick*0.18}`} fill="none" stroke={frameTint} strokeWidth="3" strokeLinecap="round"/>
+      {holeXs.map((hx,i)=><line key={i} x1={hx} y1={topAt(hx)+1.5} x2={hx} y2={topAt(hx)+headThick*0.22} stroke={STROKE} strokeWidth="1.6" opacity="0.55"/>)}
+      <path d={`M ${headEndX+throatLen*0.3},${midY-throatThick*0.3} L ${headEndX+throatLen*0.7},${midY-throatThick*0.15} L ${headEndX+throatLen*0.7},${midY+throatThick*0.15} L ${headEndX+throatLen*0.3},${midY+throatThick*0.3} Z`} fill="none" stroke={STROKE} strokeWidth="1.2" opacity="0.5"/>
+      <g>
+        {gripShapeId === "hexagonal"
+          ? Array.from({length: Math.ceil((handleEndX-handleGripStartX)/14)}).map((_,i)=>{ const x=handleGripStartX+i*14; if(x>handleEndX-6)return null; return <line key={i} x1={x} y1={midY-handleThick/2+2} x2={x} y2={midY+handleThick/2-2} stroke={STROKE} strokeWidth="1" opacity="0.4"/>; })
+          : Array.from({length: Math.ceil((handleEndX-handleGripStartX)/10)}).map((_,i)=>{ const x=handleGripStartX+i*10; if(x>handleEndX-4)return null; return <line key={i} x1={x} y1={midY-handleThick/2+2} x2={x+6} y2={midY+handleThick/2-2} stroke={STROKE} strokeWidth="0.9" opacity="0.45"/>; })}
+        <path d={`M ${handleEndX-2},${midY-handleThick/2} Q ${handleEndX+6},${midY} ${handleEndX-2},${midY+handleThick/2}`} fill="none" stroke={STROKE} strokeWidth="2.4" strokeLinecap="round"/>
+      </g>
+      <path d={silhouette} fill="url(#profileSheen)"/>
+      <path d={silhouette} fill="none" stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+      <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
+        <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#B8B4A8" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#B8B4A8" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#B8B4A8" strokeWidth="1"/>
+        <text x={startX+headLen*0.5+12} y={midY+4}>{thicknessMm}mm</text>
+        <text x={startX+headLen/2} y={midY+headThick/2+36} textAnchor="middle" fontSize="10">head</text>
+        <text x={headEndX+throatLen/2} y={midY+throatThick/2+36} textAnchor="middle" fontSize="10">throat</text>
+        <text x={throatEndX+(handleEndX-throatEndX)/2} y={midY+handleThick/2+36} textAnchor="middle" fontSize="10">handle</text>
+      </g>
+    </svg>
+  );
+}
+
+function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
+  const STROKE = "#1A1A1A";
+  const cx = 230, topY = 30, headHeight = 290;
+  const halfWidth = Math.min(148, (widthMm / 260) * 148);
+  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
+  const tint = FACE_TINT[faceId] || "#EDECE8";
+  const hatched = FACE_HATCH[faceId];
+  const headBottomY = topY + headHeight, throatNeckY = headBottomY - 18;
+  const bridgeTopY = headBottomY - 4, bridgeHeight = 86, bridgeBottomY = bridgeTopY + bridgeHeight;
+  const handleWidth = 26, collarY = bridgeBottomY + 10;
+  const handleTopY = collarY + 14;
+  const handleHeight = Math.max(120, Math.min(200, (lengthMm - 380) * 1.1 + 130));
+  const handleBottomY = handleTopY + handleHeight;
+  const holeDots: {x:number,y:number}[] = [];
+  const countCfg = HOLE_COUNT_OPTIONS.find(h => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
+  if (holeCountId !== "none") {
+    const { rows, cols } = countCfg;
+    for (let r = 0; r < rows; r++) {
+      const rowProgress = rows > 1 ? r/(rows-1) : 0.5;
+      const fy = topY + headHeight*0.14 + rowProgress*(headHeight*0.66);
+      const shapeTaper = shape === "diamond" ? 1 - Math.abs(rowProgress-0.5)*0.85 : shape === "teardrop" ? 0.6 + rowProgress*0.4 : Math.sin(rowProgress*Math.PI)*0.45 + 0.6;
+      const vertBias = holePatternId === "centered" ? 0.55+0.45*(1-Math.abs(rowProgress-0.5)*2) : holePatternId === "edge" ? 0.85+0.15*Math.abs(rowProgress-0.5)*2 : 1;
+      const rowHalf = (halfWidth - 26) * Math.min(1, shapeTaper+0.35) * vertBias;
+      for (let c = 0; c < cols; c++) {
+        const colProgress = cols > 1 ? c/(cols-1) : 0.5;
+        const horizBias = holePatternId === "centered" ? 0.5+0.5*(1-Math.abs(colProgress-0.5)*2) : holePatternId === "edge" ? 0.8+0.2*Math.abs(colProgress-0.5)*2 : 1;
+        const effectiveHalf = rowHalf * (holePatternId === "even" ? 1 : 0.4+0.6*horizBias);
+        const fx = cx - effectiveHalf*0.76 + colProgress*(effectiveHalf*1.52);
+        holeDots.push({ x: fx, y: fy });
+      }
+    }
+  }
+  const hatchLines: {x1:number,y1:number,x2:number,y2:number}[] = [];
+  if (hatched) {
+    const hatchTopY = topY + headHeight*0.06, hatchBottomY = topY + headHeight*0.42;
+    for (let x = cx - halfWidth - 40; x < cx + halfWidth + 40; x += 16) hatchLines.push({ x1:x, y1:hatchTopY-20, x2:x+70, y2:hatchBottomY+20 });
+  }
+  const innerNeckHalf = handleWidth/2+3, outerThroatHalf = halfWidth*0.4, throatMidY = (bridgeTopY+bridgeBottomY)/2;
+  const strutOffsets: number[] = [];
+  if (bridgeId === "open") {
+    if (beamCount === 1) strutOffsets.push(0);
+    else if (beamCount === 2) { const g = innerNeckHalf*0.55; strutOffsets.push(-g, g); }
+    else { const g = innerNeckHalf*0.65; strutOffsets.push(0,-g,g); }
+    strutOffsets.sort((a,b)=>a-b);
+  }
+  const lerpHalf = (yFrac) => outerThroatHalf + (innerNeckHalf - outerThroatHalf) * yFrac;
+  const boundaries = [-1, ...strutOffsets.map(s=>s/innerNeckHalf), 1];
+  return (
+    <svg viewBox="0 0 460 640" width="100%" height="100%" style={{display:"block"}}>
+      <defs><clipPath id="headClip"><path d={outline}/></clipPath></defs>
+      <path d={outline} fill={tint} stroke={STROKE} strokeWidth="2.5" strokeLinejoin="round"/>
+      {hatched && <g clipPath="url(#headClip)">{hatchLines.map((h,i)=><line key={i} x1={h.x1} y1={h.y1} x2={h.x2} y2={h.y2} stroke={STROKE} strokeWidth="1" opacity="0.55"/>)}</g>}
+      <path d={headOutlinePath(shape, cx, topY+7, halfWidth-9, headHeight-14)} fill="none" stroke={STROKE} strokeWidth="1" opacity="0.5"/>
+      <g clipPath="url(#headClip)">{holeDots.map((h,i)=><circle key={i} cx={h.x} cy={h.y} r={6.5} fill="none" stroke={STROKE} strokeWidth="1.3"/>)}</g>
+      {mode === "diagram" && (
+        <g>
+          <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#2E5BA8" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="#2E5BA8" opacity="0.12"/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#2E5BA8" strokeWidth="1.5" strokeDasharray="4 3"/>
+          <circle cx={cx} cy={sweet.y} r={3} fill="#2E5BA8"/>
+        </g>
+      )}
+      <path d={`M ${cx-halfWidth*0.5} ${headBottomY-6} Q ${cx-outerThroatHalf-6} ${throatNeckY+16}, ${cx-outerThroatHalf} ${bridgeTopY} M ${cx+halfWidth*0.5} ${headBottomY-6} Q ${cx+outerThroatHalf+6} ${throatNeckY+16}, ${cx+outerThroatHalf} ${bridgeTopY}`} fill="none" stroke={STROKE} strokeWidth="2.5" strokeLinecap="round"/>
+      <path d={`M ${cx-outerThroatHalf} ${bridgeTopY} L ${cx+outerThroatHalf} ${bridgeTopY} L ${cx+innerNeckHalf} ${bridgeBottomY} L ${cx-innerNeckHalf} ${bridgeBottomY} Z`} fill={bridgeId==="closed"?tint:"none"} stroke={STROKE} strokeWidth="2.5" strokeLinejoin="round"/>
+      {bridgeId === "open" && beamOrientation === "vertical" && (
+        <g>
+          {boundaries.slice(0,-1).map((bL,i)=>{
+            const bR=boundaries[i+1], inset=5, dir=(v)=>(v>=0?-1:1);
+            const topL=lerpHalf(0)*bL, topR=lerpHalf(0)*bR, botL=lerpHalf(1)*bL, botR=lerpHalf(1)*bR;
+            const midL=lerpHalf(0.5)*bL, midR=lerpHalf(0.5)*bR;
+            const iTopL=topL+inset*dir(topL), iTopR=topR-inset*dir(topR), iBotL=botL+inset*dir(botL), iBotR=botR-inset*dir(botR);
+            const iMidL=midL+inset*0.4*dir(midL), iMidR=midR-inset*0.4*dir(midR);
+            return <path key={i} d={`M ${cx+iTopL} ${bridgeTopY+8} Q ${cx+iMidL} ${throatMidY}, ${cx+iBotL} ${bridgeBottomY-8} Q ${cx+(iBotL+iBotR)/2} ${bridgeBottomY+5}, ${cx+iBotR} ${bridgeBottomY-8} Q ${cx+iMidR} ${throatMidY}, ${cx+iTopR} ${bridgeTopY+8} Q ${cx+(iTopL+iTopR)/2} ${bridgeTopY-5}, ${cx+iTopL} ${bridgeTopY+8} Z`} fill="none" stroke={STROKE} strokeWidth="1.6" strokeLinejoin="round"/>;
+          })}
+        </g>
+      )}
+      {bridgeId === "open" && beamOrientation === "horizontal" && (
+        <g>
+          <path d={`M ${cx-outerThroatHalf+6} ${bridgeTopY+8} Q ${cx} ${throatMidY}, ${cx-innerNeckHalf+5} ${bridgeBottomY-8} Q ${cx} ${bridgeBottomY+5}, ${cx+innerNeckHalf-5} ${bridgeBottomY-8} Q ${cx} ${throatMidY}, ${cx+outerThroatHalf-6} ${bridgeTopY+8} Q ${cx} ${bridgeTopY-5}, ${cx-outerThroatHalf+6} ${bridgeTopY+8} Z`} fill="none" stroke={STROKE} strokeWidth="1.6" strokeLinejoin="round"/>
+          {Array.from({length:Math.min(beamCount,2)}).map((_,i,arr)=>{ const t=arr.length===1?0.5:(i+1)/3; const y=bridgeTopY+t*bridgeHeight; const half=lerpHalf(t)-10; return <line key={i} x1={cx-half} y1={y} x2={cx+half} y2={y} stroke={STROKE} strokeWidth="2.2" strokeLinecap="round"/>; })}
+        </g>
+      )}
+      {bridgeId === "open" && beamOrientation === "diagonal" && (
+        <g>
+          <path d={`M ${cx-outerThroatHalf+6} ${bridgeTopY+8} Q ${cx} ${throatMidY}, ${cx-innerNeckHalf+5} ${bridgeBottomY-8} Q ${cx} ${bridgeBottomY+5}, ${cx+innerNeckHalf-5} ${bridgeBottomY-8} Q ${cx} ${throatMidY}, ${cx+outerThroatHalf-6} ${bridgeTopY+8} Q ${cx} ${bridgeTopY-5}, ${cx-outerThroatHalf+6} ${bridgeTopY+8} Z`} fill="none" stroke={STROKE} strokeWidth="1.6" strokeLinejoin="round"/>
+          {beamCount===1 ? (
+            <g>
+              <line x1={cx-outerThroatHalf+10} y1={bridgeTopY+12} x2={cx} y2={bridgeBottomY-10} stroke={STROKE} strokeWidth="2.2" strokeLinecap="round"/>
+              <line x1={cx+outerThroatHalf-10} y1={bridgeTopY+12} x2={cx} y2={bridgeBottomY-10} stroke={STROKE} strokeWidth="2.2" strokeLinecap="round"/>
+            </g>
+          ) : (
+            <g>
+              <line x1={cx-outerThroatHalf+10} y1={bridgeTopY+12} x2={cx+innerNeckHalf-6} y2={bridgeBottomY-10} stroke={STROKE} strokeWidth="2.2" strokeLinecap="round"/>
+              <line x1={cx+outerThroatHalf-10} y1={bridgeTopY+12} x2={cx-innerNeckHalf+6} y2={bridgeBottomY-10} stroke={STROKE} strokeWidth="2.2" strokeLinecap="round"/>
+            </g>
+          )}
+        </g>
+      )}
+      <path d={`M ${cx-innerNeckHalf-2} ${bridgeBottomY} L ${cx-handleWidth/2-5} ${collarY} L ${cx+handleWidth/2+5} ${collarY} L ${cx+innerNeckHalf+2} ${bridgeBottomY}`} fill={tint} stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+      <line x1={cx-handleWidth/2-5} y1={collarY} x2={cx-handleWidth/2-5} y2={collarY+8} stroke={STROKE} strokeWidth="2"/>
+      <line x1={cx+handleWidth/2+5} y1={collarY} x2={cx+handleWidth/2+5} y2={collarY+8} stroke={STROKE} strokeWidth="2"/>
+      <g>
+        <rect x={cx-handleWidth/2} y={handleTopY} width={handleWidth} height={handleHeight} fill="#FFFFFF" stroke={STROKE} strokeWidth="2.2" rx={4}/>
+        {gripShapeId === "hexagonal" ? (
+          <g>
+            {/* solid molded grip sleeve underneath — a real hex-pattern
+                grip (e.g. Hesacore) is one continuous piece with a
+                pressed-in texture, not a wire cage with visible gaps */}
+            <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="#E4DFCF" />
+            <clipPath id="hexHandleClip">
+              <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} />
+            </clipPath>
+            <g clipPath="url(#hexHandleClip)">
+              {(() => {
+                // Properly tessellating flat-top hex grid: adjacent cells
+                // share edges with zero gap between them, matching a
+                // pressed-honeycomb texture on a real molded grip.
+                const hexR = handleWidth / 4.2;
+                const hexW = hexR * 2;
+                const hexH = hexR * Math.sqrt(3);
+                const colStep = hexW * 0.75;
+                const cells = [];
+                let col = 0;
+                for (let x = cx - handleWidth / 2 - hexW; x < cx + handleWidth / 2 + hexW; x += colStep) {
+                  const yOffset = col % 2 === 0 ? 0 : hexH / 2;
+                  for (let y = handleTopY - hexH; y < handleBottomY + hexH; y += hexH) {
+                    cells.push({ x, y: y + yOffset });
+                  }
+                  col++;
+                }
+                const flatTopHex = (px, py, r) => {
+                  const pts = [];
+                  for (let i = 0; i < 6; i++) {
+                    const ang = (Math.PI / 3) * i;
+                    pts.push(`${px + r * Math.cos(ang)},${py + r * Math.sin(ang)}`);
+                  }
+                  return pts.join(" ");
+                };
+                return cells.map((c, i) => (
+                  <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="#E4DFCF" stroke={STROKE} strokeWidth="0.6" opacity="0.6" />
+                ));
+              })()}
+            </g>
+          </g>
+        ) : (
+          <g>
+            {Array.from({length:Math.ceil(handleHeight/18)}).map((_,i)=>{ const y0=handleTopY+i*18, y1=y0+18; if(y1>handleBottomY)return null; return <g key={i}><line x1={cx-handleWidth/2} y1={y0} x2={cx+handleWidth/2} y2={y1} stroke={STROKE} strokeWidth="1.1" opacity="0.8"/><line x1={cx-handleWidth/2} y1={y1} x2={cx+handleWidth/2} y2={y0} stroke={STROKE} strokeWidth="1.1" opacity="0.8"/></g>; })}
+            <line x1={cx-handleWidth/6} y1={handleTopY} x2={cx-handleWidth/6} y2={handleBottomY} stroke={STROKE} strokeWidth="1" opacity="0.35"/>
+            <line x1={cx+handleWidth/6} y1={handleTopY} x2={cx+handleWidth/6} y2={handleBottomY} stroke={STROKE} strokeWidth="1" opacity="0.35"/>
+          </g>
+        )}
+        <rect x={cx-handleWidth/2} y={handleTopY} width={handleWidth} height={handleHeight} fill="none" stroke={STROKE} strokeWidth="2.2" rx={4}/>
+        <rect x={cx-handleWidth/2-4} y={handleBottomY-4} width={handleWidth+8} height={12} rx={4} fill="#FFFFFF" stroke={STROKE} strokeWidth="2"/>
+        <path d={`M ${cx-6} ${handleBottomY+8} Q ${cx-14} ${handleBottomY+26}, ${cx} ${handleBottomY+30} Q ${cx+14} ${handleBottomY+26}, ${cx+6} ${handleBottomY+8}`} fill="none" stroke={STROKE} strokeWidth="1.6"/>
+      </g>
+      {mode === "diagram" && (
+        <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
+          <line x1={cx-halfWidth} y1={topY-16} x2={cx+halfWidth} y2={topY-16} stroke="#B8B4A8" strokeWidth="1"/>
+          <line x1={cx-halfWidth} y1={topY-22} x2={cx-halfWidth} y2={topY-10} stroke="#B8B4A8" strokeWidth="1"/>
+          <line x1={cx+halfWidth} y1={topY-22} x2={cx+halfWidth} y2={topY-10} stroke="#B8B4A8" strokeWidth="1"/>
+          <text x={cx} y={topY-24} textAnchor="middle">face width {widthMm}mm</text>
+          <line x1={cx+halfWidth+18} y1={topY} x2={cx+halfWidth+18} y2={handleBottomY} stroke="#B8B4A8" strokeWidth="1"/>
+          <text x={cx+halfWidth+26} y={(topY+handleBottomY)/2} transform={`rotate(90 ${cx+halfWidth+26} ${(topY+handleBottomY)/2})`} textAnchor="middle">total length {lengthMm}mm</text>
+          <text x={cx} y={bridgeTopY+bridgeHeight/2+4} textAnchor="middle" fontSize="10" fill="#5A574C">{bridgeId==="closed"?"closed bridge":`${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}`}</text>
+        </g>
+      )}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// UI PRIMITIVES
+// ---------------------------------------------------------------------------
+
+function SelectField({ value, onChange, options }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        width: "100%", padding: "10px 12px", borderRadius: 8,
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: "#1A2030", color: "#EAE6DC",
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontSize: 14, cursor: "pointer", appearance: "auto",
+        WebkitAppearance: "auto",
+      }}
+    >
+      {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+    </select>
+  );
+}
+
+function SliderField({ label, value, onChange, min, max, step = 1, suffix, explanation }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, color: "#9AA3B0", fontFamily: "Inter, sans-serif" }}>{label}</span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#AEFB00", fontWeight: 600 }}>{value}{suffix}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ width: "100%", accentColor: "#AEFB00", height: 4, cursor: "pointer" }}
+      />
+      {explanation && <p style={{ fontSize: 12, color: "#6A7485", lineHeight: 1.5, marginTop: 6, fontFamily: "Inter, sans-serif" }}>{explanation}</p>}
+    </div>
+  );
+}
+
+function ToggleGroup({ options, value, onChange, disabled }: { options: {id:any,label:string}[], value:any, onChange:(v:any)=>void, disabled?: (id:any)=>boolean }) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {options.map(o => {
+        const isDisabled = disabled?.(o.id) ?? false;
+        const isActive = value === o.id;
+        return (
+          <button
+            key={o.id}
+            disabled={isDisabled}
+            onClick={() => onChange(o.id)}
+            style={{
+              flex: "1 1 auto", padding: "10px 10px", borderRadius: 8,
+              border: `1px solid ${isActive ? "#AEFB00" : "rgba(255,255,255,0.1)"}`,
+              background: isActive ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
+              color: isDisabled ? "#3A4455" : isActive ? "#AEFB00" : "#9AA3B0",
+              fontSize: 12.5, fontWeight: 600, cursor: isDisabled ? "not-allowed" : "pointer",
+              fontFamily: "Inter, sans-serif", transition: "all 0.15s ease",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RatingDots({ val, max = 5, color = "#AEFB00" }) {
+  return (
+    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+      {Array.from({length: max}).map((_,i) => (
+        <div key={i} style={{
+          width: 8, height: 8, borderRadius: "50%",
+          background: i < Math.round(val) ? color : "rgba(255,255,255,0.1)",
+          transition: "background 0.2s ease",
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+function ScoreBar({ label, val, max = 5 }) {
+  const pct = (val / max) * 100;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 13, color: "#9AA3B0", fontFamily: "Inter, sans-serif" }}>{label}</span>
+        <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#AEFB00", fontWeight: 600 }}>{val.toFixed(1)}</span>
+      </div>
+      <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #AEFB00, #00D4F0)", transition: "width 0.4s ease" }}/>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ icon, label, isOpen, onToggle, badge = null }) {
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "16px 0", background: "none", border: "none", cursor: "pointer",
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ color: isOpen ? "#AEFB00" : "#6A7485", transition: "color 0.2s" }}>{icon}</span>
+        <span style={{
+          fontSize: 13, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+          letterSpacing: "0.08em", textTransform: "uppercase",
+          color: isOpen ? "#EAE6DC" : "#9AA3B0", transition: "color 0.2s",
+        }}>{label}</span>
+        {badge && <span style={{ background: "rgba(174,251,0,0.15)", color: "#AEFB00", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", padding: "2px 7px", borderRadius: 4 }}>{badge}</span>}
+      </div>
+      <ChevronDown size={16} color={isOpen ? "#AEFB00" : "#3A4455"} style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}/>
+    </button>
+  );
+}
+
+function AccordionSection({ id, icon, label, isOpen, onToggle, badge = null, children }) {
+  return (
+    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <SectionHeader icon={icon} label={label} isOpen={isOpen} onToggle={onToggle} badge={badge}/>
+      {isOpen && (
+        <div style={{ paddingBottom: 20 }}>{children}</div>
+      )}
+    </div>
+  );
+}
+
+function MiniRatingGrid({ items }: { items: {label:string, val:number}[] }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px", marginTop: 12 }}>
+      {items.map(({label, val}) => (
+        <div key={label}>
+          <div style={{ fontSize: 11, color: "#6A7485", marginBottom: 4, fontFamily: "Inter, sans-serif" }}>{label}</div>
+          <RatingDots val={val}/>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MaterialNote({ text }) {
+  return <p style={{ fontSize: 13, color: "#7B8494", lineHeight: 1.6, marginTop: 10, fontFamily: "Inter, sans-serif" }}>{text}</p>;
+}
+
+function BestForTag({ text }) {
+  if (!text) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "6px 10px", background: "rgba(0,212,240,0.08)", borderRadius: 6, border: "1px solid rgba(0,212,240,0.15)" }}>
+      <CheckCircle2 size={12} color="#00D4F0"/>
+      <span style={{ fontSize: 12, color: "#00D4F0", fontFamily: "Inter, sans-serif" }}>{text}</span>
+    </div>
+  );
+}
+
+function FTOWarning() {
+  return (
+    <div style={{ display:"flex", gap:8, padding:"10px 12px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8, marginTop:12 }}>
+      <AlertTriangle size={14} color="#FFB400" style={{flexShrink:0, marginTop:1}}/>
+      <p style={{ fontSize:12, color:"#C88A00", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
+        This spec touches features flagged in IP landscape research (perforation pattern, graphene/kevlar composite, or hybrid core). Confirm freedom-to-operate with patent counsel before production.
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CONSUMER QUESTIONNAIRE
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// SMART FINDER — QUESTION DATA
+// Organized into short, clearly-labeled sections rather than one flat
+// list (chunking reduces the decision fatigue documented in choice-
+// architecture research). Sections D (advanced-only) only render when
+// the player has selected "Advanced" in Section 1, so beginners never
+// see questions irrelevant to them.
+// ---------------------------------------------------------------------------
+
+const FINDER_SECTION_1 = [
+  {
+    id: "racquetBackground",
+    label: "Racquet-sport background",
+    question: "Have you played other racquet sports before padel?",
+    options: [
+      { id: "none", label: "None" },
+      { id: "tennis", label: "Tennis" },
+      { id: "squash", label: "Squash" },
+      { id: "badminton", label: "Badminton / table tennis" },
+      { id: "multiple", label: "Multiple" },
+    ],
+  },
+  {
+    id: "level",
+    label: "Your level",
+    question: "How would you describe your padel level?",
+    options: [
+      { id: "beginner", label: "Beginner" },
+      { id: "intermediate", label: "Intermediate" },
+      { id: "advanced", label: "Advanced" },
+    ],
+  },
+  {
+    id: "frequency",
+    label: "Frequency",
+    question: "How often are you playing right now?",
+    options: [
+      { id: "starting", label: "Just started" },
+      { id: "monthly", label: "A few times a month" },
+      { id: "weekly", label: "Weekly" },
+      { id: "multiple-weekly", label: "Multiple times a week" },
+    ],
+  },
+];
+
+const FINDER_SECTION_2 = [
+  {
+    id: "handSize",
+    label: "Hand reference",
+    question: "Pick the description closest to your hand.",
+    options: [
+      { id: "small", label: "Small / narrow hand" },
+      { id: "medium", label: "Medium" },
+      { id: "large", label: "Large hand" },
+    ],
+  },
+  {
+    id: "injuryHistory",
+    label: "Injury history",
+    question: "Any current or recurring elbow, wrist, or shoulder discomfort?",
+    options: [
+      { id: "none", label: "No" },
+      { id: "mild", label: "Mild, occasional" },
+      { id: "ongoing", label: "Yes, ongoing or diagnosed" },
+    ],
+  },
+  {
+    id: "availablePower",
+    label: "Available power",
+    question: "When you swing freely, your shots tend to be...",
+    options: [
+      { id: "powerful", label: "Naturally powerful — I hold back for control" },
+      { id: "even", label: "Pretty even" },
+      { id: "limited", label: "I have to work to generate pace" },
+    ],
+  },
+];
+
+const FINDER_SECTION_3 = [
+  {
+    id: "netInstinct",
+    label: "Forced scenario",
+    question: "A ball comes fast and slightly off-center at the net. Your instinct is to...",
+    options: [
+      { id: "block", label: "Block it back safely" },
+      { id: "redirect", label: "Redirect it with pace" },
+      { id: "winner", label: "Take a big swing for the winner" },
+    ],
+  },
+  {
+    id: "goal",
+    label: "Goals",
+    question: "What are you mainly trying to improve right now?",
+    options: [
+      { id: "consistency", label: "Consistency / fewer errors" },
+      { id: "power", label: "Power on smashes / overheads" },
+      { id: "defense", label: "Defense at the net" },
+      { id: "versatility", label: "Overall versatility" },
+    ],
+  },
+  {
+    id: "spinInterest",
+    label: "Spin interest",
+    question: "Do you actively try to add spin (slice, topspin), or mostly hit flat?",
+    options: [
+      { id: "flat", label: "Mostly flat" },
+      { id: "some", label: "Sometimes" },
+      { id: "high", label: "Yes, spin is a big part of my game" },
+    ],
+  },
+];
+
+const FINDER_FEEL_FORK = {
+  id: "feelPreference",
+  label: "The feel fork",
+  question:
+    "Two racquets, same weight and shape. One has a smoother face that holds the ball a touch longer before release — many players describe it as feeling \"controlled\" or \"glued.\" The other has a grippier, textured face that releases the ball faster with more bite and spin, but feels less forgiving if your timing is slightly off. Which sounds more like you?",
+  options: [
+    { id: "smooth", label: "Smoother / held" },
+    { id: "grippy", label: "Grippier / faster release" },
+    { id: "unsure", label: "Not sure — explain more" },
+  ],
+};
+
+const FINDER_SECTION_5 = [
+  {
+    id: "sessionLength",
+    label: "Session length",
+    question: "How long are your typical sessions?",
+    options: [
+      { id: "short", label: "Under an hour" },
+      { id: "medium", label: "1-2 hours" },
+      { id: "long", label: "2+ hours or multiple matches" },
+    ],
+  },
+];
+
+// --- Advanced-only sections (gated behind level === "advanced") ---
+
+const FINDER_SECTION_A = [
+  {
+    id: "courtPosition",
+    label: "Court position",
+    question: "Which side do you usually play?",
+    options: [
+      { id: "drive", label: "Right / drive (back-court, point-building)" },
+      { id: "reves", label: "Left / reves (net-finishing, overheads)" },
+      { id: "both", label: "Both, depending on partner" },
+    ],
+  },
+  {
+    id: "pointStyle",
+    label: "Point construction",
+    question: "In a rally, you're usually the one who...",
+    options: [
+      { id: "builder", label: "Builds the point patiently from the back" },
+      { id: "finisher", label: "Looks to finish quickly once given an opening" },
+      { id: "adaptive", label: "Reads and reacts — I adapt to whatever the point gives me" },
+    ],
+  },
+  {
+    id: "biggestWeapon",
+    label: "Biggest weapon",
+    question: "If you had to pick one shot that wins you the most points right now...",
+    options: [
+      { id: "smash", label: "Smash / overhead" },
+      { id: "bandeja", label: "Bandeja or vibora" },
+      { id: "lob", label: "Lob" },
+      { id: "volley", label: "Net volleys" },
+      { id: "depth", label: "Consistent baseline depth" },
+    ],
+  },
+];
+
+const FINDER_SECTION_B = [
+  {
+    id: "hasModifications",
+    label: "Current setup",
+    question: "Do you currently play with any racket modifications (added weight, lead/tungsten tape, custom grip)?",
+    options: [
+      { id: "stock", label: "No, stock racket" },
+      { id: "added-weight", label: "Yes, I've added weight" },
+      { id: "other-mod", label: "Yes, changed grip or balance another way" },
+    ],
+  },
+  {
+    id: "feelSensitivity",
+    label: "Sensitivity to change",
+    question: "Have you ever switched rackets mid-season and immediately felt the difference in balance or stiffness?",
+    options: [
+      { id: "instant", label: "Yes, instantly" },
+      { id: "delayed", label: "Yes, but it took a session or two" },
+      { id: "no", label: "No, I don't notice much difference" },
+    ],
+  },
+];
+
+// modPlacement is a conditional follow-up, only shown if hasModifications === "added-weight"
+const FINDER_MOD_PLACEMENT = {
+  id: "modPlacement",
+  label: "Weight placement",
+  question: "Where did you add weight?",
+  options: [
+    { id: "head", label: "Head (more power, more swing weight)" },
+    { id: "handle", label: "Handle / throat (more stability, less swing weight)" },
+  ],
+};
+
+const FINDER_SECTION_D = {
+  id: "techFeel",
+  label: "Brand technology",
+  question:
+    "Some brands build their \"comfort\" technology into the core (foam/internal dampening — e.g. Babolat's Vibrabsorb), others build it into the frame/bridge (e.g. basalt reinforcement, triangulated bridges), and others into the grip. If you've felt a difference between these, which gave you the most noticeable comfort improvement?",
+  options: [
+    { id: "core", label: "Core-based dampening" },
+    { id: "frame", label: "Frame or bridge reinforcement" },
+    { id: "grip", label: "Grip-based" },
+    { id: "uncompared", label: "Haven't compared" },
+    { id: "unsure", label: "Not sure what these mean" },
+  ],
+};
+
+// Conditional, answer-specific follow-up text for the brand-technology
+// question — only the explanation matching what they actually picked is
+// shown. Named examples span multiple brands per mechanism so no single
+// brand reads as the one being promoted.
+const TECH_FEEL_FOLLOWUPS = {
+  core: "That's a comfort system built into the core and handle — elastomers absorb vibration right at the source, before it travels far through the frame. Several brands take this approach (Babolat's Vibrabsorb, StarVie and others using Noene-type viscoelastic inserts factory-built into the handle). It tends to pair with a smoother, softer-feeling face, which tracks with what you felt: great for comfort, but some players feel like the ball releases too fast to really \"hold\" and shape a shot. If that tradeoff has bothered you, it's worth comparing rougher or more textured faces from brands using the same core philosophy — same dampening approach, more bite.",
+  frame: "That's a stiffness-based fix rather than an absorption-based one — reinforcement at the bridge or throat (basalt fiber blends, like those used in Bullpadel's Vertex Core and other brands' basalt-reinforced bridges, or triangulated/diagonal bridge geometry) resists the frame flexing or twisting on contact, instead of soaking up vibration after the fact. That's why it feels more solid and direct, especially on off-center hits, rather than cushioned. If you want more of that feeling, look specifically at bridge construction and frame material across brands — that's the lever, more than the core.",
+  grip: "That's a viscoelastic or anti-shock grip insert doing the work — it catches vibration at the very last step, right before it reaches your hand, rather than stopping it earlier in the frame or core. This is the category brands like Noene (used as a factory-integrated layer by StarVie and others, and sold separately as an aftermarket undergrip) and Bullpadel's Hesacore specialize in. The racket itself can still feel lively through the swing, but your hand and forearm specifically feel shielded. If your discomfort is really centered in the gripping hand rather than general arm fatigue, this is the most surgical fix, and it's worth comparing grip material specifically, even if the core and frame differ.",
+  unsure: "Quick breakdown, since it's useful before comparing specific models: Core-based dampening (e.g. Babolat's Vibrabsorb, or Noene-type inserts built into the handle by StarVie and others) absorbs vibration at the source, inside the core and handle — usually paired with a smoother face, which trades some ball-bite for comfort. Frame or bridge reinforcement (e.g. basalt fiber blends like Bullpadel's Vertex Core, or triangulated bridges) resists the frame flexing or twisting in the first place, so it feels more solid and direct rather than cushioned. Grip-based damping (Noene's anti-shock undergrip, Bullpadel's Hesacore) catches vibration at the last step, right before it reaches your hand, so the racket can still feel lively but your hand stays shielded. If one of these sounds like something you've felt before, that's a good thread to pull on next time you're comparing models.",
+  // "uncompared" intentionally has no entry — no follow-up is shown.
+};
+
+function FindRacquetPanel({ onApply, mode }) {
+  // Single answers map, keyed by question id, instead of one useState
+  // per question — this is what makes the section list data-driven.
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [applied, setApplied] = useState(false);
+
+  const setAnswer = (id: string, value: string) => {
+    setAnswers(prev => ({ ...prev, [id]: value }));
+    setApplied(false);
+  };
+
+  const isAdvanced = answers.level === "advanced";
+
+  // Core questions required before the button activates — kept to the
+  // questions every player sees, so beginners aren't blocked on
+  // advanced-only fields that never render for them.
+  const requiredIds = ["racquetBackground", "level", "frequency", "handSize", "injuryHistory", "availablePower", "netInstinct", "goal", "spinInterest", "feelPreference", "sessionLength"];
+  const canApply = requiredIds.every(id => answers[id]);
+
+  const handleApply = () => {
+    if (!canApply) return;
+    onApply(answers);
+    setApplied(true);
+  };
+
+  const QRow = ({ q }: { q: { id: string; label: string; question: string; options: { id: string; label: string }[] } }) => (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>{q.label}</div>
+      <p style={{ fontSize: 13, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>{q.question}</p>
+      <ToggleGroup options={q.options} value={answers[q.id] ?? null} onChange={v => setAnswer(q.id, v)} />
+    </div>
+  );
+
+  const SectionDivider = ({ label }: { label: string }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#AEFB00", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+    </div>
+  );
+
+  // Follow-up text shown beneath the feel-fork question only when the
+  // player picks "unsure" — gives them a felt-physics anchor before
+  // moving on, without slowing down players who already have a preference.
+  const feelUnsureFollowup =
+    "If you're not sure: a smoother face holds the ball a beat longer before release, which gives you more time to feel and direct the shot — but some players feel like the ball \"slides\" rather than bites. A grippier, textured face releases faster with more spin potential, but punishes mistimed contact more. There's no wrong answer here — it's worth testing both if you can.";
+
+  return (
+    <div>
+      {mode === "player" && (
+        <div style={{ padding:"14px 16px", background:"linear-gradient(135deg, rgba(174,251,0,0.1), rgba(0,212,240,0.06))", borderRadius:10, border:"1px solid rgba(174,251,0,0.2)", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <Sparkles size={14} color="#AEFB00"/>
+            <span style={{ fontSize:13, fontWeight:700, color:"#AEFB00", fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase" }}>Smart Finder</span>
+          </div>
+          <p style={{ fontSize:12.5, color:"#9AA3B0", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
+            A deeper set of questions across a few short sections — covering background, body, goals, and feel — so the recommendation actually fits you, not just a category. Advanced players get a few extra questions for finer tuning.
+          </p>
+        </div>
+      )}
+
+      <SectionDivider label="Background" />
+      {FINDER_SECTION_1.map(q => <QRow key={q.id} q={q} />)}
+
+      <SectionDivider label="Body & physical history" />
+      {FINDER_SECTION_2.map(q => <QRow key={q.id} q={q} />)}
+
+      <SectionDivider label="Play style & goals" />
+      {FINDER_SECTION_3.map(q => <QRow key={q.id} q={q} />)}
+
+      <SectionDivider label="The feel fork" />
+      <QRow q={FINDER_FEEL_FORK} />
+      {answers.feelPreference === "unsure" && (
+        <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
+          {feelUnsureFollowup}
+        </p>
+      )}
+
+      <SectionDivider label="Practical constraints" />
+      {FINDER_SECTION_5.map(q => <QRow key={q.id} q={q} />)}
+
+      {isAdvanced && (
+        <>
+          <SectionDivider label="Role & tactical fit (advanced)" />
+          {FINDER_SECTION_A.map(q => <QRow key={q.id} q={q} />)}
+
+          <SectionDivider label="Fine-tuning (advanced)" />
+          {FINDER_SECTION_B.map(q => <QRow key={q.id} q={q} />)}
+          {answers.hasModifications === "added-weight" && (
+            <QRow q={FINDER_MOD_PLACEMENT} />
+          )}
+
+          <SectionDivider label="Brand technology (advanced)" />
+          <QRow q={FINDER_SECTION_D} />
+          {answers.techFeel && TECH_FEEL_FOLLOWUPS[answers.techFeel] && (
+            <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
+              {TECH_FEEL_FOLLOWUPS[answers.techFeel]}
+            </p>
+          )}
+        </>
+      )}
+
+      <button
+        onClick={handleApply}
+        disabled={!canApply}
+        style={{
+          width:"100%", padding:"14px 16px", borderRadius:10, border:"none",
+          background: canApply ? "linear-gradient(135deg, #AEFB00, #7DD400)" : "rgba(255,255,255,0.06)",
+          color: canApply ? "#080B10" : "#3A4455",
+          fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:15,
+          letterSpacing:"0.08em", textTransform:"uppercase", cursor: canApply ? "pointer" : "not-allowed",
+          marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          WebkitTapHighlightColor:"transparent",
+        }}
+      >
+        {applied ? <><CheckCircle2 size={16}/> Spec Applied</> : <>Build My Racquet <ArrowRight size={16}/></>}
+      </button>
+
+      {!canApply && (
+        <p style={{ textAlign:"center", fontSize:11.5, color:"#4A5568", marginTop:8, fontFamily:"Inter, sans-serif" }}>
+          Answer the questions above (advanced sections are optional) to unlock your recommendation.
+        </p>
+      )}
+
+      {applied && (
+        <p style={{ textAlign:"center", fontSize:12.5, color:"#6A7485", marginTop:10, fontFamily:"Inter, sans-serif" }}>
+          Spec applied — scroll to Build to fine-tune any option.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PLAYABILITY RADAR
+// ---------------------------------------------------------------------------
+
+function PlayabilityRadar({ scores }) {
+  const data = [
+    { subject: "Power", value: scores.power, fullMark: 5 },
+    { subject: "Control", value: scores.control, fullMark: 5 },
+    { subject: "Comfort", value: scores.comfort, fullMark: 5 },
+    { subject: "Sweet Spot", value: scores.sweetSpot, fullMark: 5 },
+    { subject: "Stability", value: scores.stability, fullMark: 5 },
+    { subject: "Spin", value: scores.spin, fullMark: 5 },
+    { subject: "Durability", value: scores.durability, fullMark: 5 },
+  ];
+  return (
+    <div style={{ width:"100%", height: 240 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data} margin={{top:10, right:30, bottom:10, left:30}}>
+          <PolarGrid gridType="polygon" stroke="rgba(255,255,255,0.08)"/>
+          <PolarAngleAxis dataKey="subject" tick={{ fill:"#6A7485", fontSize:10, fontFamily:"'JetBrains Mono', monospace" }}/>
+          <PolarRadiusAxis domain={[0,5]} tick={false} axisLine={false}/>
+          <Radar name="Build" dataKey="value" stroke="#AEFB00" fill="#AEFB00" fillOpacity={0.15} strokeWidth={2}/>
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MAIN APP
+// ---------------------------------------------------------------------------
+
+export default function App() {
+  const [mode, setMode] = useState<"player"|"manufacturer">("player");
+  const [activeTab, setActiveTab] = useState<"find"|"build"|"view"|"scores">("find");
+  const [diagramMode, setDiagramMode] = useState<"diagram"|"illustration"|"profile">("diagram");
+
+  // Build state
+  const [shapeId, setShapeId] = useState("teardrop");
+  const [coreId, setCoreId] = useState("eva-medium");
+  const [faceId, setFaceId] = useState("carbon-12k");
+  const [frameId, setFrameId] = useState("hybrid-frame");
+  const [surfaceId, setSurfaceId] = useState("rough");
+  const [gripId, setGripId] = useState("pu-grip");
+  const [gripShapeId, setGripShapeId] = useState("octagonal");
+  const [bridgeId, setBridgeId] = useState("open");
+  const [beamCount, setBeamCount] = useState(2);
+  const [beamOrientation, setBeamOrientation] = useState("vertical");
+  const [holeCountId, setHoleCountId] = useState("standard");
+  const [holePatternId, setHolePatternId] = useState("even");
+  const [lengthMm, setLengthMm] = useState(450);
+  const [widthMm, setWidthMm] = useState(255);
+  const [thicknessMm, setThicknessMm] = useState(38);
+  const [weightG, setWeightG] = useState(365);
+  const [balanceCm, setBalanceCm] = useState(25.8);
+  const [gripCircMm, setGripCircMm] = useState(38);
+
+  // Accordion state
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["shape"]));
+  const toggle = (id: string) => setOpenSections(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const shape = SHAPES.find(s => s.id === shapeId)!;
+  const core = CORE_MATERIALS.find(c => c.id === coreId)!;
+  const face = FACE_MATERIALS.find(f => f.id === faceId)!;
+  const frame = FRAME_MATERIALS.find(f => f.id === frameId)!;
+  const surface = SURFACE_TEXTURES.find(s => s.id === surfaceId)!;
+  const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
+  const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
+
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm]);
+  const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
+  const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holeCountId !== "none" || coreId === "hybrid-core";
+
+  const handleApplyRec = (answers) => {
+    const rec = recommendSpec(answers);
+    setShapeId(rec.shapeId); setCoreId(rec.coreId); setFaceId(rec.faceId);
+    setFrameId(rec.frameId); setSurfaceId(rec.surfaceId); setGripId(rec.gripId);
+    setGripShapeId(rec.gripShapeId);
+    setWeightG(Math.round(rec.weightG));
+    setBalanceCm(Math.round(rec.balanceCm * 10) / 10);
+    setGripCircMm(Math.round(rec.gripCircMm));
+    setActiveTab("view");
+  };
+
+  // Shared diagram props
+  const diagramProps = {
+    shape: shapeId, faceId, gripShapeId, holeCountId, holePatternId,
+    lengthMm, widthMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
+    bridgeId, beamCount, beamOrientation,
+  };
+
+  const LIME = "#AEFB00";
+
+  // Score top metric for header badge
+  const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability);
+
+  const tabDefs = [
+    { id: "find", label: "Find", icon: <Sparkles size={18}/> },
+    { id: "build", label: "Build", icon: <Settings2 size={18}/> },
+    { id: "view", label: "View", icon: <Eye size={18}/> },
+    { id: "scores", label: "Scores", icon: <BarChart3 size={18}/> },
+  ];
+
+  // ---- BUILD CONTENT ----
+  const buildContent = (
+    <div style={{ padding: "0 16px" }}>
+      {/* Find panel inlined at top of build in player mode */}
+      {mode === "player" && (
+        <div style={{ marginBottom: 4 }}>
+          <AccordionSection id="finder" icon={<Sparkles size={15}/>} label="Smart Finder" isOpen={openSections.has("finder")} onToggle={() => toggle("finder")}>
+            <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
+          </AccordionSection>
+        </div>
+      )}
+
+      {/* Head Shape */}
+      <AccordionSection id="shape" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 22 22 2 22"/></svg>} label="Head Shape" isOpen={openSections.has("shape")} onToggle={() => toggle("shape")}>
+        <SelectField value={shapeId} onChange={setShapeId} options={SHAPES}/>
+        <MaterialNote text={shape.note}/>
+        <BestForTag text={shape.bestFor}/>
+        <MiniRatingGrid items={[{label:"Power", val:shape.power},{label:"Control", val:shape.control},{label:"Forgiveness", val:shape.forgiveness}]}/>
+        <p style={{ fontSize:11.5, color:"#4A5568", marginTop:10, fontFamily:"Inter, sans-serif" }}>Balance: {shape.balanceRange} · Sweet spot: {shape.sweetSpot}</p>
+      </AccordionSection>
+
+      {/* Face Material */}
+      <AccordionSection id="face" icon={<Layers size={15}/>} label="Face Material" isOpen={openSections.has("face")} onToggle={() => toggle("face")} badge={face.cost ? face.cost : undefined}>
+        <SelectField value={faceId} onChange={setFaceId} options={FACE_MATERIALS}/>
+        <MaterialNote text={face.note}/>
+        {face.bestFor && <BestForTag text={face.bestFor}/>}
+        <MiniRatingGrid items={[{label:"Power", val:face.power},{label:"Control", val:face.control},{label:"Comfort", val:face.comfort},{label:"Durability", val:face.durability}]}/>
+        {faceId === "carbon-3k" && (
+          <div style={{ marginTop:10, padding:"8px 10px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8 }}>
+            <p style={{ fontSize:12, color:"#C88A00", margin:0, fontFamily:"Inter, sans-serif" }}>Source disagreement flagged — verify stiffness behavior against your supplier's data sheet.</p>
+          </div>
+        )}
+      </AccordionSection>
+
+      {/* Core Material */}
+      <AccordionSection id="core" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>} label="Core Material" isOpen={openSections.has("core")} onToggle={() => toggle("core")}>
+        <SelectField value={coreId} onChange={setCoreId} options={CORE_MATERIALS}/>
+        <div style={{ fontSize:11.5, color:"#4A5568", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
+        <MaterialNote text={core.note}/>
+        <BestForTag text={core.bestFor}/>
+        <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
+      </AccordionSection>
+
+      {/* Dimensions */}
+      <AccordionSection id="dims" icon={<Ruler size={15}/>} label="Dimensions" isOpen={openSections.has("dims")} onToggle={() => toggle("dims")}>
+        <SliderField label="Total Length" value={lengthMm} onChange={setLengthMm} min={400} max={455} suffix=" mm" explanation={explainLength(lengthMm)}/>
+        <SliderField label="Face Width" value={widthMm} onChange={setWidthMm} min={200} max={260} suffix=" mm" explanation={explainWidth(widthMm, shapeId)}/>
+        <SliderField label="Thickness" value={thicknessMm} onChange={setThicknessMm} min={28} max={38} suffix=" mm" explanation={explainThickness(thicknessMm)}/>
+        <SliderField label="Weight" value={weightG} onChange={setWeightG} min={350} max={380} suffix=" g" explanation={explainWeight(weightG)}/>
+        <SliderField label="Balance Point" value={balanceCm} onChange={setBalanceCm} min={24} max={27} step={0.1} suffix=" cm" explanation={explainBalance(balanceCm, shapeId)}/>
+        <SliderField label="Grip Circumference" value={gripCircMm} onChange={setGripCircMm} min={35} max={42} suffix=" mm" explanation={explainGripCirc(gripCircMm)}/>
+        {mode === "manufacturer" && (
+          <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginTop:4 }}>
+            Length max 455mm, head width max 260mm, thickness max 38mm per FIP January 2026 rules. 2.5% manufacturing tolerance on thickness only.
+          </p>
+        )}
+      </AccordionSection>
+
+      {/* Frame */}
+      <AccordionSection id="frame" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>} label="Frame Material" isOpen={openSections.has("frame")} onToggle={() => toggle("frame")}>
+        <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS}/>
+        <MaterialNote text={frame.note}/>
+      </AccordionSection>
+
+      {/* Surface Texture */}
+      <AccordionSection id="surface" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6l9-4 9 4v12l-9 4-9-4z"/></svg>} label="Surface Texture" isOpen={openSections.has("surface")} onToggle={() => toggle("surface")}>
+        <SelectField value={surfaceId} onChange={setSurfaceId} options={SURFACE_TEXTURES}/>
+        <MaterialNote text={surface.note}/>
+        <MiniRatingGrid items={[{label:"Spin", val:surface.spin}]}/>
+      </AccordionSection>
+
+      {/* Bridge */}
+      <AccordionSection id="bridge" icon={<GitFork size={15}/>} label="Bridge & Throat" isOpen={openSections.has("bridge")} onToggle={() => toggle("bridge")}>
+        <SelectField value={bridgeId} onChange={setBridgeId} options={BRIDGE_TYPES}/>
+        <MaterialNote text={bridge.note}/>
+        {bridgeId === "open" && (
+          <>
+            <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Stability Beams</p>
+              <ToggleGroup
+                options={BEAM_COUNT_OPTIONS.map(b=>({id:b.id, label:b.label}))}
+                value={beamCount}
+                onChange={setBeamCount}
+                disabled={id => id === 3 && beamOrientation !== "vertical"}
+              />
+              <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_COUNT_OPTIONS.find(b=>b.id===beamCount)?.note}</p>
+            </div>
+            <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Beam Orientation</p>
+              <ToggleGroup
+                options={BEAM_ORIENTATIONS.map(o=>({id:o.id, label:o.label}))}
+                value={beamOrientation}
+                onChange={v => { setBeamOrientation(v); if (v !== "vertical" && beamCount === 3) setBeamCount(2); }}
+              />
+              <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_ORIENTATIONS.find(o=>o.id===beamOrientation)?.note}</p>
+            </div>
+          </>
+        )}
+      </AccordionSection>
+
+      {/* Grip */}
+      <AccordionSection id="grip" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>} label="Grip" isOpen={openSections.has("grip")} onToggle={() => toggle("grip")}>
+        <SelectField value={gripId} onChange={setGripId} options={GRIP_MATERIALS}/>
+        <MaterialNote text={grip.note}/>
+        <MiniRatingGrid items={[{label:"Tack", val:grip.tack},{label:"Vibration Damp", val:grip.vibrationDamp}]}/>
+        <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Handle Cross-Section</p>
+          <ToggleGroup options={GRIP_SHAPES.map(g=>({id:g.id, label:g.label}))} value={gripShapeId} onChange={setGripShapeId}/>
+          <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{GRIP_SHAPES.find(g=>g.id===gripShapeId)?.note}</p>
+        </div>
+      </AccordionSection>
+
+      {/* Holes */}
+      <AccordionSection id="holes" icon={<Grid3x3 size={15}/>} label="Face Perforation" isOpen={openSections.has("holes")} onToggle={() => toggle("holes")}>
+        <SelectField value={holeCountId} onChange={setHoleCountId} options={HOLE_COUNT_OPTIONS}/>
+        <MaterialNote text={HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.note || ""}/>
+        {holeCountId !== "none" && (
+          <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Hole Pattern</p>
+            <SelectField value={holePatternId} onChange={setHolePatternId} options={HOLE_PATTERN_STYLES}/>
+            <MaterialNote text={HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.note || ""}/>
+          </div>
+        )}
+        {mode === "manufacturer" && (
+          <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+            FIP rules: holes in the central striking area must measure 9–13mm diameter. 4cm peripheral band allows different shapes up to 20mm. No minimum or maximum count specified.
+          </p>
+        )}
+      </AccordionSection>
+
+      {mode === "manufacturer" && fto_flagged && (
+        <div style={{ marginTop:4 }}><FTOWarning/></div>
+      )}
+    </div>
+  );
+
+  // ---- VIEW CONTENT ----
+  const viewContent = (
+    <div>
+      {/* View mode toggle */}
+      <div style={{ display:"flex", gap:6, padding:"12px 16px" }}>
+        {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}].map(m => (
+          <button key={m.id} onClick={() => setDiagramMode(m.id as any)} style={{
+            flex:1, padding:"9px 6px", borderRadius:8,
+            border: `1px solid ${diagramMode===m.id ? "rgba(174,251,0,0.3)" : "rgba(255,255,255,0.06)"}`,
+            background: diagramMode===m.id ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
+            color: diagramMode===m.id ? "#AEFB00" : "#6A7485",
+            fontSize: 12, fontWeight:700, cursor:"pointer",
+            fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase",
+            WebkitTapHighlightColor:"transparent",
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* Diagram */}
+      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", background:"#F5F2EB" }}>
+        <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
+          <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
+            {diagramMode === "profile"
+              ? <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holeCountId={holeCountId} gripShapeId={gripShapeId}/>
+              : <RacquetDiagram {...diagramProps} mode={diagramMode}/>
+            }
+          </div>
+        </div>
+
+        {/* Info strip */}
+        <div style={{ background:"#EDEADE", padding:"10px 14px", borderTop:"1px solid #D8D4C8" }}>
+          {diagramMode !== "profile" && (
+            <p style={{ fontSize:12, color:"#5A574C", lineHeight:1.5, margin:0, fontFamily:"Inter, sans-serif" }}>
+              <strong style={{color:"#26241E"}}>Sweet spot:</strong> {sweetSpotPosLabel(shapeId, balanceCm)} ·{" "}
+              <strong style={{color:"#26241E"}}>Stability:</strong> {stabilityPct}% — {stabilityPct >= 65 ? "tight, resists off-center twist" : stabilityPct >= 45 ? "moderate wobble zone" : "looser, twists more off-center"}
+            </p>
+          )}
+          {diagramMode === "profile" && (
+            <p style={{ fontSize:12, color:"#5A574C", lineHeight:1.5, margin:0, fontFamily:"Inter, sans-serif" }}>
+              Side-on profile — head thickness <strong style={{color:"#26241E"}}>{thicknessMm}mm</strong> ({Math.round(((thicknessMm-28)/10)*100)}% toward the 38mm FIP max). Depth exaggerated for legibility.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Quick score strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, margin:"16px", }}>
+        {[["Power",scores.power],["Control",scores.control],["Comfort",scores.comfort],["Spin",scores.spin]].map(([label,val]) => (
+          <div key={label as string} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
+            <div style={{ fontSize:18, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:LIME }}>{(val as number).toFixed(1)}</div>
+            <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", marginTop:2, textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {mode === "manufacturer" && fto_flagged && <div style={{margin:"0 16px"}}><FTOWarning/></div>}
+    </div>
+  );
+
+  // ---- SCORES CONTENT ----
+  const scoresContent = (
+    <div style={{ padding:"0 16px" }}>
+      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:0 }}>Playability Index</p>
+        <PlayabilityRadar scores={scores}/>
+      </div>
+
+      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:14 }}>Scores</p>
+        <ScoreBar label="Power" val={scores.power}/>
+        <ScoreBar label="Control" val={scores.control}/>
+        <ScoreBar label="Comfort / Vibration Damping" val={scores.comfort}/>
+        <ScoreBar label="Sweet Spot Size" val={scores.sweetSpot}/>
+        <ScoreBar label="Stability (Off-Center Resistance)" val={scores.stability}/>
+        <ScoreBar label="Spin Potential" val={scores.spin}/>
+        <ScoreBar label="Durability" val={scores.durability}/>
+        <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+          Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
+        </p>
+      </div>
+
+      {/* Build Summary */}
+      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:24 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:12 }}>Current Build</p>
+        <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:12, lineHeight:1.9 }}>
+          {[
+            ["Shape", shape.label],
+            ["Length / Width", `${lengthMm}mm / ${widthMm}mm`],
+            ["Thickness", `${thicknessMm}mm`],
+            ["Weight", `${weightG}g`],
+            ["Balance", `${balanceCm}cm`],
+            ["Face", face.label],
+            ["Core", core.label],
+            ["Frame", frame.label],
+            ["Surface", surface.label],
+            ["Bridge", bridgeId === "open" ? `${bridge.label} — ${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}` : bridge.label],
+            ["Grip", `${grip.label}`],
+            ["Grip Circ.", `${gripCircMm}mm`],
+            ["Holes", holeCountId === "none" ? "None" : `${HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.label} — ${HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.label}`],
+          ].map(([k,v]) => (
+            <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(255,255,255,0.05)", padding:"2px 0", gap:8 }}>
+              <span style={{ color:"#4A5568", flexShrink:0 }}>{k}</span>
+              <span style={{ color:"#9AA3B0", textAlign:"right" }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {mode === "manufacturer" && (
+        <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.6, marginBottom:32, fontFamily:"Inter, sans-serif" }}>
+          Material playability characteristics are drawn from publicly available manufacturer and OEM technical guides current as of mid-2026. Brand-specific marketing names are intentionally not used — this tool models the underlying material science. Always confirm freedom-to-operate with qualified patent counsel before committing a design to production.
+        </p>
+      )}
+    </div>
+  );
+
+  // ---- FIND CONTENT (standalone tab) ----
+  const findContent = (
+    <div style={{ padding:"0 16px" }}>
+      <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
+    </div>
+  );
+
+  const tabContent = {
+    find: findContent,
+    build: buildContent,
+    view: viewContent,
+    scores: scoresContent,
+  };
+
+  return (
+    <div style={{ fontFamily:"Inter, system-ui, sans-serif", background:"#080B10", minHeight:"100dvh", color:"#EAE6DC" }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { display: none; }
+        scrollbar-width: none;
+        input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; background: rgba(255,255,255,0.12); border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #AEFB00; cursor: pointer; border: 2px solid #080B10; box-shadow: 0 0 0 2px rgba(174,251,0,0.3); }
+        input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #AEFB00; cursor: pointer; border: 2px solid #080B10; }
+        select option { background: #1A2030; color: #EAE6DC; }
+        button { -webkit-tap-highlight-color: transparent; }
+      `}</style>
+
+      {/* ── HEADER ── */}
+      <header style={{ background:"rgba(8,11,16,0.95)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,0.07)", position:"sticky", top:0, zIndex:50 }}>
+        <div style={{ maxWidth:1024, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            {/* Racquet icon */}
+            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(174,251,0,0.15)", border:"1px solid rgba(174,251,0,0.25)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <ellipse cx="9" cy="9" rx="7" ry="7" stroke="#AEFB00" strokeWidth="1.8"/>
+                <path d="M14.5 14.5 L21 21" stroke="#AEFB00" strokeWidth="2.2" strokeLinecap="round"/>
+                <circle cx="9" cy="9" r="2.5" fill="rgba(174,251,0,0.2)" stroke="#AEFB00" strokeWidth="1.2" strokeDasharray="2 2"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#EAE6DC", lineHeight:1 }}>RACQUET<span style={{color:"#AEFB00"}}>LAB</span></div>
+              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
+            </div>
+          </div>
+
+          {/* Mode toggle */}
+          <div style={{ display:"flex", gap:4, background:"rgba(255,255,255,0.05)", padding:3, borderRadius:8, border:"1px solid rgba(255,255,255,0.07)" }}>
+            {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Pro",icon:<Wrench size={12}/>}].map(m => (
+              <button key={m.id} onClick={() => setMode(m.id as any)} style={{
+                display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
+                background: mode===m.id ? "#AEFB00" : "transparent",
+                color: mode===m.id ? "#080B10" : "#6A7485",
+                fontSize:11.5, fontWeight:700, cursor:"pointer",
+                fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.05em", textTransform:"uppercase",
+                WebkitTapHighlightColor:"transparent", transition:"all 0.15s ease",
+              }}>{m.icon}{m.label}</button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* ── TABLET LAYOUT (md+) ── */}
+      <div style={{ maxWidth:1024, margin:"0 auto" }} className="md-layout">
+        <div style={{ display:"grid" }} className="content-grid">
+
+          {/* Desktop: two-column */}
+          <style>{`
+            @media (min-width: 768px) {
+              .content-grid { grid-template-columns: 380px 1fr !important; min-height: calc(100dvh - 57px); }
+              .left-col { border-right: 1px solid rgba(255,255,255,0.07); overflow-y: auto; height: calc(100dvh - 57px); position: sticky; top: 57px; }
+              .right-col { padding: 0; display: flex; flex-direction: column; }
+              .bottom-nav { display: none !important; }
+              .mobile-only { display: none !important; }
+              .desktop-right-tabs { display: flex !important; }
+              .main-scroll { padding-bottom: 24px !important; }
+            }
+            @media (max-width: 767px) {
+              .content-grid { grid-template-columns: 1fr !important; }
+              .left-col { display: none !important; }
+              .right-col { display: none !important; }
+              .desktop-right-tabs { display: none !important; }
+            }
+          `}</style>
+
+          {/* Left col: build sections (desktop only) */}
+          <div className="left-col" style={{ padding:"8px 0" }}>
+            {buildContent}
+          </div>
+
+          {/* Right col: view + scores (desktop only) */}
+          <div className="right-col">
+            {/* Tab strip */}
+            <div className="desktop-right-tabs" style={{ display:"none", padding:"12px 20px 0", gap:8, borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+              {[{id:"view",label:"Visualize",icon:<Eye size={14}/>},{id:"scores",label:"Scores & Summary",icon:<BarChart3 size={14}/>}].map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
+                  display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:"8px 8px 0 0",
+                  border:"1px solid rgba(255,255,255,0.07)", borderBottom:"none",
+                  background: activeTab===t.id ? "rgba(174,251,0,0.1)" : "transparent",
+                  color: activeTab===t.id ? "#AEFB00" : "#6A7485",
+                  fontSize:12.5, fontWeight:700, cursor:"pointer",
+                  fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase",
+                  WebkitTapHighlightColor:"transparent",
+                }}>{t.icon}{t.label}</button>
+              ))}
+            </div>
+            <div style={{ overflowY:"auto", flex:1, padding:"0", paddingBottom:24 }}>
+              {(activeTab === "view" || activeTab === "find" || activeTab === "build") ? viewContent : scoresContent}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── MOBILE LAYOUT ── */}
+      {/* Mobile main scroll area */}
+      <div className="mobile-only main-scroll" style={{ paddingBottom:"calc(72px + env(safe-area-inset-bottom))", overflowY:"auto" }}>
+        {tabContent[activeTab]}
+      </div>
+
+      {/* Bottom nav (mobile only) */}
+      <nav className="bottom-nav" style={{
+        position:"fixed", bottom:0, left:0, right:0, zIndex:100,
+        background:"rgba(8,11,16,0.97)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
+        borderTop:"1px solid rgba(255,255,255,0.08)",
+        paddingBottom:"env(safe-area-inset-bottom)",
+        display:"flex",
+      }}>
+        {tabDefs.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} style={{
+            flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            padding:"10px 4px", border:"none", background:"none", cursor:"pointer",
+            color: activeTab===tab.id ? "#AEFB00" : "#3A4455",
+            WebkitTapHighlightColor:"transparent", transition:"color 0.15s ease", gap:4,
+          }}>
+            <span style={{ transition:"color 0.15s ease" }}>{tab.icon}</span>
+            <span style={{ fontSize:9.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase" }}>{tab.label}</span>
+            {activeTab===tab.id && <span style={{ position:"absolute", bottom:"env(safe-area-inset-bottom)", width:20, height:2, borderRadius:1, background:"#AEFB00" }}/>}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
