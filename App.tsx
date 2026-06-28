@@ -1385,31 +1385,72 @@ function RacquetIllustration3D({
   const edgeMargin = 14; // minimum clearance kept between any hole's edge and the face rim
   if (holeCountId !== "none") {
     const { rows, cols } = countCfg;
-    for (let r = 0; r < rows; r++) {
-      const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
-      const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
-      // Real, shape-aware face boundary at this row's height — holes
-      // are clamped against THIS, not a flat margin guess, so they can
-      // never reach the rim regardless of how the head narrows here.
-      const rowT = (fy - topY) / headHeight;
-      const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
 
-      // Pattern bias still shapes the DISTRIBUTION (how tightly packed
-      // toward center vs. edges), but is now blended much more gently
-      // — the previous "centered" pattern multiplied width down to as
-      // little as 27% of the row, which crammed holes together almost
-      // edge-to-edge. This version keeps a believable spacing floor
-      // even in the most concentrated configuration.
-      const vertBias = holePatternId === "centered" ? 0.72 + 0.28 * (1 - Math.abs(rowProgress - 0.5) * 2) : holePatternId === "edge" ? 0.88 + 0.12 * Math.abs(rowProgress - 0.5) * 2 : 1;
-      const rowHalf = Math.min(realRowHalf, realRowHalf * vertBias + realRowHalf * 0.3);
-
+    if (holePatternId === "even") {
+      // True fixed grid: every row shares the same column x-positions
+      // and every column shares the same row y-positions, like holes
+      // actually punched in manufacturing — then any hole that would
+      // fall outside THIS ROW's real face boundary is simply skipped,
+      // rather than every row being independently squeezed to fit (the
+      // previous approach), which is what made adjacent rows look
+      // misaligned/uneven despite the label. Column positions are
+      // derived from the single widest row, so the grid is uniform
+      // and only the outer columns get clipped near the head's taper.
+      let widestRowHalf = 0;
+      for (let r = 0; r < rows; r++) {
+        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
+        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
+        const rowT = (fy - topY) / headHeight;
+        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
+        if (realRowHalf > widestRowHalf) widestRowHalf = realRowHalf;
+      }
+      const gridPlacementHalf = Math.max(0, widestRowHalf - holeRadius);
+      const colXs: number[] = [];
       for (let c = 0; c < cols; c++) {
         const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
-        const horizBias = holePatternId === "centered" ? 0.65 + 0.35 * (1 - Math.abs(colProgress - 0.5) * 2) : holePatternId === "edge" ? 0.85 + 0.15 * Math.abs(colProgress - 0.5) * 2 : 1;
-        const effectiveHalf = Math.min(rowHalf, rowHalf * (holePatternId === "even" ? 1 : 0.55 + 0.45 * horizBias));
-        const placementHalf = Math.max(0, effectiveHalf - holeRadius);
-        const fx = cx - placementHalf + colProgress * (placementHalf * 2);
-        holeDots.push({ x: fx, y: fy });
+        colXs.push(-gridPlacementHalf + colProgress * (gridPlacementHalf * 2));
+      }
+
+      for (let r = 0; r < rows; r++) {
+        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
+        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
+        const rowT = (fy - topY) / headHeight;
+        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
+        for (const colX of colXs) {
+          // skip (don't push inward) any grid position that genuinely
+          // falls outside this row's real boundary at this height
+          if (Math.abs(colX) + holeRadius <= realRowHalf) {
+            holeDots.push({ x: cx + colX, y: fy });
+          }
+        }
+      }
+    } else {
+      for (let r = 0; r < rows; r++) {
+        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
+        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
+        // Real, shape-aware face boundary at this row's height — holes
+        // are clamped against THIS, not a flat margin guess, so they can
+        // never reach the rim regardless of how the head narrows here.
+        const rowT = (fy - topY) / headHeight;
+        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
+
+        // Pattern bias still shapes the DISTRIBUTION (how tightly packed
+        // toward center vs. edges), but is now blended much more gently
+        // — the previous "centered" pattern multiplied width down to as
+        // little as 27% of the row, which crammed holes together almost
+        // edge-to-edge. This version keeps a believable spacing floor
+        // even in the most concentrated configuration.
+        const vertBias = holePatternId === "centered" ? 0.72 + 0.28 * (1 - Math.abs(rowProgress - 0.5) * 2) : 0.88 + 0.12 * Math.abs(rowProgress - 0.5) * 2;
+        const rowHalf = Math.min(realRowHalf, realRowHalf * vertBias + realRowHalf * 0.3);
+
+        for (let c = 0; c < cols; c++) {
+          const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
+          const horizBias = holePatternId === "centered" ? 0.65 + 0.35 * (1 - Math.abs(colProgress - 0.5) * 2) : 0.85 + 0.15 * Math.abs(colProgress - 0.5) * 2;
+          const effectiveHalf = Math.min(rowHalf, rowHalf * (0.55 + 0.45 * horizBias));
+          const placementHalf = Math.max(0, effectiveHalf - holeRadius);
+          const fx = cx - placementHalf + colProgress * (placementHalf * 2);
+          holeDots.push({ x: fx, y: fy });
+        }
       }
     }
   }
@@ -1643,23 +1684,28 @@ function RacquetIllustration3D({
       <g>
         <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="url(#handleGrad3d)" rx={6} />
         {gripShapeId === "hexagonal" ? (
-          <g clipPath={`inset(0)`} opacity="0.4">
-            {(() => {
-              const hexR = handleWidth / 4.2, hexW = hexR * 2, hexH = hexR * Math.sqrt(3), colStep = hexW * 0.75;
-              const cells: { x: number; y: number }[] = [];
-              let col = 0;
-              for (let x = cx - handleWidth / 2 - hexW; x < cx + handleWidth / 2 + hexW; x += colStep) {
-                const yOffset = col % 2 === 0 ? 0 : hexH / 2;
-                for (let y = handleTopY - hexH; y < handleBottomY + hexH; y += hexH) cells.push({ x, y: y + yOffset });
-                col++;
-              }
-              const flatTopHex = (px, py, r) => {
-                const pts = [];
-                for (let i = 0; i < 6; i++) { const ang = (Math.PI / 3) * i; pts.push(`${px + r * Math.cos(ang)},${py + r * Math.sin(ang)}`); }
-                return pts.join(" ");
-              };
-              return cells.map((c, i) => <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="none" stroke="#8A8268" strokeWidth="0.6" />);
-            })()}
+          <g>
+            <clipPath id="illustHexHandleClip">
+              <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} rx={6} />
+            </clipPath>
+            <g clipPath="url(#illustHexHandleClip)" opacity="0.4">
+              {(() => {
+                const hexR = handleWidth / 4.2, hexW = hexR * 2, hexH = hexR * Math.sqrt(3), colStep = hexW * 0.75;
+                const cells: { x: number; y: number }[] = [];
+                let col = 0;
+                for (let x = cx - handleWidth / 2 - hexW; x < cx + handleWidth / 2 + hexW; x += colStep) {
+                  const yOffset = col % 2 === 0 ? 0 : hexH / 2;
+                  for (let y = handleTopY - hexH; y < handleBottomY + hexH; y += hexH) cells.push({ x, y: y + yOffset });
+                  col++;
+                }
+                const flatTopHex = (px, py, r) => {
+                  const pts = [];
+                  for (let i = 0; i < 6; i++) { const ang = (Math.PI / 3) * i; pts.push(`${px + r * Math.cos(ang)},${py + r * Math.sin(ang)}`); }
+                  return pts.join(" ");
+                };
+                return cells.map((c, i) => <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="none" stroke="#8A8268" strokeWidth="0.6" />);
+              })()}
+            </g>
           </g>
         ) : (
           <g opacity="0.32">
