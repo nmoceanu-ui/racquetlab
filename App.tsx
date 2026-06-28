@@ -1416,143 +1416,132 @@ function RacquetIllustration3D({
         </filter>
       </defs>
 
-      {/* THROAT — for a closed bridge, one solid continuous shape. For
-          an open bridge, built as explicit solid struts with real empty
-          space between them (the card background shows straight
-          through, exactly like a real open-bridge throat) rather than
-          a solid wedge with subtracted slivers — at this render size a
-          thin cutout reads as a decorative line, not an actual gap. */}
-      {bridgeId === "closed" ? (
-        <path
-          d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
-          fill="url(#throatGrad3d)"
-        />
-      ) : (
-        <g>
-          {beamOrientation === "vertical" &&
-            (() => {
-              // Each strut is a real tapering quadrilateral with visible
-              // width (not a thin line) running from the throat's outer
-              // edge down to the handle collar, with explicit empty
-              // space — no fill at all — between adjacent struts.
-              const strutHalfWidth = 7;
-              const positions = strutOffsets.length > 0 ? strutOffsets : [0];
-              return positions.map((offset, i) => {
-                const topCenter = (offset / innerNeckHalf) * outerThroatHalf;
-                const botCenter = offset;
-                return (
-                  <path
-                    key={i}
-                    d={`M ${cx + topCenter - strutHalfWidth} ${throatTopY + 4}
-                        L ${cx + topCenter + strutHalfWidth} ${throatTopY + 4}
-                        L ${cx + botCenter + strutHalfWidth * 0.6} ${throatBottomY - 2}
-                        L ${cx + botCenter - strutHalfWidth * 0.6} ${throatBottomY - 2} Z`}
-                    fill="url(#throatGrad3d)"
-                  />
-                );
-              });
-            })()}
+      {/* THROAT — one continuous, solid piece of the SAME dark glossy
+          frame material as the head's rim (url(#rimGrad3d), not a
+          separate lighter color) — this is the key correction from the
+          previous version: real open-bridge throats are one molded
+          piece with holes punched through it, not a different-colored
+          set of struts floating in front of a dark background. The
+          beam openings are real cut-through holes (rendered via mask,
+          revealing the actual dark card background behind), small and
+          rounded like the reference photo's punched throat holes —
+          not light-colored bars. */}
+      <path
+        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+        fill="url(#rimGrad3d)"
+        mask={bridgeId === "open" ? "url(#throatHoleMask)" : undefined}
+      />
 
-          {beamOrientation === "horizontal" &&
-            (() => {
-              // Two side rails (the throat's outer frame, always present
-              // on an open bridge) plus real horizontal rungs with
-              // visible thickness and genuine open gaps between them.
-              const railWidth = 9;
-              const rungHeight = 11;
-              const rungCount = Math.min(beamCount, 2);
-              const rungYs =
-                rungCount === 1
-                  ? [throatTopY + (throatBottomY - throatTopY) * 0.5]
-                  : [throatTopY + (throatBottomY - throatTopY) * 0.32, throatTopY + (throatBottomY - throatTopY) * 0.68];
-              return (
-                <>
-                  {/* left + right rails */}
-                  <path
-                    d={`M ${cx - outerThroatHalf} ${throatTopY + 4} L ${cx - outerThroatHalf + railWidth} ${throatTopY + 4} L ${cx - innerNeckHalf + railWidth} ${throatBottomY - 2} L ${cx - innerNeckHalf} ${throatBottomY - 2} Z`}
-                    fill="url(#throatGrad3d)"
-                  />
-                  <path
-                    d={`M ${cx + outerThroatHalf} ${throatTopY + 4} L ${cx + outerThroatHalf - railWidth} ${throatTopY + 4} L ${cx + innerNeckHalf - railWidth} ${throatBottomY - 2} L ${cx + innerNeckHalf} ${throatBottomY - 2} Z`}
-                    fill="url(#throatGrad3d)"
-                  />
-                  {rungYs.map((y, i) => {
-                    const half = throatHalfWidthAt(y);
-                    return (
-                      <rect
-                        key={i}
-                        x={cx - half + railWidth * 0.4}
-                        y={y - rungHeight / 2}
-                        width={(half - railWidth * 0.4) * 2}
-                        height={rungHeight}
-                        rx={rungHeight * 0.3}
-                        fill="url(#throatGrad3d)"
-                      />
-                    );
-                  })}
-                </>
-              );
-            })()}
+      {bridgeId === "open" && (
+        <defs>
+          <mask id="throatHoleMask">
+            <rect x={cx - outerThroatHalf - 20} y={throatTopY - 10} width={(outerThroatHalf + 20) * 2} height={throatHeight + 20} fill="#FFFFFF" />
 
-          {beamOrientation === "diagonal" &&
-            (() => {
-              // beamCount=1: a single V — two struts meeting at the
-              // bottom center. beamCount=2: a full X — the same two
-              // struts from beamCount=1, PLUS a second crossing pair,
-              // so 1-beam and 2-beam are genuinely different shapes
-              // (a V vs an X), not a subtle angle change.
-              const strutW = 7;
-              const railWidth = 9;
-              const meetX = 0, meetY = throatBottomY - 6;
-              const vStrut = (fromX: number, mirror: 1 | -1) => {
-                const dx = meetX - fromX, dy = meetY - (throatTopY + 4);
-                const len = Math.hypot(dx, dy);
-                const nx = (-dy / len) * strutW * mirror, ny = (dx / len) * strutW * mirror;
-                return `M ${cx + fromX + nx} ${throatTopY + 4 + ny} L ${cx + fromX - nx} ${throatTopY + 4 - ny} L ${cx + meetX - nx} ${meetY - ny} L ${cx + meetX + nx} ${meetY + ny} Z`;
-              };
-              return (
-                <>
-                  {/* outer rails so the throat silhouette stays bounded
-                      even where no strut covers the very top corners */}
-                  <path d={`M ${cx - outerThroatHalf} ${throatTopY + 4} L ${cx - outerThroatHalf + railWidth} ${throatTopY + 4} L ${cx - innerNeckHalf + railWidth} ${throatBottomY - 2} L ${cx - innerNeckHalf} ${throatBottomY - 2} Z`} fill="url(#throatGrad3d)" />
-                  <path d={`M ${cx + outerThroatHalf} ${throatTopY + 4} L ${cx + outerThroatHalf - railWidth} ${throatTopY + 4} L ${cx + innerNeckHalf - railWidth} ${throatBottomY - 2} L ${cx + innerNeckHalf} ${throatBottomY - 2} Z`} fill="url(#throatGrad3d)" />
-                  {/* the V: one strut from each top corner converging at
-                      bottom-center — present for both 1 and 2 beams */}
-                  <path d={vStrut(-outerThroatHalf + railWidth + 4, 1)} fill="url(#throatGrad3d)" />
-                  <path d={vStrut(outerThroatHalf - railWidth - 4, -1)} fill="url(#throatGrad3d)" />
-                  {/* the second crossing pair, ONLY for 2 beams, forming
-                      the X — genuinely additional geometry, not a
-                      re-angled version of the same lines */}
-                  {beamCount >= 2 && (
+            {beamOrientation === "vertical" &&
+              (() => {
+                // N-1 openings between N struts — each a rounded,
+                // tapering hole punched through the solid throat,
+                // narrow enough to read as a real structural cutout
+                // rather than a bar of a different material. Top and
+                // bottom boundary positions are computed as separate
+                // arrays (top edge spans the full outerThroatHalf
+                // width, bottom edge spans the narrower innerNeckHalf
+                // collar width) — strut offsets are already defined in
+                // bottom-edge units, so only THEY need the ratio
+                // conversion to find their corresponding top position;
+                // the outer rail edges are already correct as-is at
+                // both top and bottom and must not be re-scaled.
+                const positions = strutOffsets.length > 0 ? strutOffsets : [0];
+                const holeHalf = 9;
+                const strutTopPos = (offset: number) => (offset / innerNeckHalf) * outerThroatHalf;
+                const topBoundaries = [-outerThroatHalf, ...positions.map(strutTopPos), outerThroatHalf];
+                const botBoundaries = [-innerNeckHalf, ...positions, innerNeckHalf];
+                const holes = [];
+                for (let i = 0; i < topBoundaries.length - 1; i++) {
+                  const leftTop = topBoundaries[i], rightTop = topBoundaries[i + 1];
+                  const leftBot = botBoundaries[i], rightBot = botBoundaries[i + 1];
+                  const cxTop = (leftTop + rightTop) / 2, cxBot = (leftBot + rightBot) / 2;
+                  const wTop = Math.max(6, (rightTop - leftTop) / 2 - holeHalf), wBot = Math.max(6, (rightBot - leftBot) / 2 - holeHalf);
+                  holes.push(
+                    <path
+                      key={i}
+                      d={`M ${cx + cxTop - wTop} ${throatTopY + 10}
+                          Q ${cx + cxTop - wTop * 0.6} ${throatMidY}, ${cx + cxBot - wBot} ${throatBottomY - 8}
+                          Q ${cx + cxBot} ${throatBottomY - 2}, ${cx + cxBot + wBot} ${throatBottomY - 8}
+                          Q ${cx + cxTop + wTop * 0.6} ${throatMidY}, ${cx + cxTop + wTop} ${throatTopY + 10}
+                          Q ${cx + cxTop} ${throatTopY + 4}, ${cx + cxTop - wTop} ${throatTopY + 10} Z`}
+                      fill="#000000"
+                    />
+                  );
+                }
+                return holes;
+              })()}
+
+            {beamOrientation === "horizontal" &&
+              (() => {
+                // One or two rounded slot-shaped holes spanning most of
+                // the throat width, between solid top/bottom rails —
+                // matches how a horizontal-bridge throat actually looks:
+                // wide flat openings, not a ladder of thin lines.
+                const rungCount = Math.min(beamCount, 2);
+                const margin = 14;
+                const slotYs =
+                  rungCount === 1
+                    ? [{ top: throatTopY + 18, bot: throatBottomY - 18 }]
+                    : [
+                        { top: throatTopY + 14, bot: throatTopY + (throatBottomY - throatTopY) * 0.46 },
+                        { top: throatTopY + (throatBottomY - throatTopY) * 0.58, bot: throatBottomY - 14 },
+                      ];
+                return slotYs.map((slot, i) => {
+                  const halfTop = throatHalfWidthAt(slot.top) - margin;
+                  const halfBot = throatHalfWidthAt(slot.bot) - margin;
+                  const half = Math.min(halfTop, halfBot);
+                  const midY = (slot.top + slot.bot) / 2;
+                  return (
+                    <rect
+                      key={i}
+                      x={cx - half}
+                      y={slot.top}
+                      width={half * 2}
+                      height={slot.bot - slot.top}
+                      rx={Math.min(10, (slot.bot - slot.top) / 2)}
+                      fill="#000000"
+                    />
+                  );
+                });
+              })()}
+
+            {beamOrientation === "diagonal" &&
+              (() => {
+                // 1 beam: two triangular holes either side of a single
+                // central diagonal divider (a V-shaped solid strut left
+                // standing). 2 beams: four smaller triangular holes
+                // around a full X-shaped solid divider — genuinely more
+                // (and smaller) openings, not the same two re-angled.
+                const margin = 10;
+                if (beamCount <= 1) {
+                  return (
                     <>
-                      <path
-                        d={(() => {
-                          const fromX = -outerThroatHalf + railWidth + 4;
-                          const toX = outerThroatHalf - railWidth - 4;
-                          const dx = toX - fromX, dy = (throatBottomY - 8) - (throatTopY + 4);
-                          const len = Math.hypot(dx, dy);
-                          const nx = (-dy / len) * strutW, ny = (dx / len) * strutW;
-                          return `M ${cx + fromX + nx} ${throatTopY + 4 + ny} L ${cx + fromX - nx} ${throatTopY + 4 - ny} L ${cx + toX - nx} ${throatBottomY - 8 - ny} L ${cx + toX + nx} ${throatBottomY - 8 + ny} Z`;
-                        })()}
-                        fill="url(#throatGrad3d)"
-                      />
-                      <path
-                        d={(() => {
-                          const fromX = outerThroatHalf - railWidth - 4;
-                          const toX = -outerThroatHalf + railWidth + 4;
-                          const dx = toX - fromX, dy = (throatBottomY - 8) - (throatTopY + 4);
-                          const len = Math.hypot(dx, dy);
-                          const nx = (-dy / len) * strutW, ny = (dx / len) * strutW;
-                          return `M ${cx + fromX + nx} ${throatTopY + 4 + ny} L ${cx + fromX - nx} ${throatTopY + 4 - ny} L ${cx + toX - nx} ${throatBottomY - 8 - ny} L ${cx + toX + nx} ${throatBottomY - 8 + ny} Z`;
-                        })()}
-                        fill="url(#throatGrad3d)"
-                      />
+                      <path d={`M ${cx - outerThroatHalf + margin} ${throatTopY + 10} L ${cx - margin} ${throatBottomY - 10} L ${cx - innerNeckHalf - 2} ${throatBottomY - 10} L ${cx - outerThroatHalf + margin + 6} ${throatTopY + 14} Z`} fill="#000000" />
+                      <path d={`M ${cx + outerThroatHalf - margin} ${throatTopY + 10} L ${cx + margin} ${throatBottomY - 10} L ${cx + innerNeckHalf + 2} ${throatBottomY - 10} L ${cx + outerThroatHalf - margin - 6} ${throatTopY + 14} Z`} fill="#000000" />
                     </>
-                  )}
-                </>
-              );
-            })()}
-        </g>
+                  );
+                }
+                // 2 beams: split each side into two smaller triangles
+                // flanking the X's crossing point, so the lattice reads
+                // as denser/more reinforced than the single-V case.
+                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.5;
+                return (
+                  <>
+                    <path d={`M ${cx - outerThroatHalf + margin} ${throatTopY + 10} L ${cx - 6} ${crossY} L ${cx - innerNeckHalf - 2} ${crossY + 4} L ${cx - outerThroatHalf + margin + 4} ${throatTopY + 16} Z`} fill="#000000" />
+                    <path d={`M ${cx - innerNeckHalf - 2} ${crossY - 4} L ${cx - 6} ${crossY} L ${cx - margin} ${throatBottomY - 10} L ${cx - innerNeckHalf - 2} ${throatBottomY - 14} Z`} fill="#000000" />
+                    <path d={`M ${cx + outerThroatHalf - margin} ${throatTopY + 10} L ${cx + 6} ${crossY} L ${cx + innerNeckHalf + 2} ${crossY + 4} L ${cx + outerThroatHalf - margin - 4} ${throatTopY + 16} Z`} fill="#000000" />
+                    <path d={`M ${cx + innerNeckHalf + 2} ${crossY - 4} L ${cx + 6} ${crossY} L ${cx + margin} ${throatBottomY - 10} L ${cx + innerNeckHalf + 2} ${throatBottomY - 14} Z`} fill="#000000" />
+                  </>
+                );
+              })()}
+          </mask>
+        </defs>
       )}
 
       {/* HEAD — drawn on top of the throat's upper overlap, so the join
