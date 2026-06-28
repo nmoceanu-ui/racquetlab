@@ -1732,8 +1732,9 @@ function RacquetIllustration3D({
         </linearGradient>
 
         <radialGradient id="sweetSpotGlow3d" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.3" />
-          <stop offset="70%" stopColor="#AEFB00" stopOpacity="0.08" />
+          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.65" />
+          <stop offset="55%" stopColor="#AEFB00" stopOpacity="0.35" />
+          <stop offset="85%" stopColor="#AEFB00" stopOpacity="0.12" />
           <stop offset="100%" stopColor="#AEFB00" stopOpacity="0" />
         </radialGradient>
 
@@ -1905,6 +1906,12 @@ function RacquetIllustration3D({
 
       <g clipPath="url(#illustInnerClip)">
         <circle cx={cx} cy={sweet.y} r={sweet.r * 1.3} fill="url(#sweetSpotGlow3d)" />
+        {/* a defined boundary at the actual computed radius — the soft
+            glow alone makes it hard to judge size precisely from one
+            config to the next; this ring gives a concrete edge so
+            changes in shape/stability/holes are visually legible, not
+            just a vague brightness shift */}
+        <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#AEFB00" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.85" />
       </g>
 
       <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" />
