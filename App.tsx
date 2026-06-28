@@ -1208,24 +1208,48 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
 }
 
 // ---------------------------------------------------------------------------
-// RACQUET ILLUSTRATION 3D — a genuinely dimensional, "molded object" render
-// for the consumer-facing illustration mode, built on the exact same head/
-// throat/handle geometry as RacquetDiagram (via the shared path helpers)
-// so dimensions always stay in sync with the spec view. The flat line-art
-// in RacquetDiagram is intentionally schematic; this is the opposite goal —
-// it should look like a real, lit, photographed product:
-//   - A radial gradient across the face simulates the curve of a real
-//     molded composite surface catching light, with a darker tone toward
-//     the lower-right edge as if shaded.
-//   - A soft specular highlight sits upper-left, consistent with standard
-//     product-photography lighting, with intensity/sharpness driven by
-//     each material's measured gloss value (carbon/graphene = lacquered
-//     shine, fiberglass = soft satin, kevlar = warm metallic sheen).
-//   - A grounding drop shadow keeps the object from feeling like it's
-//     floating against the card background.
-//   - The frame rim gets a beveled look (a thin inner light edge against
-//     a darker outer edge) rather than a flat stroke, suggesting real
-//     molded plastic/composite thickness.
+// RACQUET ILLUSTRATION 3D — a product-photography-style render for the
+// consumer-facing illustration mode, built on the same head/throat/handle
+// geometry as RacquetDiagram (via the shared path helpers) so dimensions
+// stay in sync with the spec view. Rebuilt to chase the specific visual
+// cues a real studio photo has that flat gradients don't:
+//   - A slight horizontal perspective skew on the head, so the silhouette
+//     reads as a foreshortened 3D object rather than a flat front view.
+//   - A dense checker-weave texture (small alternating light/dark cells)
+//     for carbon/kevlar/graphene — real carbon fiber's woven look comes
+//     from cell density, not a few crosshatch lines.
+//   - A hard, thin rim-light tracing the lit side of the silhouette,
+//     which is the single strongest "this is a real lit object" cue in
+//     product photography, distinct from a soft gradient fill.
+//   - A curved specular reflection band that follows the head's surface
+//     curve (via a clipped diagonal stripe) instead of a static ellipse.
+//   - A harder-edged, more directional cast shadow.
+// (Superseded by the smooth one-piece-mold version below — texture grid
+// removed, gradient-only shading retained.)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// RACQUET ILLUSTRATION 3D — a smooth, "one-piece mold" render for the
+// consumer-facing illustration mode. Built on the same head/throat/handle
+// geometry as RacquetDiagram (via the shared path helpers) so dimensions
+// stay in sync with the spec view. Deliberately avoids any tiled/repeated
+// geometry (no weave grid, no dot grid) on the face — real racquets with
+// a painted or lacquered finish show a continuous molded surface, not a
+// visible weave, and that's the look this version targets:
+//   - The entire face is shaded with smooth, continuous gradients only —
+//     no rects, no tiles, nothing that reads as "made of pieces."
+//   - Material identity comes through via gradient tone and a gloss-
+//     intensity-driven highlight, not a literal texture pattern.
+//   - A slight rotation on the head simulates a 3/4 turn toward the
+//     viewer, matching a real product-photo angle.
+//   - A hard, thin rim-light traces the lit edge of the silhouette —
+//     still the strongest "this is a lit 3D object" cue, kept from the
+//     previous version since it reads as part of the molded edge, not a
+//     separate decorative shape.
+//   - A directional, blurred cast shadow grounds the object.
+//   - Perforation holes remain as actual circular depressions (shadow +
+//     well + highlight), since those are a real structural feature of
+//     the racquet, not a surface texture choice.
 // ---------------------------------------------------------------------------
 
 function RacquetIllustration3D({
@@ -1247,6 +1271,11 @@ function RacquetIllustration3D({
 }) {
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
+  // Rotation applied to the head group only — the throat/handle stay
+  // unskewed, consistent with how a racquet is typically held square-on
+  // for a product photo even when the head itself is angled.
+  const SKEW_DEG = -7;
+
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
   const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
   const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
@@ -1269,8 +1298,6 @@ function RacquetIllustration3D({
   const lerpHalf = (yFrac) => outerThroatHalf + (innerNeckHalf - outerThroatHalf) * yFrac;
   const boundaries = [-1, ...strutOffsets.map((s) => s / innerNeckHalf), 1];
 
-  // Hole positions reuse the exact same generator logic as RacquetDiagram
-  // so perforation placement is consistent between view modes.
   const holeDots: { x: number; y: number }[] = [];
   const countCfg = HOLE_COUNT_OPTIONS.find((h) => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
   if (holeCountId !== "none") {
@@ -1294,6 +1321,7 @@ function RacquetIllustration3D({
   const frameDark = frameObj?.id === "fiberglass-frame" ? "#9A968A" : frameObj?.id === "basalt-frame" ? "#241A12" : "#0A0A0C";
   const frameLight = frameObj?.id === "fiberglass-frame" ? "#F5F2E8" : frameObj?.id === "basalt-frame" ? "#5A4030" : "#3A3A3E";
   const gripBase = gripShapeId === "hexagonal" ? "#E4DFCF" : "#F4F1E8";
+  const approxPerimeter = 2 * (halfWidth + headHeight) * 1.05;
 
   return (
     <svg viewBox="0 0 460 660" width="100%" height="100%" style={{ display: "block" }}>
@@ -1301,116 +1329,106 @@ function RacquetIllustration3D({
         <clipPath id="illustHeadClip"><path d={outline} /></clipPath>
         <clipPath id="illustInnerClip"><path d={innerOutline} /></clipPath>
 
-        {/* Face gradient: light source upper-left, darker shade toward
-            lower-right — the core depth cue that makes this read as a
-            curved molded object instead of a flat cutout. */}
-        <radialGradient id="faceGrad3d" cx="32%" cy="26%" r="85%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.55 * faceVisual.gloss} />
-          <stop offset="22%" stopColor={faceVisual.tint} />
-          <stop offset="72%" stopColor={faceVisual.tint} />
+        {/* Smooth continuous face shading — the whole material story now
+            lives in this one gradient: tone from faceVisual.tint to
+            faceVisual.darkTone, with the gloss value only changing how
+            bright/tight the highlight ellipses read below. No tiling,
+            no repeated geometry, nothing that reads as "pieces." */}
+        <radialGradient id="faceGrad3d" cx="34%" cy="24%" r="95%">
+          <stop offset="0%" stopColor={faceVisual.tint} />
+          <stop offset="38%" stopColor={faceVisual.tint} />
           <stop offset="100%" stopColor={faceVisual.darkTone} />
         </radialGradient>
 
-        {/* Frame rim gradient: bevel effect, light catching the inner
-            edge of the rim, darker on the outer edge — suggests real
-            molded thickness rather than a flat stroke. */}
-        <linearGradient id="rimGrad3d" x1="20%" y1="0%" x2="85%" y2="100%">
+        <linearGradient id="rimGrad3d" x1="15%" y1="0%" x2="90%" y2="100%">
           <stop offset="0%" stopColor={frameLight} />
-          <stop offset="55%" stopColor={frameDark} />
+          <stop offset="45%" stopColor={frameDark} />
           <stop offset="100%" stopColor={frameDark} />
         </linearGradient>
 
-        <linearGradient id="handleGrad3d" x1="15%" y1="0%" x2="80%" y2="0%">
+        <linearGradient id="handleGrad3d" x1="8%" y1="0%" x2="92%" y2="0%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="35%" stopColor={gripBase} />
-          <stop offset="100%" stopColor="#C9C2A8" />
+          <stop offset="22%" stopColor={gripBase} />
+          <stop offset="60%" stopColor={gripBase} />
+          <stop offset="100%" stopColor="#B9B19A" />
         </linearGradient>
 
         <radialGradient id="sweetSpotGlow3d" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.35" />
-          <stop offset="70%" stopColor="#AEFB00" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.3" />
+          <stop offset="70%" stopColor="#AEFB00" stopOpacity="0.08" />
           <stop offset="100%" stopColor="#AEFB00" stopOpacity="0" />
         </radialGradient>
+
+        <filter id="shadowBlur3d" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
       </defs>
 
-      {/* Grounding drop shadow */}
-      <ellipse cx={cx + 14} cy={handleBottomY + 22} rx={halfWidth * 0.78} ry={16} fill="#000000" opacity="0.22" />
-      <ellipse cx={cx + 8} cy={topY + headHeight * 0.62} rx={halfWidth * 0.92} ry={headHeight * 0.56} fill="#000000" opacity="0.1" />
+      {/* Cast shadow — offset lower-right, soft-edged, directional */}
+      <ellipse cx={cx + 26} cy={handleBottomY + 20} rx={halfWidth * 0.7} ry={14} fill="#000000" opacity="0.3" filter="url(#shadowBlur3d)" />
+      <ellipse cx={cx + 20} cy={topY + headHeight * 0.58} rx={halfWidth * 0.88} ry={headHeight * 0.5} fill="#000000" opacity="0.16" filter="url(#shadowBlur3d)" />
 
-      {/* HEAD — rim with bevel, face with gradient depth */}
-      <path d={outline} fill="url(#rimGrad3d)" />
-      <path d={innerOutline} fill="url(#faceGrad3d)" />
+      {/* HEAD — rotated slightly, one continuous painted surface */}
+      <g transform={`rotate(${SKEW_DEG} ${cx} ${topY + headHeight / 2})`}>
+        <path d={outline} fill="url(#rimGrad3d)" />
+        <path d={innerOutline} fill="url(#faceGrad3d)" />
 
-      {/* woven texture, dimmed to sit under the lighting rather than
-          compete with it — same generator as the flat mode, lower opacity */}
-      {faceVisual.coverage > 0 && (
-        <g clipPath="url(#illustInnerClip)" opacity="0.32">
-          {(() => {
-            const spacing = faceVisual.weaveSpacing;
-            const top = topY - 10, bottom = topY + headHeight + 10;
-            const left = cx - halfWidth - 10, right = cx + halfWidth + 10;
-            const linesA = [];
-            const linesB = [];
-            for (let d = -((right - left) + (bottom - top)); d < (right - left) + (bottom - top); d += spacing) {
-              linesA.push({ x1: left + d, y1: top, x2: left + d + (bottom - top), y2: bottom });
-              linesB.push({ x1: right - d, y1: top, x2: right - d - (bottom - top), y2: bottom });
-            }
-            return (
-              <>
-                {linesA.map((l, i) => <line key={"a" + i} {...l} stroke={faceVisual.weaveColor} strokeWidth="1" />)}
-                {linesB.map((l, i) => <line key={"b" + i} {...l} stroke={faceVisual.weaveColor} strokeWidth="1" />)}
-              </>
-            );
-          })()}
+        {/* hard rim-light along the upper-left of the silhouette — reads
+            as the lit edge of the molded rim, not a separate sticker */}
+        <path
+          d={outline}
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth="2.5"
+          opacity="0.85"
+          strokeDasharray={`${approxPerimeter * 0.22} ${approxPerimeter * 0.78}`}
+          strokeDashoffset={approxPerimeter * 0.86}
+        />
+
+        {/* smooth specular highlight — two soft overlapping ellipses,
+            opacity driven by the material's gloss value, no hard edges
+            or repeated shapes */}
+        <g clipPath="url(#illustInnerClip)">
+          <ellipse
+            cx={cx - halfWidth * 0.3}
+            cy={topY + headHeight * 0.24}
+            rx={halfWidth * 0.62}
+            ry={headHeight * 0.38}
+            fill="#FFFFFF"
+            opacity={0.22 * faceVisual.gloss}
+            transform={`rotate(-20 ${cx - halfWidth * 0.3} ${topY + headHeight * 0.24})`}
+          />
+          <ellipse
+            cx={cx - halfWidth * 0.22}
+            cy={topY + headHeight * 0.16}
+            rx={halfWidth * 0.28}
+            ry={headHeight * 0.16}
+            fill="#FFFFFF"
+            opacity={0.4 * faceVisual.gloss}
+            transform={`rotate(-20 ${cx - halfWidth * 0.22} ${topY + headHeight * 0.16})`}
+          />
         </g>
-      )}
 
-      {/* specular highlight streak — the single biggest cue that sells
-          "glossy molded object" rather than "flat painted shape" */}
-      <g clipPath="url(#illustInnerClip)">
-        <ellipse
-          cx={cx - halfWidth * 0.32}
-          cy={topY + headHeight * 0.22}
-          rx={halfWidth * 0.5}
-          ry={headHeight * 0.32}
-          fill="#FFFFFF"
-          opacity={0.3 * faceVisual.gloss}
-          transform={`rotate(-18 ${cx - halfWidth * 0.32} ${topY + headHeight * 0.22})`}
-        />
-        <ellipse
-          cx={cx - halfWidth * 0.18}
-          cy={topY + headHeight * 0.14}
-          rx={halfWidth * 0.22}
-          ry={headHeight * 0.12}
-          fill="#FFFFFF"
-          opacity={0.5 * faceVisual.gloss}
-          transform={`rotate(-18 ${cx - halfWidth * 0.18} ${topY + headHeight * 0.14})`}
-        />
+        {/* perforation holes as real depressions — a genuine structural
+            feature, kept distinct from the surface-finish question above */}
+        <g clipPath="url(#illustInnerClip)">
+          {holeDots.map((h, i) => (
+            <g key={i}>
+              <circle cx={h.x} cy={h.y + 0.8} r={6.8} fill="#000000" opacity="0.3" />
+              <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
+              <path d={`M ${h.x - 4.2} ${h.y - 3.4} A 5.2 5.2 0 0 1 ${h.x + 4.2} ${h.y - 3.4}`} fill="none" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.5" strokeLinecap="round" />
+            </g>
+          ))}
+        </g>
+
+        <g clipPath="url(#illustInnerClip)">
+          <circle cx={cx} cy={sweet.y} r={sweet.r * 1.3} fill="url(#sweetSpotGlow3d)" />
+        </g>
+
+        <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" />
       </g>
 
-      {/* perforation holes rendered as actual depressions: a dark ring
-          (shadow) plus a thin bright top edge (catching light), instead
-          of a flat outline circle */}
-      <g clipPath="url(#illustInnerClip)">
-        {holeDots.map((h, i) => (
-          <g key={i}>
-            <circle cx={h.x} cy={h.y + 0.6} r={6.6} fill="#000000" opacity="0.28" />
-            <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
-            <path d={`M ${h.x - 4} ${h.y - 3.2} A 5 5 0 0 1 ${h.x + 4} ${h.y - 3.2}`} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.45" strokeLinecap="round" />
-          </g>
-        ))}
-      </g>
-
-      {/* sweet spot — a soft glow rather than a dashed measurement ring,
-          since this view is about appeal, not spec annotation */}
-      <g clipPath="url(#illustInnerClip)">
-        <circle cx={cx} cy={sweet.y} r={sweet.r * 1.4} fill="url(#sweetSpotGlow3d)" />
-      </g>
-
-      {/* thin inner bevel line for extra rim depth */}
-      <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.25" />
-
-      {/* THROAT / BRIDGE — same geometry as RacquetDiagram, beveled fill */}
+      {/* THROAT / BRIDGE — unskewed */}
       <path
         d={`M ${cx - halfWidth * 0.5} ${headBottomY - 6} Q ${cx - outerThroatHalf - 6} ${throatNeckY + 16}, ${cx - outerThroatHalf} ${bridgeTopY} M ${cx + halfWidth * 0.5} ${headBottomY - 6} Q ${cx + outerThroatHalf + 6} ${throatNeckY + 16}, ${cx + outerThroatHalf} ${bridgeTopY}`}
         fill="none"
@@ -1486,14 +1504,14 @@ function RacquetIllustration3D({
         </g>
       )}
 
-      {/* collar */}
       <path
         d={`M ${cx - innerNeckHalf - 2} ${bridgeBottomY} L ${cx - handleWidth / 2 - 5} ${collarY} L ${cx + handleWidth / 2 + 5} ${collarY} L ${cx + innerNeckHalf + 2} ${bridgeBottomY}`}
         fill="url(#rimGrad3d)"
       />
 
-      {/* HANDLE — gradient suggests a cylindrical grip catching light
-          along its left edge, consistent with the same light source */}
+      {/* HANDLE — smooth cylindrical shading, same as before since the
+          grip texture (criss-cross / hex) is a real surface feature of
+          the grip, not the "weave" issue this rebuild addresses */}
       <g>
         <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="url(#handleGrad3d)" rx={6} />
         {gripShapeId === "hexagonal" ? (
@@ -1516,7 +1534,7 @@ function RacquetIllustration3D({
             })()}
           </g>
         ) : (
-          <g opacity="0.35">
+          <g opacity="0.32">
             {Array.from({ length: Math.ceil(handleHeight / 18) }).map((_, i) => {
               const y0 = handleTopY + i * 18, y1 = y0 + 18;
               if (y1 > handleBottomY) return null;
