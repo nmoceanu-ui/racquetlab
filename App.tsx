@@ -1395,9 +1395,9 @@ function RacquetIllustration3D({
             cutouts via mask below, not a same-color shape drawn on top)
             show real contrast against it. */}
         <linearGradient id="throatGrad3d" x1="20%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor={frameObj?.id === "fiberglass-frame" ? "#E8E4D6" : frameObj?.id === "basalt-frame" ? "#7A5A3E" : "#5C5C64"} />
-          <stop offset="55%" stopColor={frameObj?.id === "fiberglass-frame" ? "#B8B2A0" : frameObj?.id === "basalt-frame" ? "#4A3424" : "#34343C"} />
-          <stop offset="100%" stopColor={frameObj?.id === "fiberglass-frame" ? "#9A9484" : frameObj?.id === "basalt-frame" ? "#2E2018" : "#1E1E24"} />
+          <stop offset="0%" stopColor={frameObj?.id === "fiberglass-frame" ? "#F0ECDE" : frameObj?.id === "basalt-frame" ? "#9C7654" : "#82828C"} />
+          <stop offset="55%" stopColor={frameObj?.id === "fiberglass-frame" ? "#D4CEB8" : frameObj?.id === "basalt-frame" ? "#7A5638" : "#5C5C68"} />
+          <stop offset="100%" stopColor={frameObj?.id === "fiberglass-frame" ? "#B8B098" : frameObj?.id === "basalt-frame" ? "#5C4028" : "#3E3E48"} />
         </linearGradient>
 
         <linearGradient id="handleGrad3d" x1="8%" y1="0%" x2="92%" y2="0%">
