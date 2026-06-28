@@ -13,31 +13,38 @@ import { supabaseConfigured } from "./lib/supabase";
 import { analytics } from "./lib/analytics";
 
 // ---------------------------------------------------------------------------
-// MATERIAL DATABASE
+// MATERIAL DATABASE — engineering-first, UI-compatible
 // ---------------------------------------------------------------------------
 
+const LAYUP_SCHEDULES = {
+  comfort: { id: "comfort", label: "Comfort layup", sequence: ["0° face ply", "+45° bias ply", "90° stabilizer"], plyCount: 3, stiffnessFactor: 0.88, dampingFactor: 1.18, reboundFactor: 1.03, massFactor: 0.96 },
+  balanced: { id: "balanced", label: "Balanced layup", sequence: ["0° face ply", "+45° bias ply", "-45° bias ply", "90° stabilizer"], plyCount: 4, stiffnessFactor: 1.0, dampingFactor: 1.0, reboundFactor: 1.0, massFactor: 1.0 },
+  power: { id: "power", label: "Power layup", sequence: ["0° face ply", "0° face ply", "+45° torsion ply", "-45° torsion ply"], plyCount: 4, stiffnessFactor: 1.16, dampingFactor: 0.88, reboundFactor: 1.02, massFactor: 1.04 },
+  reinforced: { id: "reinforced", label: "Reinforced layup", sequence: ["0° face ply", "+45° bias ply", "-45° bias ply", "90° hoop ply", "aramid/impact veil"], plyCount: 5, stiffnessFactor: 1.08, dampingFactor: 1.12, reboundFactor: 0.96, massFactor: 1.11 },
+};
+
 const CORE_MATERIALS = [
-  { id: "eva-soft", label: "EVA Foam — Soft", density: "20-25 kg/m³", power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Lower density, higher compressibility. Best shock absorption and largest forgiving sweet spot. Ball compresses into the core longer, which softens power but is gentler on the arm.", bestFor: "Beginners, recreational players, arm/elbow sensitivity" },
-  { id: "eva-medium", label: "EVA Foam — Medium", density: "25-30 kg/m³", power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "Balanced compression and rebound. The most common core choice because it doesn't strongly favor power or control.", bestFor: "Intermediate, all-round players" },
-  { id: "eva-hard", label: "EVA Foam — Hard", density: "30-40 kg/m³", power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Denser foam resists compression, so swing energy transfers to the ball almost instantly. Stiffer feel, less forgiving off-center, transmits more vibration.", bestFor: "Advanced players, aggressive baseline and smash-heavy styles" },
-  { id: "foam-pe", label: "Polyethylene Core Foam", density: "lower than EVA", power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Softer and more elastic than EVA. Comfortable with strong vibration absorption, but compresses more and wears faster.", bestFor: "Entry-level rackets, players prioritizing arm comfort over power" },
-  { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "varies by zone", power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Combines two foam densities in one core — softer near the throat, firmer toward the head — for different feel on fast vs. slow shots.", bestFor: "Players who want different feel on offense vs. defense" },
+  { id: "eva-soft", label: "EVA Foam — Soft", density: "20-25 kg/m³", densityKgM3: 23, compressionModulusMPa: 1.9, dampingCoefficient: 0.34, reboundCoefficient: 0.82, shearStability: 0.58, power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Low-density EVA with high compressibility. In the physics model it increases dwell time, damping and sweet-spot forgiveness, but lowers immediate rebound on high-speed impacts.", bestFor: "Beginners, recreational players, arm/elbow sensitivity" },
+  { id: "eva-medium", label: "EVA Foam — Medium", density: "25-30 kg/m³", densityKgM3: 28, compressionModulusMPa: 3.0, dampingCoefficient: 0.26, reboundCoefficient: 0.86, shearStability: 0.72, power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "Middle-density EVA. This is the neutral core baseline for rebound, vibration and face support.", bestFor: "Intermediate, all-round players" },
+  { id: "eva-hard", label: "EVA Foam — Hard", density: "30-40 kg/m³", densityKgM3: 36, compressionModulusMPa: 4.8, dampingCoefficient: 0.18, reboundCoefficient: 0.90, shearStability: 0.88, power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Dense EVA resists compression and supports the face laminate. The model treats it as high impact stiffness and rebound, with reduced damping and off-center forgiveness.", bestFor: "Advanced players, aggressive baseline and smash-heavy styles" },
+  { id: "foam-pe", label: "Polyethylene Core Foam", density: "18-24 kg/m³", densityKgM3: 21, compressionModulusMPa: 1.3, dampingCoefficient: 0.40, reboundCoefficient: 0.78, shearStability: 0.46, power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Softer and more elastic than EVA. It damps vibration heavily, but the model penalizes control and long-term compression set.", bestFor: "Entry-level rackets, players prioritizing arm comfort over power" },
+  { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "zoned 24-36 kg/m³", densityKgM3: 31, compressionModulusMPa: 3.7, dampingCoefficient: 0.27, reboundCoefficient: 0.88, shearStability: 0.80, power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Zoned core model: softer throat/central response plus firmer high-face response. It receives interaction bonuses when paired with stiff faces because the foam gradient supports impact without making the whole racquet harsh.", bestFor: "Players who want different feel on offense vs. defense" },
 ];
 
 const FACE_MATERIALS = [
-  { id: "fiberglass", label: "Fiberglass", power: 2, control: 4, comfort: 5, durability: 2, cost: "Low", note: "More elastic and forgiving than carbon, with a pronounced spring effect. Lower cost and weight, standard for entry-level rackets.", bestFor: "Beginners, comfort-first builds" },
-  { id: "carbon-3k", label: "Carbon Fiber — 3K", power: 5, control: 3, comfort: 2, durability: 5, cost: "Mid", note: "3,000 filaments per tow, tubular weave. Most describe 3K as the stiffest, most direct, most powerful weave. Source disagreement exists — verify against your supplier's data sheet.", bestFor: "Advanced/aggressive players prioritizing power" },
-  { id: "carbon-12k", label: "Carbon Fiber — 12K", power: 4, control: 4, comfort: 3, durability: 4, cost: "Mid", note: "12,000 filaments per tow. Widely described as the versatile middle ground — softer-flexing than 3K with a bit more ball release.", bestFor: "All-round players, the most common spec" },
-  { id: "carbon-18k", label: "Carbon Fiber — 18K / TeXtreme", power: 3, control: 5, comfort: 4, durability: 4, cost: "High", note: "Higher filament count, flat-tape construction. More flexible and comfortable than 3K, better vibration filtering.", bestFor: "Defensive/control players, arm-sensitive players" },
-  { id: "graphene", label: "Graphene-Enhanced", power: 5, control: 3, comfort: 2, durability: 4, cost: "Very high", note: "Thin, lightweight, very strong carbon allotrope blended into a carbon layup. Adds stiffness and structural reinforcement for power transfer.", bestFor: "Premium offensive rackets" },
-  { id: "kevlar-reinforced", label: "Kevlar-Reinforced", power: 4, control: 4, comfort: 2, durability: 5, cost: "High", note: "Kevlar used as structural reinforcement for frame durability and impact resistance. Suits attacking players more than touch players.", bestFor: "Durability-focused builds, hard consistent hitters" },
+  { id: "fiberglass", label: "Fiberglass", cost: "Low", resinSystem: "Flexible epoxy / vinyl-ester compatible", weaveOrientation: "Plain weave 0°/90°", laminateThicknessMm: 0.28, prepregQuality: "wet-layup / standard prepreg", layupScheduleId: "comfort", fiberModulusGPa: 72, faceThicknessMm: 0.85, flexuralModulusGPa: 22, dampingCoefficient: 0.070, impactStiffnessNmm: 32, reboundCoefficient: 0.86, weightContributionG: 42, power: 2, control: 4, comfort: 5, durability: 2, note: "More elastic and forgiving than carbon. The upgraded model gives it high damping and dwell time, not simply a generic comfort score.", bestFor: "Beginners, comfort-first builds" },
+  { id: "carbon-3k", label: "Carbon Fiber — 3K", cost: "Mid", resinSystem: "Toughened epoxy prepreg", weaveOrientation: "Twill 0°/90° with tight tow crimp", laminateThicknessMm: 0.24, prepregQuality: "aerospace-grade standard modulus", layupScheduleId: "power", fiberModulusGPa: 235, faceThicknessMm: 0.95, flexuralModulusGPa: 72, dampingCoefficient: 0.032, impactStiffnessNmm: 74, reboundCoefficient: 0.91, weightContributionG: 48, power: 5, control: 3, comfort: 2, durability: 5, note: "Tight 3K carbon modelled as high modulus and high impact stiffness. Interaction with hard EVA raises ball speed but increases vibration transmission.", bestFor: "Advanced/aggressive players prioritizing power" },
+  { id: "carbon-12k", label: "Carbon Fiber — 12K", cost: "Mid", resinSystem: "Toughened epoxy prepreg", weaveOrientation: "Twill 0°/90° with wider tow", laminateThicknessMm: 0.26, prepregQuality: "high-consistency sport prepreg", layupScheduleId: "balanced", fiberModulusGPa: 230, faceThicknessMm: 0.90, flexuralModulusGPa: 58, dampingCoefficient: 0.040, impactStiffnessNmm: 60, reboundCoefficient: 0.89, weightContributionG: 46, power: 4, control: 4, comfort: 3, durability: 4, note: "Balanced carbon face. The model treats it as lower apparent stiffness than 3K because the wider tow and layup allow more usable face flex.", bestFor: "All-round players, the most common spec" },
+  { id: "carbon-18k", label: "Carbon Fiber — 18K / TeXtreme", cost: "High", resinSystem: "Low-void epoxy prepreg", weaveOrientation: "Spread tow / flat tape quasi-isotropic", laminateThicknessMm: 0.22, prepregQuality: "premium low-void prepreg", layupScheduleId: "comfort", fiberModulusGPa: 240, faceThicknessMm: 0.82, flexuralModulusGPa: 50, dampingCoefficient: 0.046, impactStiffnessNmm: 52, reboundCoefficient: 0.88, weightContributionG: 43, power: 3, control: 5, comfort: 4, durability: 4, note: "Higher filament-count/flat-tape behavior is modelled as smoother flex with better damping, not automatically more power.", bestFor: "Defensive/control players, arm-sensitive players" },
+  { id: "graphene", label: "Graphene-Enhanced", cost: "Very high", resinSystem: "Nano-filled toughened epoxy", weaveOrientation: "Carbon twill + graphene resin dispersion", laminateThicknessMm: 0.25, prepregQuality: "premium nano-modified prepreg", layupScheduleId: "power", fiberModulusGPa: 250, faceThicknessMm: 0.88, flexuralModulusGPa: 76, dampingCoefficient: 0.035, impactStiffnessNmm: 78, reboundCoefficient: 0.92, weightContributionG: 44, power: 5, control: 3, comfort: 2, durability: 4, note: "Graphene enhancement is represented as a resin/structure modifier: high stiffness-to-weight and strong rebound, but with patent/FTO caution.", bestFor: "Premium offensive rackets" },
+  { id: "kevlar-reinforced", label: "Kevlar-Reinforced", cost: "High", resinSystem: "Impact-toughened epoxy", weaveOrientation: "Carbon/aramid hybrid 0°/90° + bias", laminateThicknessMm: 0.30, prepregQuality: "hybrid reinforcement prepreg", layupScheduleId: "reinforced", fiberModulusGPa: 112, faceThicknessMm: 1.02, flexuralModulusGPa: 46, dampingCoefficient: 0.060, impactStiffnessNmm: 58, reboundCoefficient: 0.85, weightContributionG: 53, power: 4, control: 4, comfort: 2, durability: 5, note: "Aramid reinforcement raises impact tolerance and damping, but mass and lower rebound reduce crisp ball exit compared with pure carbon.", bestFor: "Durability-focused builds, hard consistent hitters" },
 ];
 
 const FRAME_MATERIALS = [
-  { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", note: "Flexes more under load, absorbing impact and improving comfort at some cost to stability on heavy shots." },
-  { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", note: "Lighter and stiffer than fiberglass, with greater shock resistance and a longer effective lifespan." },
-  { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid", stiffness: 3, weightImpact: "Mid", note: "Carbon for strength, fiberglass for flex — improves shock absorption versus pure carbon while keeping more stiffness than pure fiberglass." },
-  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability." },
+  { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", torsionalStiffnessNmDeg: 18, dampingCoefficient: 0.075, weightContributionG: 72, note: "Flexes more under load, absorbing impact and improving comfort at some cost to stability on heavy shots." },
+  { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", torsionalStiffnessNmDeg: 34, dampingCoefficient: 0.038, weightContributionG: 82, note: "Lighter and stiffer than fiberglass, with greater shock resistance and a longer effective lifespan." },
+  { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid", stiffness: 3, weightImpact: "Mid", torsionalStiffnessNmDeg: 27, dampingCoefficient: 0.054, weightContributionG: 79, note: "Carbon for strength, fiberglass for flex — improves shock absorption versus pure carbon while keeping more stiffness than pure fiberglass." },
+  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", torsionalStiffnessNmDeg: 25, dampingCoefficient: 0.060, weightContributionG: 81, note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability." },
 ];
 
 const SURFACE_TEXTURES = [
@@ -59,9 +66,9 @@ const GRIP_SHAPES = [
 ];
 
 const SHAPES = [
-  { id: "round", label: "Round", balanceRange: "low (closer to handle)", sweetSpot: "Large, centered", power: 2, control: 5, forgiveness: 5, note: "Mass sits closer to the handle and face center. Largest, most centrally located sweet spot. Most maneuverable, most forgiving on off-center contact.", bestFor: "Beginners, defensive players, net play, arm/shoulder load" },
-  { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, ~25.6–26.2 cm", sweetSpot: "Medium, shifted slightly up", power: 4, control: 4, forgiveness: 3, note: "Structural compromise between round and diamond. Mass shifts upward, raising the power ceiling while keeping a usably wide hitting area.", bestFor: "Intermediate to advanced all-round players" },
-  { id: "diamond", label: "Diamond", balanceRange: "high, above 26.3 cm", sweetSpot: "Small, positioned high", power: 5, control: 2, forgiveness: 1, note: "Mass concentrated toward the top of the face, maximizing swing inertia and smash potential. Smallest sweet spot, least forgiving.", bestFor: "Advanced attacking players with consistent, high-technique contact" },
+  { id: "round", label: "Round", balanceRange: "low (closer to handle)", sweetSpot: "Large, centered", power: 2, control: 5, forgiveness: 5, massDistribution: { head: 0.50, perimeter: 0.24, throat: 0.26 }, sweetSpotYFrac: 0.56, polarFactor: 0.88, note: "Mass sits closer to the handle and face center. Largest, most centrally located sweet spot. Most maneuverable, most forgiving on off-center contact.", bestFor: "Beginners, defensive players, net play, arm/shoulder load" },
+  { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, ~25.6–26.2 cm", sweetSpot: "Medium, shifted slightly up", power: 4, control: 4, forgiveness: 3, massDistribution: { head: 0.56, perimeter: 0.27, throat: 0.17 }, sweetSpotYFrac: 0.48, polarFactor: 1.0, note: "Structural compromise between round and diamond. Mass shifts upward, raising the power ceiling while keeping a usably wide hitting area.", bestFor: "Intermediate to advanced all-round players" },
+  { id: "diamond", label: "Diamond", balanceRange: "high, above 26.3 cm", sweetSpot: "Small, positioned high", power: 5, control: 2, forgiveness: 1, massDistribution: { head: 0.63, perimeter: 0.29, throat: 0.08 }, sweetSpotYFrac: 0.36, polarFactor: 1.12, note: "Mass concentrated toward the top of the face, maximizing swing inertia and smash potential. Smallest sweet spot, least forgiving.", bestFor: "Advanced attacking players with consistent, high-technique contact" },
 ];
 
 const BRIDGE_TYPES = [
@@ -82,95 +89,117 @@ const BEAM_ORIENTATIONS = [
 ];
 
 const HOLE_COUNT_OPTIONS = [
-  { id: "none", label: "None (0)", rows: 0, cols: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
-  { id: "minimal", label: "Minimal (1–10)", rows: 3, cols: 3, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
-  { id: "low", label: "Low (~30–40)", rows: 5, cols: 4, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
-  { id: "standard", label: "Standard (~50–60)", rows: 7, cols: 5, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
-  { id: "high", label: "High (~70–80)", rows: 8, cols: 6, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
+  { id: "none", label: "None (0)", rows: 0, cols: 0, openAreaPct: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
+  { id: "minimal", label: "Minimal (1–10)", rows: 3, cols: 3, openAreaPct: 3, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
+  { id: "low", label: "Low (~30–40)", rows: 5, cols: 4, openAreaPct: 8, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
+  { id: "standard", label: "Standard (~50–60)", rows: 7, cols: 5, openAreaPct: 13, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
+  { id: "high", label: "High (~70–80)", rows: 8, cols: 6, openAreaPct: 18, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
 ];
 
 const HOLE_PATTERN_STYLES = [
-  { id: "centered", label: "Concentrated Center", note: "Holes clustered near the face center enlarge and soften the sweet spot in the area players hit most often." },
-  { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the usable face. The most common pattern on all-round rackets." },
-  { id: "edge", label: "Concentrated Edges", note: "Holes pushed toward the outer face, keeping the center stiffer and more direct — for precision-oriented players." },
+  { id: "centered", label: "Concentrated Center", stiffnessFactor: 0.92, sweetSpotFactor: 1.12, note: "Holes clustered near the face center enlarge and soften the sweet spot in the area players hit most often." },
+  { id: "even", label: "Evenly Distributed", stiffnessFactor: 1.0, sweetSpotFactor: 1.0, note: "Holes spread uniformly across the usable face. The most common pattern on all-round rackets." },
+  { id: "edge", label: "Concentrated Edges", stiffnessFactor: 1.08, sweetSpotFactor: 0.92, note: "Holes pushed toward the outer face, keeping the center stiffer and more direct — for precision-oriented players." },
 ];
 
 // ---------------------------------------------------------------------------
-// COMPUTATION FUNCTIONS
+// PHYSICS ENGINE
 // ---------------------------------------------------------------------------
 
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const round1 = (v: number) => Math.round(v * 10) / 10;
+const round2 = (v: number) => Math.round(v * 100) / 100;
+const scale5 = (v: number, min: number, max: number) => round1(clamp(((v - min) / (max - min)) * 5, 0.5, 5));
+const inverseScale5 = (v: number, min: number, max: number) => round1(clamp(5 - ((v - min) / (max - min)) * 4.5, 0.5, 5));
+
+function computeInertia({ shape, weightG, balanceCm, lengthMm, widthMm, thicknessMm, face, frame, grip }) {
+  const mKg = weightG / 1000;
+  const pivotCm = 5.0;
+  const balanceFromPivotM = Math.max(0.05, (balanceCm - pivotCm) / 100);
+  const lengthM = lengthMm / 1000;
+  const widthM = widthMm / 1000;
+  const shapeHeadFactor = shape?.massDistribution?.head ?? 0.56;
+  const faceMassFactor = (face.weightContributionG - 45) / 1000;
+  const frameMassFactor = (frame.weightContributionG - 78) / 1000;
+  const swingweightKgCm2 = (mKg * balanceFromPivotM * balanceFromPivotM * 10000) * (1.03 + shapeHeadFactor * 0.34 + faceMassFactor * 1.5);
+  const twistweightKgCm2 = (mKg * Math.pow(widthM / 2, 2) * 10000) * (0.42 + (shape?.massDistribution?.perimeter ?? 0.27) * 0.9 + frameMassFactor * 2.0);
+  const polarInertiaKgCm2 = swingweightKgCm2 * 0.72 + twistweightKgCm2 * (0.95 + (thicknessMm - 34) * 0.015);
+  const maneuverability = inverseScale5(swingweightKgCm2, 135, 190);
+  return {
+    balancePointCm: round1(balanceCm),
+    swingweight: round1(swingweightKgCm2),
+    twistweight: round1(twistweightKgCm2),
+    polarInertia: round1(polarInertiaKgCm2),
+    maneuverability,
+  };
+}
+
+function computePhysics({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, lengthMm = 450, thicknessMm }) {
+  const layup = LAYUP_SCHEDULES[face.layupScheduleId] ?? LAYUP_SCHEDULES.balanced;
+  const hole = HOLE_COUNT_OPTIONS.find(h => h.id === holeCountId) ?? HOLE_COUNT_OPTIONS[3];
+  const holePattern = HOLE_PATTERN_STYLES.find(h => h.id === holePatternId) ?? HOLE_PATTERN_STYLES[1];
+  const openAreaPenalty = 1 - (hole.openAreaPct ?? 12) / 100 * 0.72;
+  const thicknessFactor = Math.pow((thicknessMm ?? 38) / 38, 2.2);
+  const faceCoreCompatibility = clamp(1 - Math.abs(face.impactStiffnessNmm / 18 - core.compressionModulusMPa) * 0.045, 0.82, 1.08);
+  const hardHardBonus = core.compressionModulusMPa >= 4.5 && face.flexuralModulusGPa >= 65 ? 1.08 : 1.0;
+  const softFaceComfortBonus = core.dampingCoefficient >= 0.30 && face.dampingCoefficient >= 0.055 ? 1.12 : 1.0;
+  const bridgeStiffness = bridgeId === "closed" ? 1.10 : beamOrientation === "diagonal" ? 1.08 : beamOrientation === "horizontal" ? 1.04 : 1.0;
+  const effectiveFlexuralModulus = face.flexuralModulusGPa * layup.stiffnessFactor * openAreaPenalty * holePattern.stiffnessFactor * thicknessFactor * faceCoreCompatibility;
+  const impactStiffness = face.impactStiffnessNmm * layup.stiffnessFactor * openAreaPenalty * holePattern.stiffnessFactor * bridgeStiffness * hardHardBonus + core.compressionModulusMPa * 4.2;
+  const dampingCoefficient = clamp((face.dampingCoefficient * 0.38 + core.dampingCoefficient * 0.42 + frame.dampingCoefficient * 0.12 + grip.vibrationDamp * 0.018) * layup.dampingFactor * softFaceComfortBonus, 0.025, 0.33);
+  const reboundCoefficient = clamp((face.reboundCoefficient * 0.56 + core.reboundCoefficient * 0.34 + layup.reboundFactor * 0.08) * (1 - dampingCoefficient * 0.10) * (surface.id === "smooth" ? 1.01 : surface.id === "3d-print" ? 0.985 : 0.995), 0.72, 0.96);
+  const laminateMassG = round1((face.weightContributionG * layup.massFactor) + ((thicknessMm ?? 38) - 36) * 0.8 - (hole.openAreaPct ?? 12) * 0.25);
+  const stabilityRaw = clamp((frame.torsionalStiffnessNmDeg / 34) * 0.28 + (impactStiffness / 95) * 0.27 + (widthMm / 260) * 0.16 + (weightG / 380) * 0.14 + bridgeStiffness * 0.12 + (shape?.massDistribution?.perimeter ?? 0.27) * 0.16, 0.15, 1.0);
+  const sweetSpotMm = round1(clamp((shape.forgiveness * 10 + 24) * (1 + dampingCoefficient * 0.75) * (holePattern.sweetSpotFactor ?? 1) * (holeCountId === "high" ? 1.06 : holeCountId === "none" ? 0.82 : 1), 24, 82));
+  const inertia = computeInertia({ shape, weightG, balanceCm, lengthMm, widthMm, thicknessMm, face, frame, grip });
+  const dynamicPower = reboundCoefficient * 62 + impactStiffness * 0.26 + inertia.swingweight * 0.10;
+  const controlResponse = (effectiveFlexuralModulus * 0.42 + stabilityRaw * 38 + (1 - Math.abs(reboundCoefficient - 0.875)) * 18) - Math.max(0, inertia.swingweight - 165) * 0.18;
+  return {
+    layup,
+    effectiveFlexuralModulus: round1(effectiveFlexuralModulus),
+    dampingCoefficient: round2(dampingCoefficient),
+    impactStiffness: round1(impactStiffness),
+    reboundCoefficient: round2(reboundCoefficient),
+    weightContributionG: laminateMassG,
+    faceCoreCompatibility: round2(faceCoreCompatibility),
+    sweetSpotMm,
+    stabilityRaw: round2(stabilityRaw),
+    dynamicPower: round1(dynamicPower),
+    controlResponse: round1(controlResponse),
+    ...inertia,
+  };
+}
+
 function computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) {
-  let stability = 0.5;
-  stability += (frame.stiffness - 3) * 0.06;
-  stability += (face.durability - 3) * 0.03;
-  stability += (6 - core.comfort) * 0.015;
-  if (bridgeId === "closed") stability += 0.12;
-  else if (beamOrientation === "diagonal") stability += 0.1;
-  else if (beamOrientation === "horizontal") stability += 0.04;
-  stability += ((widthMm - 230) / 30) * 0.05;
-  if (weightG !== undefined) stability += ((weightG - 365) / 15) * 0.07;
-  return Math.max(0.15, Math.min(0.95, stability));
+  const physics = computePhysics({ shape: SHAPES[1], core, face, frame, surface: SURFACE_TEXTURES[1], grip: GRIP_MATERIALS[0], bridgeId, beamOrientation, holeCountId: "standard", holePatternId: "even", weightG: weightG ?? 365, balanceCm: 25.8, widthMm: widthMm ?? 255, thicknessMm: 38 });
+  return physics.stabilityRaw;
 }
 
 function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth }) {
-  const baseYFrac = shape === "round" ? 0.56 : shape === "diamond" ? 0.36 : 0.48;
+  const shapeObj = SHAPES.find(s => s.id === shape) ?? SHAPES[1];
+  const baseYFrac = shapeObj.sweetSpotYFrac ?? 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
-  const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
+  const yFrac = clamp(baseYFrac - balanceShift, 0.22, 0.62);
   const y = topY + headHeight * yFrac;
-  const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG });
-  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : 40;
-  const stabilityScale = 0.78 + stability * 0.5;
-  let r = baseR * stabilityScale;
-  const holeBoost = { none: 0.85, minimal: 0.9, low: 0.97, standard: 1.0, high: 1.08 }[holeCountId] ?? 1.0;
-  r *= holeBoost;
-  if (holePatternId === "centered") r *= 1.1;
-  else if (holePatternId === "edge") r *= 0.92;
-  r = Math.max(20, Math.min(72, r));
-  return { y, r, stability };
+  const physics = computePhysics({ shape: shapeObj, core, face, frame, surface: SURFACE_TEXTURES[1], grip: GRIP_MATERIALS[0], bridgeId, beamOrientation, holeCountId, holePatternId, weightG: weightG ?? 365, balanceCm, widthMm, thicknessMm: 38 });
+  const r = clamp(physics.sweetSpotMm * 0.85, 20, 72);
+  return { y, r, stability: physics.stabilityRaw };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }) {
-  const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
-  const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
-  const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
-  add("power", shape.power); add("control", shape.control); add("sweetSpot", shape.forgiveness);
-  add("power", core.power); add("control", core.control); add("comfort", core.comfort); add("sweetSpot", core.sweetSpot); add("durability", core.durability);
-  add("power", face.power); add("control", face.control); add("comfort", face.comfort); add("durability", face.durability);
-  add("durability", frame.stiffness >= 4 ? 5 : frame.stiffness); add("comfort", 6 - frame.stiffness);
-  add("spin", surface.spin);
-  add("comfort", grip.vibrationDamp);
-  if (bridgeId === "closed") { add("control", 4); add("durability", 4); add("comfort", 3); }
-  else if (beamOrientation === "diagonal") { add("control", 4); add("durability", 4); add("comfort", 3); }
-  const holeEffect = { none: { power: 5, control: 4, comfort: 1, sweetSpot: 1 }, minimal: { power: 5, control: 4, comfort: 2, sweetSpot: 2 }, low: { power: 4, control: 4, comfort: 3, sweetSpot: 3 }, standard: { power: 3, control: 3, comfort: 3, sweetSpot: 3 }, high: { power: 2, control: 3, comfort: 4, sweetSpot: 4 } }[holeCountId];
-  if (holeEffect) { add("power", holeEffect.power); add("control", holeEffect.control); add("comfort", holeEffect.comfort); add("sweetSpot", holeEffect.sweetSpot); }
-  if (holePatternId === "centered") add("sweetSpot", 4);
-  else if (holePatternId === "edge") add("sweetSpot", 2);
-  if (weightG !== undefined) {
-    if (weightG >= 374) { add("power", 4); add("control", 2); add("comfort", 2); }
-    else if (weightG >= 362) { add("power", 3); add("control", 3); add("comfort", 3); }
-    else { add("power", 2); add("control", 4); add("comfort", 4); }
-  }
-  if (balanceCm !== undefined) {
-    if (balanceCm >= 26.5) { add("power", 4); add("control", 2); }
-    else if (balanceCm >= 25.3) { add("power", 3); add("control", 3); }
-    else { add("power", 2); add("control", 4); }
-  }
-  if (widthMm !== undefined) {
-    if (widthMm >= 250) add("sweetSpot", 4);
-    else if (widthMm >= 230) add("sweetSpot", 3);
-    else add("sweetSpot", 2);
-  }
-  if (thicknessMm !== undefined) {
-    if (thicknessMm >= 37) { add("power", 3); add("comfort", 2); }
-    else if (thicknessMm >= 33) { add("power", 3); add("comfort", 3); }
-    else { add("power", 2); add("comfort", 4); }
-  }
-  const out: any = {};
-  ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
-    out[k] = n[k] ? Math.round((s[k] / n[k]) * 10) / 10 : 0;
-  });
-  out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
-  return out;
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm, lengthMm = 450 }) {
+  const physics = computePhysics({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, lengthMm, thicknessMm });
+  const scores: any = {
+    power: scale5(physics.dynamicPower, 72, 105),
+    control: scale5(physics.controlResponse, 40, 82),
+    comfort: inverseScale5(physics.impactStiffness * (1 - physics.dampingCoefficient), 45, 105),
+    sweetSpot: scale5(physics.sweetSpotMm, 30, 78),
+    durability: scale5((face.flexuralModulusGPa * 0.35 + frame.torsionalStiffnessNmDeg * 0.9 + core.shearStability * 30), 38, 92),
+    spin: clamp(round1(surface.spin + (holeCountId === "high" ? 0.2 : 0) - (surface.id === "smooth" ? 0 : physics.reboundCoefficient > 0.91 ? 0.1 : 0)), 0.5, 5),
+    stability: scale5(physics.stabilityRaw, 0.35, 0.95),
+    maneuverability: physics.maneuverability,
+    physics,
+  };
+  return scores;
 }
 
 // ---------------------------------------------------------------------------
@@ -1889,6 +1918,32 @@ function BestForTag({ text }) {
   );
 }
 
+
+function EngineeringSpecGrid({ items }) {
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:12 }}>
+      {items.map(([label, value]) => (
+        <div key={label} style={{ padding:"8px 9px", borderRadius:8, background:"rgba(255,255,255,0.035)", border:"1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize:9.5, color:"#4A5568", textTransform:"uppercase", letterSpacing:"0.06em", fontFamily:"'JetBrains Mono', monospace", marginBottom:3 }}>{label}</div>
+          <div style={{ fontSize:11.5, color:"#9AA3B0", fontFamily:"Inter, sans-serif", lineHeight:1.35 }}>{String(value)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PhysicsMetricGrid({ physics }) {
+  const items = [
+    ["Flexural modulus", `${physics.effectiveFlexuralModulus} GPa`],
+    ["Damping coeff.", physics.dampingCoefficient],
+    ["Impact stiffness", `${physics.impactStiffness} N/mm`],
+    ["Rebound coeff.", physics.reboundCoefficient],
+    ["Laminate mass", `${physics.weightContributionG} g`],
+    ["Face/core fit", physics.faceCoreCompatibility],
+  ];
+  return <EngineeringSpecGrid items={items}/>;
+}
+
 function FTOWarning() {
   return (
     <div style={{ display:"flex", gap:8, padding:"10px 12px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8, marginTop:12 }}>
@@ -2417,12 +2472,13 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm]);
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, lengthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, lengthMm, thicknessMm]);
+  const physics = scores.physics;
   const matchedRacquets = useMemo(
     () => matchRacquets({ shapeId, coreId, faceId, surfaceId, weightG, balanceCm }, { limit: 4 }),
     [shapeId, coreId, faceId, surfaceId, weightG, balanceCm]
   );
-  const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
+  const stabilityPct = Math.round(physics.stabilityRaw * 100);
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holeCountId !== "none" || coreId === "hybrid-core";
 
   // Track when matched racquets actually become visible (Scores tab, or
@@ -2457,7 +2513,7 @@ export default function App() {
   const LIME = "#AEFB00";
 
   // Score top metric for header badge
-  const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability);
+  const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability, scores.maneuverability);
 
   const tabDefs = [
     { id: "find", label: "Find", icon: <Sparkles size={18}/> },
@@ -2492,6 +2548,20 @@ export default function App() {
         <SelectField value={faceId} onChange={setFaceId} options={FACE_MATERIALS}/>
         <MaterialNote text={face.note}/>
         {face.bestFor && <BestForTag text={face.bestFor}/>}
+        <EngineeringSpecGrid items={[
+          ["Resin system", face.resinSystem],
+          ["Weave orientation", face.weaveOrientation],
+          ["Laminate thickness", `${face.laminateThicknessMm} mm/ply`],
+          ["Prepreg quality", face.prepregQuality],
+          ["Layup schedule", physics.layup.label],
+          ["Fiber modulus", `${face.fiberModulusGPa} GPa`],
+          ["Face thickness", `${face.faceThicknessMm} mm`],
+          ["Base flexural", `${face.flexuralModulusGPa} GPa`],
+          ["Base damping", face.dampingCoefficient],
+          ["Base impact stiffness", `${face.impactStiffnessNmm} N/mm`],
+          ["Base rebound", face.reboundCoefficient],
+          ["Weight contribution", `${face.weightContributionG} g`],
+        ]}/>
         <MiniRatingGrid items={[{label:"Power", val:face.power},{label:"Control", val:face.control},{label:"Comfort", val:face.comfort},{label:"Durability", val:face.durability}]}/>
         {faceId === "carbon-3k" && (
           <div style={{ marginTop:10, padding:"8px 10px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8 }}>
@@ -2506,6 +2576,14 @@ export default function App() {
         <div style={{ fontSize:11.5, color:"#4A5568", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
         <MaterialNote text={core.note}/>
         <BestForTag text={core.bestFor}/>
+        <EngineeringSpecGrid items={[
+          ["Density", `${core.densityKgM3} kg/m³`],
+          ["Compression modulus", `${core.compressionModulusMPa} MPa`],
+          ["Core damping", core.dampingCoefficient],
+          ["Core rebound", core.reboundCoefficient],
+          ["Shear stability", core.shearStability],
+          ["Interaction role", core.id === "hybrid-core" ? "zoned response" : core.compressionModulusMPa >= 4 ? "face support" : "shock damping"],
+        ]}/>
         <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
       </AccordionSection>
 
@@ -2660,6 +2738,20 @@ export default function App() {
         ))}
       </div>
 
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, margin:"0 16px 16px" }}>
+        {[
+          ["Swingweight", physics.swingweight],
+          ["Twistweight", physics.twistweight],
+          ["Balance", physics.balancePointCm],
+          ["Polar I", physics.polarInertia],
+        ].map(([label,val]) => (
+          <div key={label as string} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
+            <div style={{ fontSize:15, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:LIME }}>{val}</div>
+            <div style={{ fontSize:9.5, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", marginTop:2, textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
       {mode === "manufacturer" && fto_flagged && <div style={{margin:"0 16px"}}><FTOWarning/></div>}
     </div>
   );
@@ -2681,9 +2773,34 @@ export default function App() {
         <ScoreBar label="Stability (Off-Center Resistance)" val={scores.stability}/>
         <ScoreBar label="Spin Potential" val={scores.spin}/>
         <ScoreBar label="Durability" val={scores.durability}/>
+        <ScoreBar label="Maneuverability" val={scores.maneuverability}/>
         <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
           Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
         </p>
+      </div>
+
+      {/* Physics Engine */}
+      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:4 }}>Physics Engine Output</p>
+        <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:12, fontFamily:"Inter, sans-serif" }}>
+          Values are calculated from face/core/frame interaction, layup schedule, hole open-area, geometry and mass distribution. They are estimates for design comparison.
+        </p>
+        <PhysicsMetricGrid physics={physics}/>
+        <div style={{ marginTop:12, fontFamily:"'JetBrains Mono', monospace", fontSize:12, lineHeight:1.9 }}>
+          {[
+            ["Swingweight", `${physics.swingweight} kg·cm²`],
+            ["Twistweight", `${physics.twistweight} kg·cm²`],
+            ["Balance point", `${physics.balancePointCm} cm`],
+            ["Polar inertia", `${physics.polarInertia} kg·cm²`],
+            ["Sweet spot diameter", `${physics.sweetSpotMm} mm`],
+            ["Layup", physics.layup.sequence.join(" / ")],
+          ].map(([k,v]) => (
+            <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(255,255,255,0.05)", padding:"2px 0", gap:8 }}>
+              <span style={{ color:"#4A5568", flexShrink:0 }}>{k}</span>
+              <span style={{ color:"#9AA3B0", textAlign:"right" }}>{v}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Build Summary */}
@@ -2696,6 +2813,9 @@ export default function App() {
             ["Thickness", `${thicknessMm}mm`],
             ["Weight", `${weightG}g`],
             ["Balance", `${balanceCm}cm`],
+            ["Swingweight", `${physics.swingweight} kg·cm²`],
+            ["Twistweight", `${physics.twistweight} kg·cm²`],
+            ["Polar inertia", `${physics.polarInertia} kg·cm²`],
             ["Face", face.label],
             ["Core", core.label],
             ["Frame", frame.label],
