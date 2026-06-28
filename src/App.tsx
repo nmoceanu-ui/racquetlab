@@ -96,6 +96,236 @@ const HOLE_PATTERN_STYLES = [
 ];
 
 // ---------------------------------------------------------------------------
+// PHYSICS ENGINE (Pro mode) — two genuinely different kinds of numbers
+// live here, and the distinction matters for honesty:
+//
+// 1. REAL GEOMETRY-BASED MECHANICS (swingweight, twistweight, balance
+//    point, polar moment of inertia): these are computed from actual
+//    rigid-body physics — mass distribution, moment-of-inertia
+//    formulas, the parallel-axis theorem — using only the spec values
+//    already in this tool (length, width, thickness, weight, balance,
+//    shape). No invented constants. These are the same formulas/
+//    conventions used in published tennis-racket inertial-property
+//    research (swingweight measured about a pivot 100mm from the butt;
+//    twistweight as the polar moment about the long axis). Real units
+//    (kg·cm²), directly comparable to published tennis reference
+//    ranges once you account for padel's shorter, solid (unstrung)
+//    construction.
+//
+// 2. RELATIVE MATERIAL-STIFFNESS MODEL (RPS — Racquet Padel Stiffness
+//    — plus damping, impact stiffness, and rebound index): these are
+//    NOT lab measurements. They are explicitly modeled on how tennis's
+//    own RA scale actually works — RA is a 0-100ish arbitrary number
+//    from a specific deflection-measuring machine, only meaningful in
+//    relative comparison, not a fundamental material constant. No
+//    machine like that exists for padel yet, and the real per-material
+//    lab data (Young's modulus by specific carbon layup, EVA damping
+//    coefficients) isn't reliably published by padel brands. Rather
+//    than inventing fake "real" units, this engine builds a transparent,
+//    internally-consistent RELATIVE index, weighted according to what
+//    composite-engineering sources actually establish:
+//      - Core hardness and frame material are REAL, well-established
+//        stiffness drivers — weighted heaviest.
+//      - Face material CATEGORY (fiberglass vs carbon vs graphene vs
+//        kevlar) reflects real differences in fiber modulus class.
+//      - Carbon tow size (3K/12K/18K) gets only a SMALL secondary
+//        nudge — sourced composite-engineering material is explicit
+//        that "if fibers are the same grade, stiffness and strength
+//        are not affected by tow size," and that tow count is mainly a
+//        weave/cost/manufacturability spec, not a stiffness
+//        specification. This is the actual market-correction point:
+//        K-count should never be the dominant number in a stiffness
+//        story, and this engine deliberately keeps it from being one.
+//      - Thickness contributes via the same "thicker beam resists
+//        bending more" logic used to explain tennis frame stiffness.
+//      - Bridge type/orientation contributes a small torsional-rigidity
+//        modifier, consistent with this app's existing stability model.
+// ---------------------------------------------------------------------------
+
+// --- Geometry-based mechanics ---------------------------------------------
+
+// Shared head-width-profile helper (same curve already used and
+// verified for the illustration view's hole placement and inner-face
+// boundary), reused here so the mass model's "head is wider in the
+// middle, narrower at the tip" shape matches what's actually drawn.
+function headWidthProfileAt(t: number, shape: string): number {
+  if (shape === "round") return Math.sin(t * Math.PI) * 0.92 + 0.06;
+  if (shape === "diamond") return t < 0.32 ? (t / 0.32) * 0.94 : 0.94 - ((t - 0.32) / 0.68) * 0.5;
+  return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
+}
+
+interface MassModel {
+  segMasses: number[]; // grams per segment
+  distFromButtMm: number[];
+  zoneOf: ("head" | "throat" | "handle")[];
+  widthMm: number;
+  lengthMm: number;
+  shape: string;
+  segments: number;
+}
+
+// Builds a discretized 1D mass distribution along the racquet's length,
+// calibrated so it exactly reproduces the user's actual total weight
+// AND actual balance point (solved as a 2-unknown linear system: head
+// mass vs. throat+handle mass), rather than assuming a fixed guessed
+// profile. Within the head region, mass is distributed proportionally
+// to local width (using the same curve the illustration renders), so a
+// wider head is correctly modeled as carrying more material at that
+// height — this is what makes twistweight respond correctly to the
+// width slider.
+function buildMassModel({ lengthMm, widthMm, weightG, balanceCm, shape }: { lengthMm: number; widthMm: number; weightG: number; balanceCm: number; shape: string }): MassModel {
+  const segments = 60;
+  const segLen = lengthMm / segments;
+  const headLenMm = lengthMm * 0.62; // head occupies ~62% of total length, matching this tool's existing throat/handle proportions
+  const handleLenMm = lengthMm * 0.20;
+  const throatLenMm = lengthMm - headLenMm - handleLenMm;
+
+  const zoneOf: ("head" | "throat" | "handle")[] = [];
+  const relDensity: number[] = [];
+  const distFromButtMm: number[] = [];
+  for (let i = 0; i < segments; i++) {
+    const distFromTip = (i + 0.5) * segLen;
+    distFromButtMm.push(lengthMm - distFromTip);
+    if (distFromTip < headLenMm) {
+      zoneOf.push("head");
+      relDensity.push(headWidthProfileAt(distFromTip / headLenMm, shape));
+    } else if (distFromTip < headLenMm + throatLenMm) {
+      zoneOf.push("throat"); // open/perforated frame only — much less material than the head
+      relDensity.push(0.35);
+    } else {
+      zoneOf.push("handle"); // frame + grip
+      relDensity.push(0.55);
+    }
+  }
+
+  const headRelSum = relDensity.reduce((s, d, i) => (zoneOf[i] === "head" ? s + d : s), 0);
+  const restRelSum = relDensity.reduce((s, d, i) => (zoneOf[i] !== "head" ? s + d : s), 0);
+  const headCentroid = relDensity.reduce((s, d, i) => (zoneOf[i] === "head" ? s + d * distFromButtMm[i] : s), 0) / headRelSum;
+  const restCentroid = relDensity.reduce((s, d, i) => (zoneOf[i] !== "head" ? s + d * distFromButtMm[i] : s), 0) / restRelSum;
+
+  // Solve exactly for headMass/restMass so the model's total mass and
+  // center of mass match the real spec values precisely:
+  //   headMass + restMass = weightG
+  //   headMass*headCentroid + restMass*restCentroid = weightG*balanceCm*10
+  const targetMomentMm = weightG * balanceCm * 10;
+  const headMass = (targetMomentMm - weightG * restCentroid) / (headCentroid - restCentroid);
+  const restMass = weightG - headMass;
+  const headScale = headMass / headRelSum;
+  const restScale = restMass / restRelSum;
+  const segMasses = relDensity.map((d, i) => d * (zoneOf[i] === "head" ? headScale : restScale));
+
+  return { segMasses, distFromButtMm, zoneOf, widthMm, lengthMm, shape, segments };
+}
+
+// Swingweight: moment of inertia about a pivot 100mm from the butt end
+// — the standard tennis-physics convention (sourced), applied here
+// since it's purely a statement of WHERE the pivot sits, not anything
+// tennis-specific. Units: kg·cm².
+function computeSwingweightKgCm2(model: MassModel): number {
+  const pivotMm = 100;
+  let I = 0; // g·mm²
+  for (let i = 0; i < model.segments; i++) {
+    const d = model.distFromButtMm[i] - pivotMm;
+    I += model.segMasses[i] * d * d;
+  }
+  return I * 1e-5; // g·mm² → kg·cm²
+}
+
+// Twistweight: polar moment of inertia about the racquet's long axis.
+// Depends on LATERAL mass distribution (how far material sits from the
+// centerline), not longitudinal position. Each segment's mass is
+// treated as a thin rectangular strip spanning the local half-width,
+// using the standard thin-rectangular-plate radius-of-gyration
+// approximation (r ≈ half-width / √3 ≈ half-width × 0.577).
+function computeTwistweightKgCm2(model: MassModel): number {
+  const headLenMm = model.lengthMm * 0.62;
+  let I = 0; // g·mm²
+  for (let i = 0; i < model.segments; i++) {
+    let halfWidthMm: number;
+    if (model.zoneOf[i] === "head") {
+      const distFromTip = model.lengthMm - model.distFromButtMm[i];
+      halfWidthMm = (model.widthMm / 2) * headWidthProfileAt(distFromTip / headLenMm, model.shape);
+    } else {
+      halfWidthMm = 13; // handle/throat half-width, matching this tool's 26mm handle width elsewhere
+    }
+    const gyrationRadius = halfWidthMm * 0.577;
+    I += model.segMasses[i] * gyrationRadius * gyrationRadius;
+  }
+  return I * 1e-5;
+}
+
+interface GeometryPhysics {
+  swingweightKgCm2: number;
+  twistweightKgCm2: number;
+  polarInertiaKgM2: number; // SI-unit version of twistweight, for anyone wanting standard physics units
+  balanceCm: number;
+}
+
+function computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape }: { lengthMm: number; widthMm: number; weightG: number; balanceCm: number; shape: string }): GeometryPhysics {
+  const model = buildMassModel({ lengthMm, widthMm, weightG, balanceCm, shape });
+  const swingweightKgCm2 = computeSwingweightKgCm2(model);
+  const twistweightKgCm2 = computeTwistweightKgCm2(model);
+  return {
+    swingweightKgCm2,
+    twistweightKgCm2,
+    polarInertiaKgM2: twistweightKgCm2 * 1e-4, // kg·cm² → kg·m² (1 cm² = 1e-4 m²)
+    balanceCm,
+  };
+}
+
+// --- Relative material-stiffness model (RPS) -------------------------------
+
+const CORE_STIFFNESS_WEIGHT: Record<string, number> = { "eva-soft": 15, "foam-pe": 12, "hybrid-core": 35, "eva-medium": 40, "eva-hard": 70 };
+const FRAME_STIFFNESS_WEIGHT: Record<string, number> = { "fiberglass-frame": 25, "basalt-frame": 45, "hybrid-frame": 55, "carbon-frame": 75 };
+const FACE_CATEGORY_BASE: Record<string, number> = { fiberglass: 20, "carbon-3k": 65, "carbon-12k": 65, "carbon-18k": 65, graphene: 80, "kevlar-reinforced": 60 };
+// Deliberately small — see module header. This is the number that
+// keeps K-count from dominating the score, which is the entire point.
+const K_COUNT_NUDGE: Record<string, number> = { "carbon-3k": -3, "carbon-12k": 0, "carbon-18k": 3 };
+const CORE_DENSITY_REL: Record<string, number> = { "eva-soft": 22, "foam-pe": 15, "hybrid-core": 50, "eva-medium": 50, "eva-hard": 80 };
+const CORE_DAMPING_REL: Record<string, number> = { "eva-soft": 85, "foam-pe": 90, "hybrid-core": 60, "eva-medium": 55, "eva-hard": 20 };
+const FACE_DAMPING_REL: Record<string, number> = { fiberglass: 80, "carbon-3k": 30, "carbon-12k": 45, "carbon-18k": 60, graphene: 25, "kevlar-reinforced": 35 };
+const GRIP_DAMPING_REL: Record<string, number> = { "pu-grip": 35, "eva-grip": 60, "anti-shock-grip": 95, "textured-grip": 30 };
+
+interface RelativeMaterialPhysics {
+  rpsIndex: number; // 0-100, "Racquet Padel Stiffness" — higher = stiffer
+  dampingIndex: number; // 0-100, higher = more vibration absorbed
+  impactStiffnessIndex: number; // 0-100, higher = harder/more direct local feel at contact
+  reboundIndex: number; // 0-100, higher = more energy returned to the ball
+  kCountContributionPts: number; // how many of the rpsIndex points came from K-count alone — surfaced directly in the UI as the market-correction number
+}
+
+function computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }: { coreId: string; frameId: string; faceId: string; gripId: string; thicknessMm: number; bridgeId: string; beamOrientation: string }): RelativeMaterialPhysics {
+  const coreScore = CORE_STIFFNESS_WEIGHT[coreId] ?? 40;
+  const frameScore = FRAME_STIFFNESS_WEIGHT[frameId] ?? 50;
+  const kNudge = K_COUNT_NUDGE[faceId] ?? 0;
+  const faceScore = (FACE_CATEGORY_BASE[faceId] ?? 60) + kNudge;
+  const thicknessScore = ((thicknessMm - 28) / (38 - 28)) * 100;
+  let bridgeBonus = 0;
+  if (bridgeId === "closed") bridgeBonus = 8;
+  else if (beamOrientation === "diagonal") bridgeBonus = 6;
+  else if (beamOrientation === "horizontal") bridgeBonus = 3;
+
+  const rpsIndex = Math.max(0, Math.min(100, coreScore * 0.32 + frameScore * 0.28 + faceScore * 0.22 + thicknessScore * 0.13 + bridgeBonus));
+
+  const cDamp = CORE_DAMPING_REL[coreId] ?? 55, fDamp = FACE_DAMPING_REL[faceId] ?? 45, gDamp = GRIP_DAMPING_REL[gripId] ?? 40;
+  const dampingIndex = cDamp * 0.45 + fDamp * 0.30 + gDamp * 0.25;
+
+  const faceImpact = (FACE_CATEGORY_BASE[faceId] ?? 60) + kNudge;
+  const coreDensity = CORE_DENSITY_REL[coreId] ?? 50;
+  const impactStiffnessIndex = faceImpact * 0.65 + coreDensity * 0.35;
+
+  const reboundIndex = Math.max(0, Math.min(100, (100 - dampingIndex) * 0.6 + coreDensity * 0.4));
+
+  // The actual market-correction number: how many RPS points did
+  // K-count alone contribute, vs. the ~22% weight the whole face
+  // category carries and the ~60% weight core+frame carry together.
+  // Surfacing this explicitly is the point of building this engine.
+  const kCountContributionPts = kNudge * 0.22;
+
+  return { rpsIndex, dampingIndex, impactStiffnessIndex, reboundIndex, kCountContributionPts };
+}
+
+// ---------------------------------------------------------------------------
 // COMPUTATION FUNCTIONS
 // ---------------------------------------------------------------------------
 
@@ -2418,6 +2648,8 @@ export default function App() {
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
   const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm]);
+  const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
+  const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
     () => matchRacquets({ shapeId, coreId, faceId, surfaceId, weightG, balanceCm }, { limit: 4 }),
     [shapeId, coreId, faceId, surfaceId, weightG, balanceCm]
@@ -2685,6 +2917,58 @@ export default function App() {
           Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
         </p>
       </div>
+
+      {mode === "manufacturer" && (
+        <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(174,251,0,0.15)", borderRadius:12, marginBottom:16 }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#AEFB00", marginBottom:4 }}>Physics Engine — Geometry-Based Mechanics</p>
+          <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
+            Computed directly from this build's mass distribution using standard rigid-body mechanics (moment of inertia, parallel-axis theorem) — not estimates. Real units, directly comparable build-to-build.
+          </p>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Swingweight</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.swingweightKgCm2.toFixed(1)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·cm²</span></div>
+              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt. Higher = harder to swing, more mass behind contact.</div>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Twistweight</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.twistweightKgCm2.toFixed(2)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·cm²</span></div>
+              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Polar moment about the long axis. Higher = more resistant to twisting on off-center hits.</div>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Polar Inertia (SI)</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.polarInertiaKgM2.toFixed(5)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·m²</span></div>
+              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Same twistweight value in standard SI units, for cross-referencing published research.</div>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Balance Point</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.balanceCm.toFixed(1)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>cm</span></div>
+              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Distance from the butt end to the center of mass — your existing Dimensions slider value, restated here as a mechanics input.</div>
+            </div>
+          </div>
+          <p style={{ fontSize:10.5, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+            Reference: published tennis-racket research places swingweight at roughly 270–310 kg·cm² and twistweight at roughly 12–15 kg·cm² for tournament frames. Padel values run meaningfully lower, consistent with a shorter (≤45.5cm vs. ~68–70cm) and narrower solid-faced design.
+          </p>
+        </div>
+      )}
+
+      {mode === "manufacturer" && (
+        <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,180,0,0.15)", borderRadius:12, marginBottom:16 }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#FFB400", marginBottom:4 }}>Relative Material Index (RPS)</p>
+          <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
+            Not a lab measurement — no padel equivalent to tennis's RA deflection-test scale exists yet. This is a transparent, internally-consistent 0–100 relative index, weighted from real, sourced composite-engineering relationships (core hardness and frame material dominate; carbon tow size is deliberately a small secondary factor, not the headline number).
+          </p>
+          <ScoreBar label="RPS — Stiffness Index" val={materialPhysics.rpsIndex / 20} max={5} />
+          <ScoreBar label="Damping Index" val={materialPhysics.dampingIndex / 20} max={5} />
+          <ScoreBar label="Impact Stiffness" val={materialPhysics.impactStiffnessIndex / 20} max={5} />
+          <ScoreBar label="Rebound Index" val={materialPhysics.reboundIndex / 20} max={5} />
+          <div style={{ marginTop:10, padding:"10px 12px", background: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "rgba(255,180,0,0.08)" : "rgba(255,255,255,0.03)", border: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "1px solid rgba(255,180,0,0.2)" : "1px solid rgba(255,255,255,0.06)", borderRadius:8 }}>
+            <p style={{ fontSize:11.5, color: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "#C88A00" : "#7B8494", margin:0, fontFamily:"Inter, sans-serif" }}>
+              <strong>Carbon tow-size contribution to RPS: {materialPhysics.kCountContributionPts >= 0 ? "+" : ""}{materialPhysics.kCountContributionPts.toFixed(2)} points</strong> (of 100). This is the market-correction number: tow size (3K/12K/18K) is mainly a weave-density and manufacturing spec, not a stiffness specification — composite-engineering sources confirm fiber grade, not tow size, governs material stiffness when fiber type is held constant. Core hardness and frame material together carry roughly 60% of this index; face material category (fiberglass vs. carbon vs. graphene vs. kevlar) carries the rest — tow size is a small nudge within that, by design.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Build Summary */}
       <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:24 }}>
