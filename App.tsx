@@ -1240,8 +1240,14 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
 //     no rects, no tiles, nothing that reads as "made of pieces."
 //   - Material identity comes through via gradient tone and a gloss-
 //     intensity-driven highlight, not a literal texture pattern.
-//   - A slight rotation on the head simulates a 3/4 turn toward the
-//     viewer, matching a real product-photo angle.
+//   - Head, throat, and handle are one continuous, unrotated silhouette
+//     (the throat is sampled as a smooth taper from the head's actual
+//     bottom width down to the handle width, with deliberate overlap at
+//     each join). An earlier version rotated only the head to fake a
+//     3/4 turn, which visually detached it from the throat and read as
+//     "crooked" — the 3/4-turn feel now comes entirely from lighting
+//     (the rim-light arc and off-center highlight), not from rotating
+//     the geometry itself.
 //   - A hard, thin rim-light traces the lit edge of the silhouette —
 //     still the strongest "this is a lit 3D object" cue, kept from the
 //     previous version since it reads as part of the molded edge, not a
@@ -1271,23 +1277,50 @@ function RacquetIllustration3D({
 }) {
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
-  // Rotation applied to the head group only — the throat/handle stay
-  // unskewed, consistent with how a racquet is typically held square-on
-  // for a product photo even when the head itself is angled.
-  const SKEW_DEG = -7;
 
+  // No independent rotation on the head — rotating only the head while
+  // the throat/handle stayed fixed is what caused the "crooked face" and
+  // "disconnected throat" problems. A real racquet photographed at an
+  // angle turns as one rigid object; since the throat/handle need to
+  // stay vertical for the rest of the UI's layout (dimension callouts,
+  // consistent column alignment across all three view modes), the head
+  // also stays unrotated here. The 3/4-turn feel now comes entirely
+  // from lighting (the rim-light arc and off-center highlight below),
+  // not from literally rotating the geometry.
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
   const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
   const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
 
-  const headBottomY = topY + headHeight, throatNeckY = headBottomY - 18;
-  const bridgeTopY = headBottomY - 4, bridgeHeight = 86, bridgeBottomY = bridgeTopY + bridgeHeight;
-  const handleWidth = 26, collarY = bridgeBottomY + 10;
-  const handleTopY = collarY + 14;
+  const headBottomY = topY + headHeight;
+  const handleWidth = 26;
   const handleHeight = Math.max(120, Math.min(200, (lengthMm - 380) * 1.1 + 130));
+
+  // The throat is now built the same way RacquetProfile builds its
+  // silhouette: as a continuous tapering outline sampled point-by-point
+  // from the head's actual bottom width down to the handle's width, so
+  // there is no seam, gap, or separately-floating shape between head
+  // and handle. throatHeight is the vertical span the taper covers.
+  const throatHeight = 92;
+  const throatTopY = headBottomY - 10; // slight overlap into the head so the join is invisible
+  const throatBottomY = throatTopY + throatHeight;
+  const handleTopY = throatBottomY - 6; // slight overlap into the throat for the same reason
   const handleBottomY = handleTopY + handleHeight;
-  const innerNeckHalf = handleWidth / 2 + 3, outerThroatHalf = halfWidth * 0.4, throatMidY = (bridgeTopY + bridgeBottomY) / 2;
+
+  // Head half-width at its own bottom edge (where the throat taper
+  // begins), sampled from the actual outline geometry rather than
+  // assumed, so the join always matches the selected shape exactly.
+  const headBottomHalfWidth = halfWidth * (shape === "diamond" ? 0.5 : shape === "teardrop" ? 0.46 : 0.74);
+
+  const throatHalfWidthAt = (y: number) => {
+    const t = Math.max(0, Math.min(1, (y - throatTopY) / (throatBottomY - throatTopY)));
+    // ease-out curve so the taper starts wide (matching the head) and
+    // narrows smoothly into the handle width, with no abrupt corner
+    const eased = 1 - Math.pow(1 - t, 2);
+    return headBottomHalfWidth + (handleWidth / 2 - headBottomHalfWidth) * eased;
+  };
+
+  const innerNeckHalf = handleWidth / 2 + 3, outerThroatHalf = headBottomHalfWidth, throatMidY = (throatTopY + throatBottomY) / 2;
   const strutOffsets: number[] = [];
   if (bridgeId === "open") {
     if (beamCount === 1) strutOffsets.push(0);
@@ -1297,6 +1330,16 @@ function RacquetIllustration3D({
   }
   const lerpHalf = (yFrac) => outerThroatHalf + (innerNeckHalf - outerThroatHalf) * yFrac;
   const boundaries = [-1, ...strutOffsets.map((s) => s / innerNeckHalf), 1];
+
+  // Sample the full head + throat silhouette as one continuous path,
+  // the same technique RacquetProfile uses, so the rendered outline has
+  // zero seams between head and throat.
+  const throatSamples: { x: number; y: number }[] = [];
+  for (let y = throatTopY; y <= throatBottomY; y += 4) {
+    throatSamples.push({ x: throatHalfWidthAt(y), y });
+  }
+  const throatOutlineRight = throatSamples.map((p) => `${cx + p.x},${p.y}`).join(" L ");
+  const throatOutlineLeft = throatSamples.slice().reverse().map((p) => `${cx - p.x},${p.y}`).join(" L ");
 
   const holeDots: { x: number; y: number }[] = [];
   const countCfg = HOLE_COUNT_OPTIONS.find((h) => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
@@ -1329,11 +1372,6 @@ function RacquetIllustration3D({
         <clipPath id="illustHeadClip"><path d={outline} /></clipPath>
         <clipPath id="illustInnerClip"><path d={innerOutline} /></clipPath>
 
-        {/* Smooth continuous face shading — the whole material story now
-            lives in this one gradient: tone from faceVisual.tint to
-            faceVisual.darkTone, with the gloss value only changing how
-            bright/tight the highlight ellipses read below. No tiling,
-            no repeated geometry, nothing that reads as "pieces." */}
         <radialGradient id="faceGrad3d" cx="34%" cy="24%" r="95%">
           <stop offset="0%" stopColor={faceVisual.tint} />
           <stop offset="38%" stopColor={faceVisual.tint} />
@@ -1364,86 +1402,21 @@ function RacquetIllustration3D({
         </filter>
       </defs>
 
-      {/* Cast shadow — offset lower-right, soft-edged, directional */}
-      <ellipse cx={cx + 26} cy={handleBottomY + 20} rx={halfWidth * 0.7} ry={14} fill="#000000" opacity="0.3" filter="url(#shadowBlur3d)" />
-      <ellipse cx={cx + 20} cy={topY + headHeight * 0.58} rx={halfWidth * 0.88} ry={headHeight * 0.5} fill="#000000" opacity="0.16" filter="url(#shadowBlur3d)" />
+      {/* Cast shadow */}
+      <ellipse cx={cx + 18} cy={handleBottomY + 20} rx={halfWidth * 0.7} ry={14} fill="#000000" opacity="0.3" filter="url(#shadowBlur3d)" />
+      <ellipse cx={cx + 14} cy={topY + headHeight * 0.58} rx={halfWidth * 0.88} ry={headHeight * 0.5} fill="#000000" opacity="0.16" filter="url(#shadowBlur3d)" />
 
-      {/* HEAD — rotated slightly, one continuous painted surface */}
-      <g transform={`rotate(${SKEW_DEG} ${cx} ${topY + headHeight / 2})`}>
-        <path d={outline} fill="url(#rimGrad3d)" />
-        <path d={innerOutline} fill="url(#faceGrad3d)" />
-
-        {/* hard rim-light along the upper-left of the silhouette — reads
-            as the lit edge of the molded rim, not a separate sticker */}
-        <path
-          d={outline}
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth="2.5"
-          opacity="0.85"
-          strokeDasharray={`${approxPerimeter * 0.22} ${approxPerimeter * 0.78}`}
-          strokeDashoffset={approxPerimeter * 0.86}
-        />
-
-        {/* smooth specular highlight — two soft overlapping ellipses,
-            opacity driven by the material's gloss value, no hard edges
-            or repeated shapes */}
-        <g clipPath="url(#illustInnerClip)">
-          <ellipse
-            cx={cx - halfWidth * 0.3}
-            cy={topY + headHeight * 0.24}
-            rx={halfWidth * 0.62}
-            ry={headHeight * 0.38}
-            fill="#FFFFFF"
-            opacity={0.22 * faceVisual.gloss}
-            transform={`rotate(-20 ${cx - halfWidth * 0.3} ${topY + headHeight * 0.24})`}
-          />
-          <ellipse
-            cx={cx - halfWidth * 0.22}
-            cy={topY + headHeight * 0.16}
-            rx={halfWidth * 0.28}
-            ry={headHeight * 0.16}
-            fill="#FFFFFF"
-            opacity={0.4 * faceVisual.gloss}
-            transform={`rotate(-20 ${cx - halfWidth * 0.22} ${topY + headHeight * 0.16})`}
-          />
-        </g>
-
-        {/* perforation holes as real depressions — a genuine structural
-            feature, kept distinct from the surface-finish question above */}
-        <g clipPath="url(#illustInnerClip)">
-          {holeDots.map((h, i) => (
-            <g key={i}>
-              <circle cx={h.x} cy={h.y + 0.8} r={6.8} fill="#000000" opacity="0.3" />
-              <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
-              <path d={`M ${h.x - 4.2} ${h.y - 3.4} A 5.2 5.2 0 0 1 ${h.x + 4.2} ${h.y - 3.4}`} fill="none" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.5" strokeLinecap="round" />
-            </g>
-          ))}
-        </g>
-
-        <g clipPath="url(#illustInnerClip)">
-          <circle cx={cx} cy={sweet.y} r={sweet.r * 1.3} fill="url(#sweetSpotGlow3d)" />
-        </g>
-
-        <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" />
-      </g>
-
-      {/* THROAT / BRIDGE — unskewed */}
+      {/* THROAT — drawn first, as a single continuous tapering outline
+          fused directly to the head's bottom edge (the throatTopY
+          overlap above means it tucks slightly under the head, so
+          there is never a visible seam, even before the head is drawn
+          on top of it). */}
       <path
-        d={`M ${cx - halfWidth * 0.5} ${headBottomY - 6} Q ${cx - outerThroatHalf - 6} ${throatNeckY + 16}, ${cx - outerThroatHalf} ${bridgeTopY} M ${cx + halfWidth * 0.5} ${headBottomY - 6} Q ${cx + outerThroatHalf + 6} ${throatNeckY + 16}, ${cx + outerThroatHalf} ${bridgeTopY}`}
-        fill="none"
-        stroke="url(#rimGrad3d)"
-        strokeWidth="9"
-        strokeLinecap="round"
+        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+        fill="url(#rimGrad3d)"
       />
-      <path
-        d={`M ${cx - outerThroatHalf} ${bridgeTopY} L ${cx + outerThroatHalf} ${bridgeTopY} L ${cx + innerNeckHalf} ${bridgeBottomY} L ${cx - innerNeckHalf} ${bridgeBottomY} Z`}
-        fill={bridgeId === "closed" ? "url(#faceGrad3d)" : "none"}
-        stroke="url(#rimGrad3d)"
-        strokeWidth="6"
-        strokeLinejoin="round"
-      />
-      {bridgeId === "open" && beamOrientation === "vertical" && (
+
+      {bridgeId === "open" && (
         <g>
           {boundaries.slice(0, -1).map((bL, i) => {
             const bR = boundaries[i + 1], inset = 5, dir = (v) => (v >= 0 ? -1 : 1);
@@ -1451,67 +1424,102 @@ function RacquetIllustration3D({
             const midL = lerpHalf(0.5) * bL, midR = lerpHalf(0.5) * bR;
             const iTopL = topL + inset * dir(topL), iTopR = topR - inset * dir(topR), iBotL = botL + inset * dir(botL), iBotR = botR - inset * dir(botR);
             const iMidL = midL + inset * 0.4 * dir(midL), iMidR = midR - inset * 0.4 * dir(midR);
+            // Only render struts for vertical orientation here — for
+            // horizontal/diagonal, a simpler single-aperture cut reads
+            // better against the smooth continuous throat body.
+            if (beamOrientation !== "vertical") return null;
             return (
               <path
                 key={i}
-                d={`M ${cx + iTopL} ${bridgeTopY + 8} Q ${cx + iMidL} ${throatMidY}, ${cx + iBotL} ${bridgeBottomY - 8} Q ${cx + (iBotL + iBotR) / 2} ${bridgeBottomY + 5}, ${cx + iBotR} ${bridgeBottomY - 8} Q ${cx + iMidR} ${throatMidY}, ${cx + iTopR} ${bridgeTopY + 8} Q ${cx + (iTopL + iTopR) / 2} ${bridgeTopY - 5}, ${cx + iTopL} ${bridgeTopY + 8} Z`}
-                fill="none"
-                stroke="url(#rimGrad3d)"
-                strokeWidth="4"
-                strokeLinejoin="round"
+                d={`M ${cx + iTopL} ${throatTopY + 10} Q ${cx + iMidL} ${throatMidY}, ${cx + iBotL} ${throatBottomY - 10} Q ${cx + (iBotL + iBotR) / 2} ${throatBottomY + 4}, ${cx + iBotR} ${throatBottomY - 10} Q ${cx + iMidR} ${throatMidY}, ${cx + iTopR} ${throatTopY + 10} Q ${cx + (iTopL + iTopR) / 2} ${throatTopY - 4}, ${cx + iTopL} ${throatTopY + 10} Z`}
+                fill="#0A0A0C"
+                opacity="0.9"
               />
             );
           })}
-        </g>
-      )}
-      {bridgeId === "open" && beamOrientation === "horizontal" && (
-        <g>
-          <path
-            d={`M ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Q ${cx} ${throatMidY}, ${cx - innerNeckHalf + 5} ${bridgeBottomY - 8} Q ${cx} ${bridgeBottomY + 5}, ${cx + innerNeckHalf - 5} ${bridgeBottomY - 8} Q ${cx} ${throatMidY}, ${cx + outerThroatHalf - 6} ${bridgeTopY + 8} Q ${cx} ${bridgeTopY - 5}, ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Z`}
-            fill="none"
-            stroke="url(#rimGrad3d)"
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          {Array.from({ length: Math.min(beamCount, 2) }).map((_, i, arr) => {
-            const t = arr.length === 1 ? 0.5 : (i + 1) / 3;
-            const y = bridgeTopY + t * bridgeHeight;
-            const half = lerpHalf(t) - 10;
-            return <line key={i} x1={cx - half} y1={y} x2={cx + half} y2={y} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />;
-          })}
-        </g>
-      )}
-      {bridgeId === "open" && beamOrientation === "diagonal" && (
-        <g>
-          <path
-            d={`M ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Q ${cx} ${throatMidY}, ${cx - innerNeckHalf + 5} ${bridgeBottomY - 8} Q ${cx} ${bridgeBottomY + 5}, ${cx + innerNeckHalf - 5} ${bridgeBottomY - 8} Q ${cx} ${throatMidY}, ${cx + outerThroatHalf - 6} ${bridgeTopY + 8} Q ${cx} ${bridgeTopY - 5}, ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Z`}
-            fill="none"
-            stroke="url(#rimGrad3d)"
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          {beamCount === 1 ? (
-            <g>
-              <line x1={cx - outerThroatHalf + 10} y1={bridgeTopY + 12} x2={cx} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
-              <line x1={cx + outerThroatHalf - 10} y1={bridgeTopY + 12} x2={cx} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
-            </g>
-          ) : (
-            <g>
-              <line x1={cx - outerThroatHalf + 10} y1={bridgeTopY + 12} x2={cx + innerNeckHalf - 6} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
-              <line x1={cx + outerThroatHalf - 10} y1={bridgeTopY + 12} x2={cx - innerNeckHalf + 6} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
-            </g>
+          {beamOrientation === "horizontal" &&
+            Array.from({ length: Math.min(beamCount, 2) }).map((_, i, arr) => {
+              const t = arr.length === 1 ? 0.5 : (i + 1) / 3;
+              const y = throatTopY + t * (throatBottomY - throatTopY);
+              const half = throatHalfWidthAt(y) - 9;
+              return (
+                <path
+                  key={i}
+                  d={`M ${cx - half} ${y - 9} Q ${cx} ${y - 4}, ${cx + half} ${y - 9} L ${cx + half} ${y + 9} Q ${cx} ${y + 4}, ${cx - half} ${y + 9} Z`}
+                  fill="#0A0A0C"
+                  opacity="0.9"
+                />
+              );
+            })}
+          {beamOrientation === "diagonal" && (
+            <path
+              d={
+                beamCount === 1
+                  ? `M ${cx - outerThroatHalf + 10} ${throatTopY + 14} L ${cx} ${throatBottomY - 12} L ${cx + outerThroatHalf - 10} ${throatTopY + 14} L ${cx + outerThroatHalf - 16} ${throatTopY + 18} L ${cx} ${throatBottomY - 22} L ${cx - outerThroatHalf + 16} ${throatTopY + 18} Z`
+                  : `M ${cx - outerThroatHalf + 10} ${throatTopY + 14} L ${cx + innerNeckHalf - 4} ${throatBottomY - 12} L ${cx + innerNeckHalf - 10} ${throatBottomY - 16} L ${cx - outerThroatHalf + 16} ${throatTopY + 18} Z M ${cx + outerThroatHalf - 10} ${throatTopY + 14} L ${cx - innerNeckHalf + 4} ${throatBottomY - 12} L ${cx - innerNeckHalf + 10} ${throatBottomY - 16} L ${cx + outerThroatHalf - 16} ${throatTopY + 18} Z`
+              }
+              fill="#0A0A0C"
+              opacity="0.9"
+            />
           )}
         </g>
       )}
 
+      {/* HEAD — drawn on top of the throat's upper overlap, so the join
+          is fully hidden; no rotation, so it stays perfectly aligned
+          with the throat beneath it */}
+      <path d={outline} fill="url(#rimGrad3d)" />
+      <path d={innerOutline} fill="url(#faceGrad3d)" />
+
       <path
-        d={`M ${cx - innerNeckHalf - 2} ${bridgeBottomY} L ${cx - handleWidth / 2 - 5} ${collarY} L ${cx + handleWidth / 2 + 5} ${collarY} L ${cx + innerNeckHalf + 2} ${bridgeBottomY}`}
-        fill="url(#rimGrad3d)"
+        d={outline}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="2.5"
+        opacity="0.85"
+        strokeDasharray={`${approxPerimeter * 0.22} ${approxPerimeter * 0.78}`}
+        strokeDashoffset={approxPerimeter * 0.86}
       />
 
-      {/* HANDLE — smooth cylindrical shading, same as before since the
-          grip texture (criss-cross / hex) is a real surface feature of
-          the grip, not the "weave" issue this rebuild addresses */}
+      <g clipPath="url(#illustInnerClip)">
+        <ellipse
+          cx={cx - halfWidth * 0.3}
+          cy={topY + headHeight * 0.24}
+          rx={halfWidth * 0.62}
+          ry={headHeight * 0.38}
+          fill="#FFFFFF"
+          opacity={0.22 * faceVisual.gloss}
+          transform={`rotate(-20 ${cx - halfWidth * 0.3} ${topY + headHeight * 0.24})`}
+        />
+        <ellipse
+          cx={cx - halfWidth * 0.22}
+          cy={topY + headHeight * 0.16}
+          rx={halfWidth * 0.28}
+          ry={headHeight * 0.16}
+          fill="#FFFFFF"
+          opacity={0.4 * faceVisual.gloss}
+          transform={`rotate(-20 ${cx - halfWidth * 0.22} ${topY + headHeight * 0.16})`}
+        />
+      </g>
+
+      <g clipPath="url(#illustInnerClip)">
+        {holeDots.map((h, i) => (
+          <g key={i}>
+            <circle cx={h.x} cy={h.y + 0.8} r={6.8} fill="#000000" opacity="0.3" />
+            <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
+            <path d={`M ${h.x - 4.2} ${h.y - 3.4} A 5.2 5.2 0 0 1 ${h.x + 4.2} ${h.y - 3.4}`} fill="none" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.5" strokeLinecap="round" />
+          </g>
+        ))}
+      </g>
+
+      <g clipPath="url(#illustInnerClip)">
+        <circle cx={cx} cy={sweet.y} r={sweet.r * 1.3} fill="url(#sweetSpotGlow3d)" />
+      </g>
+
+      <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" />
+
+      {/* HANDLE — fused to the throat's bottom the same way (slight
+          overlap into throatBottomY above), continuous gradient fill */}
       <g>
         <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="url(#handleGrad3d)" rx={6} />
         {gripShapeId === "hexagonal" ? (
