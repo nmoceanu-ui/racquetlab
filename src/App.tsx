@@ -1384,6 +1384,22 @@ function RacquetIllustration3D({
           <stop offset="100%" stopColor={frameDark} />
         </linearGradient>
 
+        {/* Throat-specific gradient — deliberately brighter and more
+            saturated than the frame rim gradient above. The previous
+            version filled both the throat body AND the beam cutouts
+            with near-identical near-black tones (#0A0A0C against a
+            frameDark that's also #0A0A0C-ish for carbon), so the whole
+            throat read as one undifferentiated blob. This gradient
+            uses a visibly lighter gunmetal tone so the throat material
+            itself is legible, and the open apertures (rendered as true
+            cutouts via mask below, not a same-color shape drawn on top)
+            show real contrast against it. */}
+        <linearGradient id="throatGrad3d" x1="20%" y1="0%" x2="85%" y2="100%">
+          <stop offset="0%" stopColor={frameObj?.id === "fiberglass-frame" ? "#E8E4D6" : frameObj?.id === "basalt-frame" ? "#7A5A3E" : "#5C5C64"} />
+          <stop offset="55%" stopColor={frameObj?.id === "fiberglass-frame" ? "#B8B2A0" : frameObj?.id === "basalt-frame" ? "#4A3424" : "#34343C"} />
+          <stop offset="100%" stopColor={frameObj?.id === "fiberglass-frame" ? "#9A9484" : frameObj?.id === "basalt-frame" ? "#2E2018" : "#1E1E24"} />
+        </linearGradient>
+
         <linearGradient id="handleGrad3d" x1="8%" y1="0%" x2="92%" y2="0%">
           <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="22%" stopColor={gripBase} />
@@ -1400,44 +1416,30 @@ function RacquetIllustration3D({
         <filter id="shadowBlur3d" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" />
         </filter>
-      </defs>
 
-      {/* Cast shadow */}
-      <ellipse cx={cx + 18} cy={handleBottomY + 20} rx={halfWidth * 0.7} ry={14} fill="#000000" opacity="0.3" filter="url(#shadowBlur3d)" />
-      <ellipse cx={cx + 14} cy={topY + headHeight * 0.58} rx={halfWidth * 0.88} ry={headHeight * 0.5} fill="#000000" opacity="0.16" filter="url(#shadowBlur3d)" />
-
-      {/* THROAT — drawn first, as a single continuous tapering outline
-          fused directly to the head's bottom edge (the throatTopY
-          overlap above means it tucks slightly under the head, so
-          there is never a visible seam, even before the head is drawn
-          on top of it). */}
-      <path
-        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
-        fill="url(#rimGrad3d)"
-      />
-
-      {bridgeId === "open" && (
-        <g>
-          {boundaries.slice(0, -1).map((bL, i) => {
-            const bR = boundaries[i + 1], inset = 5, dir = (v) => (v >= 0 ? -1 : 1);
-            const topL = lerpHalf(0) * bL, topR = lerpHalf(0) * bR, botL = lerpHalf(1) * bL, botR = lerpHalf(1) * bR;
-            const midL = lerpHalf(0.5) * bL, midR = lerpHalf(0.5) * bR;
-            const iTopL = topL + inset * dir(topL), iTopR = topR - inset * dir(topR), iBotL = botL + inset * dir(botL), iBotR = botR - inset * dir(botR);
-            const iMidL = midL + inset * 0.4 * dir(midL), iMidR = midR - inset * 0.4 * dir(midR);
-            // Only render struts for vertical orientation here — for
-            // horizontal/diagonal, a simpler single-aperture cut reads
-            // better against the smooth continuous throat body.
-            if (beamOrientation !== "vertical") return null;
-            return (
-              <path
-                key={i}
-                d={`M ${cx + iTopL} ${throatTopY + 10} Q ${cx + iMidL} ${throatMidY}, ${cx + iBotL} ${throatBottomY - 10} Q ${cx + (iBotL + iBotR) / 2} ${throatBottomY + 4}, ${cx + iBotR} ${throatBottomY - 10} Q ${cx + iMidR} ${throatMidY}, ${cx + iTopR} ${throatTopY + 10} Q ${cx + (iTopL + iTopR) / 2} ${throatTopY - 4}, ${cx + iTopL} ${throatTopY + 10} Z`}
-                fill="#0A0A0C"
-                opacity="0.9"
-              />
-            );
-          })}
-          {beamOrientation === "horizontal" &&
+        {/* Mask defining the open-bridge apertures as true cutouts —
+            white = visible throat material, black = cut away (shows
+            whatever sits behind, giving real contrast instead of a
+            dark shape painted over a dark shape). */}
+        <mask id="throatApertureMask">
+          <rect x={cx - outerThroatHalf - 20} y={throatTopY - 10} width={(outerThroatHalf + 20) * 2} height={throatHeight + 20} fill="#FFFFFF" />
+          {bridgeId === "open" &&
+            boundaries.slice(0, -1).map((bL, i) => {
+              const bR = boundaries[i + 1], inset = 5, dir = (v) => (v >= 0 ? -1 : 1);
+              const topL = lerpHalf(0) * bL, topR = lerpHalf(0) * bR, botL = lerpHalf(1) * bL, botR = lerpHalf(1) * bR;
+              const midL = lerpHalf(0.5) * bL, midR = lerpHalf(0.5) * bR;
+              const iTopL = topL + inset * dir(topL), iTopR = topR - inset * dir(topR), iBotL = botL + inset * dir(botL), iBotR = botR - inset * dir(botR);
+              const iMidL = midL + inset * 0.4 * dir(midL), iMidR = midR - inset * 0.4 * dir(midR);
+              if (beamOrientation !== "vertical") return null;
+              return (
+                <path
+                  key={i}
+                  d={`M ${cx + iTopL} ${throatTopY + 10} Q ${cx + iMidL} ${throatMidY}, ${cx + iBotL} ${throatBottomY - 10} Q ${cx + (iBotL + iBotR) / 2} ${throatBottomY + 4}, ${cx + iBotR} ${throatBottomY - 10} Q ${cx + iMidR} ${throatMidY}, ${cx + iTopR} ${throatTopY + 10} Q ${cx + (iTopL + iTopR) / 2} ${throatTopY - 4}, ${cx + iTopL} ${throatTopY + 10} Z`}
+                  fill="#000000"
+                />
+              );
+            })}
+          {bridgeId === "open" && beamOrientation === "horizontal" &&
             Array.from({ length: Math.min(beamCount, 2) }).map((_, i, arr) => {
               const t = arr.length === 1 ? 0.5 : (i + 1) / 3;
               const y = throatTopY + t * (throatBottomY - throatTopY);
@@ -1446,22 +1448,74 @@ function RacquetIllustration3D({
                 <path
                   key={i}
                   d={`M ${cx - half} ${y - 9} Q ${cx} ${y - 4}, ${cx + half} ${y - 9} L ${cx + half} ${y + 9} Q ${cx} ${y + 4}, ${cx - half} ${y + 9} Z`}
-                  fill="#0A0A0C"
-                  opacity="0.9"
+                  fill="#000000"
                 />
               );
             })}
-          {beamOrientation === "diagonal" && (
+          {bridgeId === "open" && beamOrientation === "diagonal" && (
             <path
               d={
                 beamCount === 1
                   ? `M ${cx - outerThroatHalf + 10} ${throatTopY + 14} L ${cx} ${throatBottomY - 12} L ${cx + outerThroatHalf - 10} ${throatTopY + 14} L ${cx + outerThroatHalf - 16} ${throatTopY + 18} L ${cx} ${throatBottomY - 22} L ${cx - outerThroatHalf + 16} ${throatTopY + 18} Z`
                   : `M ${cx - outerThroatHalf + 10} ${throatTopY + 14} L ${cx + innerNeckHalf - 4} ${throatBottomY - 12} L ${cx + innerNeckHalf - 10} ${throatBottomY - 16} L ${cx - outerThroatHalf + 16} ${throatTopY + 18} Z M ${cx + outerThroatHalf - 10} ${throatTopY + 14} L ${cx - innerNeckHalf + 4} ${throatBottomY - 12} L ${cx - innerNeckHalf + 10} ${throatBottomY - 16} L ${cx + outerThroatHalf - 16} ${throatTopY + 18} Z`
               }
-              fill="#0A0A0C"
-              opacity="0.9"
+              fill="#000000"
             />
           )}
+        </mask>
+      </defs>
+
+      {/* Backing plate behind the throat: dark, so apertures cut by the
+          mask above show a clearly different tone than the throat
+          material itself — this is the actual fix for "looks like one
+          blob": the cut-out areas are now genuinely a different color,
+          not a near-identical dark shape drawn on top of another. */}
+      <path
+        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+        fill="#16161A"
+      />
+
+      {/* Throat material, masked so the open apertures genuinely cut
+          through to the dark backing plate behind — this is what
+          actually creates visible contrast between "throat frame" and
+          "open gap," rather than two near-identical dark fills. */}
+      <path
+        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+        fill="url(#throatGrad3d)"
+        mask="url(#throatApertureMask)"
+      />
+
+      {/* Strut edge outlines — a thin bright stroke along each divider
+          between apertures, so the individual beams stay visually
+          distinct and countable even at a glance, not fused into one
+          shape. Drawn on top of the masked fill, so it always reads
+          regardless of beam count or orientation. */}
+      {bridgeId === "open" && (
+        <g stroke="#E8E6E0" strokeWidth="1.3" opacity="0.55" fill="none">
+          {beamOrientation === "vertical" &&
+            boundaries.slice(1, -1).map((b, i) => {
+              const top = lerpHalf(0) * b, bot = lerpHalf(1) * b, mid = lerpHalf(0.5) * b;
+              return <path key={i} d={`M ${cx + top} ${throatTopY + 6} Q ${cx + mid} ${throatMidY}, ${cx + bot} ${throatBottomY - 6}`} />;
+            })}
+          {beamOrientation === "horizontal" &&
+            Array.from({ length: Math.min(beamCount, 2) }).map((_, i, arr) => {
+              const t = arr.length === 1 ? 0.5 : (i + 1) / 3;
+              const y = throatTopY + t * (throatBottomY - throatTopY);
+              const half = throatHalfWidthAt(y) - 9;
+              return <line key={i} x1={cx - half} y1={y} x2={cx + half} y2={y} />;
+            })}
+          {beamOrientation === "diagonal" &&
+            (beamCount === 1 ? (
+              <>
+                <line x1={cx - outerThroatHalf + 13} y1={throatTopY + 16} x2={cx} y2={throatBottomY - 17} />
+                <line x1={cx + outerThroatHalf - 13} y1={throatTopY + 16} x2={cx} y2={throatBottomY - 17} />
+              </>
+            ) : (
+              <>
+                <line x1={cx - outerThroatHalf + 13} y1={throatTopY + 16} x2={cx + innerNeckHalf - 7} y2={throatBottomY - 14} />
+                <line x1={cx + outerThroatHalf - 13} y1={throatTopY + 16} x2={cx - innerNeckHalf + 7} y2={throatBottomY - 14} />
+              </>
+            ))}
         </g>
       )}
 
