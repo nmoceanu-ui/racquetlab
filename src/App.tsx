@@ -1,13 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ChevronDown, AlertTriangle, Sparkles, BarChart3,
   Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
-  Settings2, User, CheckCircle2, ArrowRight
+  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   ResponsiveContainer, PolarRadiusAxis
 } from "recharts";
+import { saveBuild, loadBuild } from "./lib/builds";
+import { supabaseConfigured } from "./lib/supabase";
+import { analytics } from "./lib/analytics";
 
 // ---------------------------------------------------------------------------
 // MATERIAL DATABASE
@@ -420,6 +423,74 @@ const MARKET_RACQUETS = [
     sourceConfidence: "high",
     note: "Teardrop all-rounder. M-Eva Balance medium-density core, 3D carbon face, adjustable Dynamic Star weight system (small ±0.3-0.6cm balance range, not a major spec driver on its own).",
   },
+  {
+    id: "wilson-bela-lt",
+    brand: "Wilson",
+    model: "Bela LT (V2.5/V3)",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 358,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "The lightest racquet in Wilson's Bela (Belasteguín) line — teardrop shape, soft EVA core, strongly convergent across independent reviews and retailers as a comfort-first, arm-friendly racquet that still keeps real spin and smash capability. Fills a genuine gap versus the more aggressive Bela Pro/V3 below.",
+  },
+  {
+    id: "wilson-bela-pro",
+    brand: "Wilson",
+    model: "Bela Pro / V3",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Wilson's flagship power signature. Sources place it anywhere from diamond to hybrid shape depending on the specific V2.5/V3/Pro variant — used the most-repeated diamond/high-balance description, but treat this one as a family representative rather than one exact SKU.",
+  },
+  {
+    id: "siux-electra-pro",
+    brand: "Siux",
+    model: "Electra Pro (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-hard",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 362,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Franco Stupaczuk's signature. Teardrop shape, hard EVA core, 12K carbon — strongly convergent across independent reviews as a firm, direct racquet whose control score genuinely outscores its power score, an unusual combination for a hard-core build.",
+  },
+  {
+    id: "head-graphene-alpha-power",
+    brand: "Head",
+    model: "Graphene 360 Alpha Power 2.0",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "graphene",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 26.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "The one genuinely graphene-faced model in this set — Head builds Graphene 360 into the frame/structure for torsion and rigidity rather than as a separate face layer, which matters if you're comparing this tool's 'graphene' face-material option directly: real-world graphene use in padel is closer to a frame-reinforcement technique than a distinct visible face material.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -817,13 +888,20 @@ function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight) {
 //     unmistakable from carbon's black/gray weave — even though padel
 //     manufacturers usually hide kevlar as a structural layer, this
 //     tool's "Kevlar-reinforced" option is modeled as visible for clarity
+//
+// gloss/darkTone are used only by the 3D illustration mode below: gloss
+// (0-1) sets how sharp/bright the specular highlight reads — woven
+// carbon and graphene have a real lacquered-composite shine, fiberglass
+// is more of a satin matte, kevlar's resin-coated weave sits in between.
+// darkTone is a deeper shade of the same material used as the gradient's
+// shadow stop, so the curvature reads as a real molded surface.
 const FACE_VISUAL = {
-  fiberglass: { tint: "#F0ECDE", weaveColor: null, weaveSpacing: 0, coverage: 0 },
-  "carbon-3k": { tint: "#D8D6D2", weaveColor: "#2A2A2E", weaveSpacing: 22, coverage: 1 },
-  "carbon-12k": { tint: "#DEDCD8", weaveColor: "#3A3A3E", weaveSpacing: 14, coverage: 1 },
-  "carbon-18k": { tint: "#E4E2DE", weaveColor: "#4A4A4E", weaveSpacing: 9, coverage: 1 },
-  graphene: { tint: "#C4C2C6", weaveColor: "#16161A", weaveSpacing: 6, coverage: 1 },
-  "kevlar-reinforced": { tint: "#F2E2A8", weaveColor: "#B8860B", weaveSpacing: 16, coverage: 1 },
+  fiberglass: { tint: "#F0ECDE", weaveColor: null, weaveSpacing: 0, coverage: 0, gloss: 0.35, darkTone: "#C9C2A8" },
+  "carbon-3k": { tint: "#D8D6D2", weaveColor: "#2A2A2E", weaveSpacing: 22, coverage: 1, gloss: 0.85, darkTone: "#3A3A3E" },
+  "carbon-12k": { tint: "#DEDCD8", weaveColor: "#3A3A3E", weaveSpacing: 14, coverage: 1, gloss: 0.8, darkTone: "#46464A" },
+  "carbon-18k": { tint: "#E4E2DE", weaveColor: "#4A4A4E", weaveSpacing: 9, coverage: 1, gloss: 0.7, darkTone: "#54545A" },
+  graphene: { tint: "#C4C2C6", weaveColor: "#16161A", weaveSpacing: 6, coverage: 1, gloss: 0.95, darkTone: "#0E0E12" },
+  "kevlar-reinforced": { tint: "#F2E2A8", weaveColor: "#B8860B", weaveSpacing: 16, coverage: 1, gloss: 0.6, darkTone: "#9C7416" },
 };
 
 const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-hard":"#D2CBB5","foam-pe":"#EDEAE0","hybrid-core":"#E3DCC8" };
@@ -1125,6 +1203,336 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
           <text x={cx} y={bridgeTopY+bridgeHeight/2+4} textAnchor="middle" fontSize="10" fill="#5A574C">{bridgeId==="closed"?"closed bridge":`${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}`}</text>
         </g>
       )}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RACQUET ILLUSTRATION 3D — a genuinely dimensional, "molded object" render
+// for the consumer-facing illustration mode, built on the exact same head/
+// throat/handle geometry as RacquetDiagram (via the shared path helpers)
+// so dimensions always stay in sync with the spec view. The flat line-art
+// in RacquetDiagram is intentionally schematic; this is the opposite goal —
+// it should look like a real, lit, photographed product:
+//   - A radial gradient across the face simulates the curve of a real
+//     molded composite surface catching light, with a darker tone toward
+//     the lower-right edge as if shaded.
+//   - A soft specular highlight sits upper-left, consistent with standard
+//     product-photography lighting, with intensity/sharpness driven by
+//     each material's measured gloss value (carbon/graphene = lacquered
+//     shine, fiberglass = soft satin, kevlar = warm metallic sheen).
+//   - A grounding drop shadow keeps the object from feeling like it's
+//     floating against the card background.
+//   - The frame rim gets a beveled look (a thin inner light edge against
+//     a darker outer edge) rather than a flat stroke, suggesting real
+//     molded plastic/composite thickness.
+// ---------------------------------------------------------------------------
+
+function RacquetIllustration3D({
+  shape,
+  faceId,
+  gripShapeId,
+  holeCountId,
+  holePatternId,
+  lengthMm,
+  widthMm,
+  balanceCm,
+  weightG,
+  coreObj,
+  faceObj,
+  frameObj,
+  bridgeId,
+  beamCount,
+  beamOrientation,
+}) {
+  const cx = 230, topY = 30, headHeight = 290;
+  const halfWidth = Math.min(148, (widthMm / 260) * 148);
+  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
+  const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
+  const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
+
+  const headBottomY = topY + headHeight, throatNeckY = headBottomY - 18;
+  const bridgeTopY = headBottomY - 4, bridgeHeight = 86, bridgeBottomY = bridgeTopY + bridgeHeight;
+  const handleWidth = 26, collarY = bridgeBottomY + 10;
+  const handleTopY = collarY + 14;
+  const handleHeight = Math.max(120, Math.min(200, (lengthMm - 380) * 1.1 + 130));
+  const handleBottomY = handleTopY + handleHeight;
+  const innerNeckHalf = handleWidth / 2 + 3, outerThroatHalf = halfWidth * 0.4, throatMidY = (bridgeTopY + bridgeBottomY) / 2;
+  const strutOffsets: number[] = [];
+  if (bridgeId === "open") {
+    if (beamCount === 1) strutOffsets.push(0);
+    else if (beamCount === 2) { const g = innerNeckHalf * 0.55; strutOffsets.push(-g, g); }
+    else { const g = innerNeckHalf * 0.65; strutOffsets.push(0, -g, g); }
+    strutOffsets.sort((a, b) => a - b);
+  }
+  const lerpHalf = (yFrac) => outerThroatHalf + (innerNeckHalf - outerThroatHalf) * yFrac;
+  const boundaries = [-1, ...strutOffsets.map((s) => s / innerNeckHalf), 1];
+
+  // Hole positions reuse the exact same generator logic as RacquetDiagram
+  // so perforation placement is consistent between view modes.
+  const holeDots: { x: number; y: number }[] = [];
+  const countCfg = HOLE_COUNT_OPTIONS.find((h) => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
+  if (holeCountId !== "none") {
+    const { rows, cols } = countCfg;
+    for (let r = 0; r < rows; r++) {
+      const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
+      const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
+      const shapeTaper = shape === "diamond" ? 1 - Math.abs(rowProgress - 0.5) * 0.85 : shape === "teardrop" ? 0.6 + rowProgress * 0.4 : Math.sin(rowProgress * Math.PI) * 0.45 + 0.6;
+      const vertBias = holePatternId === "centered" ? 0.55 + 0.45 * (1 - Math.abs(rowProgress - 0.5) * 2) : holePatternId === "edge" ? 0.85 + 0.15 * Math.abs(rowProgress - 0.5) * 2 : 1;
+      const rowHalf = (halfWidth - 26) * Math.min(1, shapeTaper + 0.35) * vertBias;
+      for (let c = 0; c < cols; c++) {
+        const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
+        const horizBias = holePatternId === "centered" ? 0.5 + 0.5 * (1 - Math.abs(colProgress - 0.5) * 2) : holePatternId === "edge" ? 0.8 + 0.2 * Math.abs(colProgress - 0.5) * 2 : 1;
+        const effectiveHalf = rowHalf * (holePatternId === "even" ? 1 : 0.4 + 0.6 * horizBias);
+        const fx = cx - effectiveHalf * 0.76 + colProgress * (effectiveHalf * 1.52);
+        holeDots.push({ x: fx, y: fy });
+      }
+    }
+  }
+
+  const frameDark = frameObj?.id === "fiberglass-frame" ? "#9A968A" : frameObj?.id === "basalt-frame" ? "#241A12" : "#0A0A0C";
+  const frameLight = frameObj?.id === "fiberglass-frame" ? "#F5F2E8" : frameObj?.id === "basalt-frame" ? "#5A4030" : "#3A3A3E";
+  const gripBase = gripShapeId === "hexagonal" ? "#E4DFCF" : "#F4F1E8";
+
+  return (
+    <svg viewBox="0 0 460 660" width="100%" height="100%" style={{ display: "block" }}>
+      <defs>
+        <clipPath id="illustHeadClip"><path d={outline} /></clipPath>
+        <clipPath id="illustInnerClip"><path d={innerOutline} /></clipPath>
+
+        {/* Face gradient: light source upper-left, darker shade toward
+            lower-right — the core depth cue that makes this read as a
+            curved molded object instead of a flat cutout. */}
+        <radialGradient id="faceGrad3d" cx="32%" cy="26%" r="85%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.55 * faceVisual.gloss} />
+          <stop offset="22%" stopColor={faceVisual.tint} />
+          <stop offset="72%" stopColor={faceVisual.tint} />
+          <stop offset="100%" stopColor={faceVisual.darkTone} />
+        </radialGradient>
+
+        {/* Frame rim gradient: bevel effect, light catching the inner
+            edge of the rim, darker on the outer edge — suggests real
+            molded thickness rather than a flat stroke. */}
+        <linearGradient id="rimGrad3d" x1="20%" y1="0%" x2="85%" y2="100%">
+          <stop offset="0%" stopColor={frameLight} />
+          <stop offset="55%" stopColor={frameDark} />
+          <stop offset="100%" stopColor={frameDark} />
+        </linearGradient>
+
+        <linearGradient id="handleGrad3d" x1="15%" y1="0%" x2="80%" y2="0%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="35%" stopColor={gripBase} />
+          <stop offset="100%" stopColor="#C9C2A8" />
+        </linearGradient>
+
+        <radialGradient id="sweetSpotGlow3d" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.35" />
+          <stop offset="70%" stopColor="#AEFB00" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="#AEFB00" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Grounding drop shadow */}
+      <ellipse cx={cx + 14} cy={handleBottomY + 22} rx={halfWidth * 0.78} ry={16} fill="#000000" opacity="0.22" />
+      <ellipse cx={cx + 8} cy={topY + headHeight * 0.62} rx={halfWidth * 0.92} ry={headHeight * 0.56} fill="#000000" opacity="0.1" />
+
+      {/* HEAD — rim with bevel, face with gradient depth */}
+      <path d={outline} fill="url(#rimGrad3d)" />
+      <path d={innerOutline} fill="url(#faceGrad3d)" />
+
+      {/* woven texture, dimmed to sit under the lighting rather than
+          compete with it — same generator as the flat mode, lower opacity */}
+      {faceVisual.coverage > 0 && (
+        <g clipPath="url(#illustInnerClip)" opacity="0.32">
+          {(() => {
+            const spacing = faceVisual.weaveSpacing;
+            const top = topY - 10, bottom = topY + headHeight + 10;
+            const left = cx - halfWidth - 10, right = cx + halfWidth + 10;
+            const linesA = [];
+            const linesB = [];
+            for (let d = -((right - left) + (bottom - top)); d < (right - left) + (bottom - top); d += spacing) {
+              linesA.push({ x1: left + d, y1: top, x2: left + d + (bottom - top), y2: bottom });
+              linesB.push({ x1: right - d, y1: top, x2: right - d - (bottom - top), y2: bottom });
+            }
+            return (
+              <>
+                {linesA.map((l, i) => <line key={"a" + i} {...l} stroke={faceVisual.weaveColor} strokeWidth="1" />)}
+                {linesB.map((l, i) => <line key={"b" + i} {...l} stroke={faceVisual.weaveColor} strokeWidth="1" />)}
+              </>
+            );
+          })()}
+        </g>
+      )}
+
+      {/* specular highlight streak — the single biggest cue that sells
+          "glossy molded object" rather than "flat painted shape" */}
+      <g clipPath="url(#illustInnerClip)">
+        <ellipse
+          cx={cx - halfWidth * 0.32}
+          cy={topY + headHeight * 0.22}
+          rx={halfWidth * 0.5}
+          ry={headHeight * 0.32}
+          fill="#FFFFFF"
+          opacity={0.3 * faceVisual.gloss}
+          transform={`rotate(-18 ${cx - halfWidth * 0.32} ${topY + headHeight * 0.22})`}
+        />
+        <ellipse
+          cx={cx - halfWidth * 0.18}
+          cy={topY + headHeight * 0.14}
+          rx={halfWidth * 0.22}
+          ry={headHeight * 0.12}
+          fill="#FFFFFF"
+          opacity={0.5 * faceVisual.gloss}
+          transform={`rotate(-18 ${cx - halfWidth * 0.18} ${topY + headHeight * 0.14})`}
+        />
+      </g>
+
+      {/* perforation holes rendered as actual depressions: a dark ring
+          (shadow) plus a thin bright top edge (catching light), instead
+          of a flat outline circle */}
+      <g clipPath="url(#illustInnerClip)">
+        {holeDots.map((h, i) => (
+          <g key={i}>
+            <circle cx={h.x} cy={h.y + 0.6} r={6.6} fill="#000000" opacity="0.28" />
+            <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
+            <path d={`M ${h.x - 4} ${h.y - 3.2} A 5 5 0 0 1 ${h.x + 4} ${h.y - 3.2}`} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.45" strokeLinecap="round" />
+          </g>
+        ))}
+      </g>
+
+      {/* sweet spot — a soft glow rather than a dashed measurement ring,
+          since this view is about appeal, not spec annotation */}
+      <g clipPath="url(#illustInnerClip)">
+        <circle cx={cx} cy={sweet.y} r={sweet.r * 1.4} fill="url(#sweetSpotGlow3d)" />
+      </g>
+
+      {/* thin inner bevel line for extra rim depth */}
+      <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.25" />
+
+      {/* THROAT / BRIDGE — same geometry as RacquetDiagram, beveled fill */}
+      <path
+        d={`M ${cx - halfWidth * 0.5} ${headBottomY - 6} Q ${cx - outerThroatHalf - 6} ${throatNeckY + 16}, ${cx - outerThroatHalf} ${bridgeTopY} M ${cx + halfWidth * 0.5} ${headBottomY - 6} Q ${cx + outerThroatHalf + 6} ${throatNeckY + 16}, ${cx + outerThroatHalf} ${bridgeTopY}`}
+        fill="none"
+        stroke="url(#rimGrad3d)"
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${cx - outerThroatHalf} ${bridgeTopY} L ${cx + outerThroatHalf} ${bridgeTopY} L ${cx + innerNeckHalf} ${bridgeBottomY} L ${cx - innerNeckHalf} ${bridgeBottomY} Z`}
+        fill={bridgeId === "closed" ? "url(#faceGrad3d)" : "none"}
+        stroke="url(#rimGrad3d)"
+        strokeWidth="6"
+        strokeLinejoin="round"
+      />
+      {bridgeId === "open" && beamOrientation === "vertical" && (
+        <g>
+          {boundaries.slice(0, -1).map((bL, i) => {
+            const bR = boundaries[i + 1], inset = 5, dir = (v) => (v >= 0 ? -1 : 1);
+            const topL = lerpHalf(0) * bL, topR = lerpHalf(0) * bR, botL = lerpHalf(1) * bL, botR = lerpHalf(1) * bR;
+            const midL = lerpHalf(0.5) * bL, midR = lerpHalf(0.5) * bR;
+            const iTopL = topL + inset * dir(topL), iTopR = topR - inset * dir(topR), iBotL = botL + inset * dir(botL), iBotR = botR - inset * dir(botR);
+            const iMidL = midL + inset * 0.4 * dir(midL), iMidR = midR - inset * 0.4 * dir(midR);
+            return (
+              <path
+                key={i}
+                d={`M ${cx + iTopL} ${bridgeTopY + 8} Q ${cx + iMidL} ${throatMidY}, ${cx + iBotL} ${bridgeBottomY - 8} Q ${cx + (iBotL + iBotR) / 2} ${bridgeBottomY + 5}, ${cx + iBotR} ${bridgeBottomY - 8} Q ${cx + iMidR} ${throatMidY}, ${cx + iTopR} ${bridgeTopY + 8} Q ${cx + (iTopL + iTopR) / 2} ${bridgeTopY - 5}, ${cx + iTopL} ${bridgeTopY + 8} Z`}
+                fill="none"
+                stroke="url(#rimGrad3d)"
+                strokeWidth="4"
+                strokeLinejoin="round"
+              />
+            );
+          })}
+        </g>
+      )}
+      {bridgeId === "open" && beamOrientation === "horizontal" && (
+        <g>
+          <path
+            d={`M ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Q ${cx} ${throatMidY}, ${cx - innerNeckHalf + 5} ${bridgeBottomY - 8} Q ${cx} ${bridgeBottomY + 5}, ${cx + innerNeckHalf - 5} ${bridgeBottomY - 8} Q ${cx} ${throatMidY}, ${cx + outerThroatHalf - 6} ${bridgeTopY + 8} Q ${cx} ${bridgeTopY - 5}, ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Z`}
+            fill="none"
+            stroke="url(#rimGrad3d)"
+            strokeWidth="4"
+            strokeLinejoin="round"
+          />
+          {Array.from({ length: Math.min(beamCount, 2) }).map((_, i, arr) => {
+            const t = arr.length === 1 ? 0.5 : (i + 1) / 3;
+            const y = bridgeTopY + t * bridgeHeight;
+            const half = lerpHalf(t) - 10;
+            return <line key={i} x1={cx - half} y1={y} x2={cx + half} y2={y} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />;
+          })}
+        </g>
+      )}
+      {bridgeId === "open" && beamOrientation === "diagonal" && (
+        <g>
+          <path
+            d={`M ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Q ${cx} ${throatMidY}, ${cx - innerNeckHalf + 5} ${bridgeBottomY - 8} Q ${cx} ${bridgeBottomY + 5}, ${cx + innerNeckHalf - 5} ${bridgeBottomY - 8} Q ${cx} ${throatMidY}, ${cx + outerThroatHalf - 6} ${bridgeTopY + 8} Q ${cx} ${bridgeTopY - 5}, ${cx - outerThroatHalf + 6} ${bridgeTopY + 8} Z`}
+            fill="none"
+            stroke="url(#rimGrad3d)"
+            strokeWidth="4"
+            strokeLinejoin="round"
+          />
+          {beamCount === 1 ? (
+            <g>
+              <line x1={cx - outerThroatHalf + 10} y1={bridgeTopY + 12} x2={cx} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
+              <line x1={cx + outerThroatHalf - 10} y1={bridgeTopY + 12} x2={cx} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
+            </g>
+          ) : (
+            <g>
+              <line x1={cx - outerThroatHalf + 10} y1={bridgeTopY + 12} x2={cx + innerNeckHalf - 6} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
+              <line x1={cx + outerThroatHalf - 10} y1={bridgeTopY + 12} x2={cx - innerNeckHalf + 6} y2={bridgeBottomY - 10} stroke="url(#rimGrad3d)" strokeWidth="5" strokeLinecap="round" />
+            </g>
+          )}
+        </g>
+      )}
+
+      {/* collar */}
+      <path
+        d={`M ${cx - innerNeckHalf - 2} ${bridgeBottomY} L ${cx - handleWidth / 2 - 5} ${collarY} L ${cx + handleWidth / 2 + 5} ${collarY} L ${cx + innerNeckHalf + 2} ${bridgeBottomY}`}
+        fill="url(#rimGrad3d)"
+      />
+
+      {/* HANDLE — gradient suggests a cylindrical grip catching light
+          along its left edge, consistent with the same light source */}
+      <g>
+        <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="url(#handleGrad3d)" rx={6} />
+        {gripShapeId === "hexagonal" ? (
+          <g clipPath={`inset(0)`} opacity="0.4">
+            {(() => {
+              const hexR = handleWidth / 4.2, hexW = hexR * 2, hexH = hexR * Math.sqrt(3), colStep = hexW * 0.75;
+              const cells: { x: number; y: number }[] = [];
+              let col = 0;
+              for (let x = cx - handleWidth / 2 - hexW; x < cx + handleWidth / 2 + hexW; x += colStep) {
+                const yOffset = col % 2 === 0 ? 0 : hexH / 2;
+                for (let y = handleTopY - hexH; y < handleBottomY + hexH; y += hexH) cells.push({ x, y: y + yOffset });
+                col++;
+              }
+              const flatTopHex = (px, py, r) => {
+                const pts = [];
+                for (let i = 0; i < 6; i++) { const ang = (Math.PI / 3) * i; pts.push(`${px + r * Math.cos(ang)},${py + r * Math.sin(ang)}`); }
+                return pts.join(" ");
+              };
+              return cells.map((c, i) => <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="none" stroke="#8A8268" strokeWidth="0.6" />);
+            })()}
+          </g>
+        ) : (
+          <g opacity="0.35">
+            {Array.from({ length: Math.ceil(handleHeight / 18) }).map((_, i) => {
+              const y0 = handleTopY + i * 18, y1 = y0 + 18;
+              if (y1 > handleBottomY) return null;
+              return (
+                <g key={i}>
+                  <line x1={cx - handleWidth / 2} y1={y0} x2={cx + handleWidth / 2} y2={y1} stroke="#8A8268" strokeWidth="1.1" />
+                  <line x1={cx - handleWidth / 2} y1={y1} x2={cx + handleWidth / 2} y2={y0} stroke="#8A8268" strokeWidth="1.1" />
+                </g>
+              );
+            })}
+          </g>
+        )}
+        <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="none" stroke="#00000022" strokeWidth="1" rx={6} />
+        <rect x={cx - handleWidth / 2 - 4} y={handleBottomY - 4} width={handleWidth + 8} height={14} rx={6} fill="url(#rimGrad3d)" />
+        <path d={`M ${cx - 6} ${handleBottomY + 10} Q ${cx - 14} ${handleBottomY + 28}, ${cx} ${handleBottomY + 32} Q ${cx + 14} ${handleBottomY + 28}, ${cx + 6} ${handleBottomY + 10}`} fill="none" stroke="#0A0A0C" strokeWidth="2" opacity="0.6" />
+      </g>
     </svg>
   );
 }
@@ -1727,9 +2135,87 @@ export default function App() {
   const [balanceCm, setBalanceCm] = useState(25.8);
   const [gripCircMm, setGripCircMm] = useState(38);
 
+  // Save & Share state
+  const [shareStatus, setShareStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "error">("idle");
+
   // Accordion state
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["shape"]));
   const toggle = (id: string) => setOpenSections(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  // On first load, check for a ?b=<code> share link and restore that
+  // build's full spec if present. Runs once on mount only.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("b");
+    if (!code) return;
+    setLoadStatus("loading");
+    loadBuild(code).then((result) => {
+      if (!result.ok) {
+        setLoadStatus("error");
+        return;
+      }
+      const s = result.spec;
+      if (typeof s.shapeId === "string") setShapeId(s.shapeId);
+      if (typeof s.coreId === "string") setCoreId(s.coreId);
+      if (typeof s.faceId === "string") setFaceId(s.faceId);
+      if (typeof s.frameId === "string") setFrameId(s.frameId);
+      if (typeof s.surfaceId === "string") setSurfaceId(s.surfaceId);
+      if (typeof s.gripId === "string") setGripId(s.gripId);
+      if (typeof s.gripShapeId === "string") setGripShapeId(s.gripShapeId);
+      if (typeof s.bridgeId === "string") setBridgeId(s.bridgeId);
+      if (typeof s.beamCount === "number") setBeamCount(s.beamCount);
+      if (typeof s.beamOrientation === "string") setBeamOrientation(s.beamOrientation);
+      if (typeof s.holeCountId === "string") setHoleCountId(s.holeCountId);
+      if (typeof s.holePatternId === "string") setHolePatternId(s.holePatternId);
+      if (typeof s.lengthMm === "number") setLengthMm(s.lengthMm);
+      if (typeof s.widthMm === "number") setWidthMm(s.widthMm);
+      if (typeof s.thicknessMm === "number") setThicknessMm(s.thicknessMm);
+      if (typeof s.weightG === "number") setWeightG(s.weightG);
+      if (typeof s.balanceCm === "number") setBalanceCm(s.balanceCm);
+      if (typeof s.gripCircMm === "number") setGripCircMm(s.gripCircMm);
+      setLoadStatus("idle");
+      setActiveTab("view");
+      analytics.buildLoaded(code);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSaveBuild = useCallback(async () => {
+    setShareStatus("saving");
+    setShareError(null);
+    const spec = {
+      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId,
+      bridgeId, beamCount, beamOrientation, holeCountId, holePatternId,
+      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
+    };
+    const result = await saveBuild(spec);
+    if (!result.ok) {
+      setShareStatus("error");
+      setShareError(result.error);
+      analytics.buildSaveFailed(result.error);
+      return;
+    }
+    setShareCode(result.code);
+    setShareStatus("saved");
+    analytics.buildSaved(result.code);
+    // Reflect the share code in the URL without a page reload, so a
+    // refresh or copy-paste of the address bar also carries the link.
+    const url = new URL(window.location.href);
+    url.searchParams.set("b", result.code);
+    window.history.replaceState({}, "", url.toString());
+    try {
+      await navigator.clipboard.writeText(url.toString());
+    } catch {
+      // clipboard API can fail (permissions, non-HTTPS context, etc.) —
+      // the URL bar still has the link even if copy silently fails
+    }
+    // Reset back to idle after a few seconds so the button is reusable
+    // for a fresh save if the person keeps editing.
+    setTimeout(() => setShareStatus("idle"), 4000);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamCount, beamOrientation, holeCountId, holePatternId, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
 
   const shape = SHAPES.find(s => s.id === shapeId)!;
   const core = CORE_MATERIALS.find(c => c.id === coreId)!;
@@ -1747,6 +2233,16 @@ export default function App() {
   const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holeCountId !== "none" || coreId === "hybrid-core";
 
+  // Track when matched racquets actually become visible (Scores tab, or
+  // desktop layout where Scores content is always reachable), not on
+  // every background spec recalculation.
+  useEffect(() => {
+    if (activeTab === "scores" && matchedRacquets.length > 0) {
+      analytics.marketMatchesViewed(matchedRacquets[0].matchPct, matchedRacquets[0].racquet.model);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, matchedRacquets]);
+
   const handleApplyRec = (answers) => {
     const rec = recommendSpec(answers);
     setShapeId(rec.shapeId); setCoreId(rec.coreId); setFaceId(rec.faceId);
@@ -1756,6 +2252,7 @@ export default function App() {
     setBalanceCm(Math.round(rec.balanceCm * 10) / 10);
     setGripCircMm(Math.round(rec.gripCircMm));
     setActiveTab("view");
+    analytics.finderCompleted(answers?.level ?? "unknown");
   };
 
   // Shared diagram props
@@ -1919,7 +2416,7 @@ export default function App() {
       {/* View mode toggle */}
       <div style={{ display:"flex", gap:6, padding:"12px 16px" }}>
         {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}].map(m => (
-          <button key={m.id} onClick={() => setDiagramMode(m.id as any)} style={{
+          <button key={m.id} onClick={() => { setDiagramMode(m.id as any); analytics.diagramModeChanged(m.id); }} style={{
             flex:1, padding:"9px 6px", borderRadius:8,
             border: `1px solid ${diagramMode===m.id ? "rgba(174,251,0,0.3)" : "rgba(255,255,255,0.06)"}`,
             background: diagramMode===m.id ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
@@ -1932,13 +2429,16 @@ export default function App() {
       </div>
 
       {/* Diagram */}
-      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", background:"#F5F2EB" }}>
+      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 30%, #2A2D38, #14161C)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
-            {diagramMode === "profile"
-              ? <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holeCountId={holeCountId} gripShapeId={gripShapeId}/>
-              : <RacquetDiagram {...diagramProps} mode={diagramMode}/>
-            }
+            {diagramMode === "profile" ? (
+              <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holeCountId={holeCountId} gripShapeId={gripShapeId}/>
+            ) : diagramMode === "illustration" ? (
+              <RacquetIllustration3D {...diagramProps} />
+            ) : (
+              <RacquetDiagram {...diagramProps} mode={diagramMode}/>
+            )}
           </div>
         </div>
 
@@ -2025,7 +2525,7 @@ export default function App() {
       <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:24 }}>
         <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:4 }}>Closest racquets on the market</p>
         <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
-          Matched against a starter set of ~18 cross-checked current models across 6 brands — not the full market. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
+          Matched against a starter set of ~17 cross-checked current models across 8 brands — not the full market. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
         </p>
         {matchedRacquets.map((m, i) => (
           <div key={m.racquet.id} style={{ padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
@@ -2081,6 +2581,8 @@ export default function App() {
         input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #AEFB00; cursor: pointer; border: 2px solid #080B10; }
         select option { background: #1A2030; color: #EAE6DC; }
         button { -webkit-tap-highlight-color: transparent; }
+        @keyframes racquetlab-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: racquetlab-spin 0.8s linear infinite; }
       `}</style>
 
       {/* ── HEADER ── */}
@@ -2101,10 +2603,41 @@ export default function App() {
             </div>
           </div>
 
+          {/* Save & Share */}
+          <button
+            onClick={handleSaveBuild}
+            disabled={shareStatus === "saving" || !supabaseConfigured}
+            title={!supabaseConfigured ? "Save & Share is coming soon" : undefined}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+              border: `1px solid ${supabaseConfigured ? "rgba(174,251,0,0.25)" : "rgba(255,255,255,0.08)"}`,
+              background: shareStatus === "saved" ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
+              color: supabaseConfigured ? "#AEFB00" : "#6A7485",
+              fontSize: 12, fontWeight: 700, cursor: supabaseConfigured && shareStatus !== "saving" ? "pointer" : "default",
+              fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
+              WebkitTapHighlightColor: "transparent", flexShrink: 0,
+            }}
+          >
+            {shareStatus === "saving" ? (
+              <Loader2 size={13} className="spin" />
+            ) : shareStatus === "saved" ? (
+              <CheckCircle2 size={13} />
+            ) : (
+              <Share2 size={13} />
+            )}
+            {shareStatus === "saved"
+              ? "Link Copied"
+              : shareStatus === "saving"
+              ? "Saving…"
+              : supabaseConfigured
+              ? "Save & Share"
+              : "Save & Share (soon)"}
+          </button>
+
           {/* Mode toggle */}
           <div style={{ display:"flex", gap:4, background:"rgba(255,255,255,0.05)", padding:3, borderRadius:8, border:"1px solid rgba(255,255,255,0.07)" }}>
             {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Pro",icon:<Wrench size={12}/>}].map(m => (
-              <button key={m.id} onClick={() => setMode(m.id as any)} style={{
+              <button key={m.id} onClick={() => { setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
                 display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
                 background: mode===m.id ? "#AEFB00" : "transparent",
                 color: mode===m.id ? "#080B10" : "#6A7485",
@@ -2116,6 +2649,19 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {loadStatus === "error" && (
+        <div style={{ background: "rgba(255,180,0,0.08)", borderBottom: "1px solid rgba(255,180,0,0.2)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <AlertTriangle size={14} color="#FFB400" />
+          <span style={{ fontSize: 12.5, color: "#C88A00", fontFamily: "Inter, sans-serif" }}>That build link doesn't exist or may have been removed — showing the default build instead.</span>
+        </div>
+      )}
+      {shareStatus === "error" && shareError && (
+        <div style={{ background: "rgba(255,80,80,0.08)", borderBottom: "1px solid rgba(255,80,80,0.2)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <AlertTriangle size={14} color="#FF5050" />
+          <span style={{ fontSize: 12.5, color: "#FF8080", fontFamily: "Inter, sans-serif" }}>{shareError}</span>
+        </div>
+      )}
 
       {/* ── TABLET LAYOUT (md+) ── */}
       <div style={{ maxWidth:1024, margin:"0 auto" }} className="md-layout">
