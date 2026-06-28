@@ -904,6 +904,26 @@ const FACE_VISUAL = {
   "kevlar-reinforced": { tint: "#F2E2A8", weaveColor: "#B8860B", weaveSpacing: 16, coverage: 1, gloss: 0.6, darkTone: "#9C7416" },
 };
 
+// Illustration-mode-specific tints, kept separate from the flat-diagram
+// tints above. The flat diagram differentiates materials mainly through
+// its literal weave-line overlay, so its tints can stay subtle; the
+// illustration mode has no weave grid (intentionally smooth/one-piece,
+// per an earlier revision) and relies on tint + gloss alone to read as
+// different materials — the original tints were all near-identical
+// pale grays once the weave pattern was removed, so nothing actually
+// looked different between carbon grades or fiberglass. These give each
+// material a genuinely distinguishable color identity while staying
+// inside a believable "real composite material" palette (no material
+// turns neon or unnatural — just more clearly itself).
+const ILLUSTRATION_FACE_VISUAL = {
+  fiberglass: { tint: "#F2EEDF", darkTone: "#C7BFA0" }, // warm cream, lowest gloss
+  "carbon-3k": { tint: "#5A5A60", darkTone: "#1C1C20" }, // darkest, stiffest-reading carbon
+  "carbon-12k": { tint: "#6E6E76", darkTone: "#26262C" }, // mid-gray carbon, the common all-rounder
+  "carbon-18k": { tint: "#82828C", darkTone: "#34343C" }, // lightest of the carbons, flat-tape look
+  graphene: { tint: "#3A3A42", darkTone: "#0C0C10" }, // near-black, glossiest
+  "kevlar-reinforced": { tint: "#D9B84A", darkTone: "#8A6310" }, // distinct gold, unmistakable from any carbon
+};
+
 const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-hard":"#D2CBB5","foam-pe":"#EDEAE0","hybrid-core":"#E3DCC8" };
 
 // ---------------------------------------------------------------------------
@@ -1289,8 +1309,28 @@ function RacquetIllustration3D({
   // not from literally rotating the geometry.
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
   const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
+
+  // Conservative approximation of the inner face's half-width at a given
+  // vertical fraction (0=top tip, 1=bottom where the head meets the
+  // throat), calibrated to sit safely INSIDE the true Bezier curve used
+  // by headOutlinePath so holes placed against this bound can never
+  // reach the rim — the earlier version used a flat margin subtraction
+  // that didn't account for the head narrowing near the top/bottom tips,
+  // which is exactly why holes were overlapping the edge there.
+  const innerFaceHalfWidthFrac = (t: number) => {
+    if (shape === "round") return Math.sin(t * Math.PI) * 0.92 + 0.06;
+    if (shape === "diamond") return t < 0.32 ? (t / 0.32) * 0.94 : 0.94 - ((t - 0.32) / 0.68) * 0.5;
+    return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
+  };
   const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
-  const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
+  // Illustration mode uses its own, more strongly differentiated
+  // tint/darkTone (see ILLUSTRATION_FACE_VISUAL) since this view has no
+  // weave-line overlay to help distinguish materials the way the flat
+  // spec diagram does — gloss and other fields still come from the
+  // shared FACE_VISUAL table.
+  const baseFaceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
+  const illustTints = ILLUSTRATION_FACE_VISUAL[faceId] || ILLUSTRATION_FACE_VISUAL["carbon-12k"];
+  const faceVisual = { ...baseFaceVisual, tint: illustTints.tint, darkTone: illustTints.darkTone };
 
   const headBottomY = topY + headHeight;
   const handleWidth = 26;
@@ -1341,19 +1381,34 @@ function RacquetIllustration3D({
 
   const holeDots: { x: number; y: number }[] = [];
   const countCfg = HOLE_COUNT_OPTIONS.find((h) => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
+  const holeRadius = 6; // matches the rendered circle radius below
+  const edgeMargin = 14; // minimum clearance kept between any hole's edge and the face rim
   if (holeCountId !== "none") {
     const { rows, cols } = countCfg;
     for (let r = 0; r < rows; r++) {
       const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
       const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
-      const shapeTaper = shape === "diamond" ? 1 - Math.abs(rowProgress - 0.5) * 0.85 : shape === "teardrop" ? 0.6 + rowProgress * 0.4 : Math.sin(rowProgress * Math.PI) * 0.45 + 0.6;
-      const vertBias = holePatternId === "centered" ? 0.55 + 0.45 * (1 - Math.abs(rowProgress - 0.5) * 2) : holePatternId === "edge" ? 0.85 + 0.15 * Math.abs(rowProgress - 0.5) * 2 : 1;
-      const rowHalf = (halfWidth - 26) * Math.min(1, shapeTaper + 0.35) * vertBias;
+      // Real, shape-aware face boundary at this row's height — holes
+      // are clamped against THIS, not a flat margin guess, so they can
+      // never reach the rim regardless of how the head narrows here.
+      const rowT = (fy - topY) / headHeight;
+      const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
+
+      // Pattern bias still shapes the DISTRIBUTION (how tightly packed
+      // toward center vs. edges), but is now blended much more gently
+      // — the previous "centered" pattern multiplied width down to as
+      // little as 27% of the row, which crammed holes together almost
+      // edge-to-edge. This version keeps a believable spacing floor
+      // even in the most concentrated configuration.
+      const vertBias = holePatternId === "centered" ? 0.72 + 0.28 * (1 - Math.abs(rowProgress - 0.5) * 2) : holePatternId === "edge" ? 0.88 + 0.12 * Math.abs(rowProgress - 0.5) * 2 : 1;
+      const rowHalf = Math.min(realRowHalf, realRowHalf * vertBias + realRowHalf * 0.3);
+
       for (let c = 0; c < cols; c++) {
         const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
-        const horizBias = holePatternId === "centered" ? 0.5 + 0.5 * (1 - Math.abs(colProgress - 0.5) * 2) : holePatternId === "edge" ? 0.8 + 0.2 * Math.abs(colProgress - 0.5) * 2 : 1;
-        const effectiveHalf = rowHalf * (holePatternId === "even" ? 1 : 0.4 + 0.6 * horizBias);
-        const fx = cx - effectiveHalf * 0.76 + colProgress * (effectiveHalf * 1.52);
+        const horizBias = holePatternId === "centered" ? 0.65 + 0.35 * (1 - Math.abs(colProgress - 0.5) * 2) : holePatternId === "edge" ? 0.85 + 0.15 * Math.abs(colProgress - 0.5) * 2 : 1;
+        const effectiveHalf = Math.min(rowHalf, rowHalf * (holePatternId === "even" ? 1 : 0.55 + 0.45 * horizBias));
+        const placementHalf = Math.max(0, effectiveHalf - holeRadius);
+        const fx = cx - placementHalf + colProgress * (placementHalf * 2);
         holeDots.push({ x: fx, y: fy });
       }
     }
@@ -1439,20 +1494,14 @@ function RacquetIllustration3D({
 
             {beamOrientation === "vertical" &&
               (() => {
-                // N-1 openings between N struts — each a rounded,
-                // tapering hole punched through the solid throat,
-                // narrow enough to read as a real structural cutout
-                // rather than a bar of a different material. Top and
-                // bottom boundary positions are computed as separate
-                // arrays (top edge spans the full outerThroatHalf
-                // width, bottom edge spans the narrower innerNeckHalf
-                // collar width) — strut offsets are already defined in
-                // bottom-edge units, so only THEY need the ratio
-                // conversion to find their corresponding top position;
-                // the outer rail edges are already correct as-is at
-                // both top and bottom and must not be re-scaled.
+                // N-1 openings between N struts. Sizing is margin-based:
+                // each opening is inset by a FRACTION of its available
+                // span (not a fixed pixel amount subtracted from a huge
+                // span), so the solid throat frame always remains the
+                // visual majority — a real open-bridge throat is mostly
+                // solid material with modest triangular holes cut into
+                // it, not mostly hole with a sliver of frame left.
                 const positions = strutOffsets.length > 0 ? strutOffsets : [0];
-                const holeHalf = 9;
                 const strutTopPos = (offset: number) => (offset / innerNeckHalf) * outerThroatHalf;
                 const topBoundaries = [-outerThroatHalf, ...positions.map(strutTopPos), outerThroatHalf];
                 const botBoundaries = [-innerNeckHalf, ...positions, innerNeckHalf];
@@ -1460,16 +1509,20 @@ function RacquetIllustration3D({
                 for (let i = 0; i < topBoundaries.length - 1; i++) {
                   const leftTop = topBoundaries[i], rightTop = topBoundaries[i + 1];
                   const leftBot = botBoundaries[i], rightBot = botBoundaries[i + 1];
+                  const spanTop = rightTop - leftTop, spanBot = rightBot - leftBot;
+                  // hole occupies 45% of the available span at top,
+                  // tapering to 35% at bottom — leaves a clearly solid
+                  // frame border on every side at every height
+                  const wTop = spanTop * 0.225, wBot = Math.max(3, spanBot * 0.175);
                   const cxTop = (leftTop + rightTop) / 2, cxBot = (leftBot + rightBot) / 2;
-                  const wTop = Math.max(6, (rightTop - leftTop) / 2 - holeHalf), wBot = Math.max(6, (rightBot - leftBot) / 2 - holeHalf);
                   holes.push(
                     <path
                       key={i}
-                      d={`M ${cx + cxTop - wTop} ${throatTopY + 10}
-                          Q ${cx + cxTop - wTop * 0.6} ${throatMidY}, ${cx + cxBot - wBot} ${throatBottomY - 8}
-                          Q ${cx + cxBot} ${throatBottomY - 2}, ${cx + cxBot + wBot} ${throatBottomY - 8}
-                          Q ${cx + cxTop + wTop * 0.6} ${throatMidY}, ${cx + cxTop + wTop} ${throatTopY + 10}
-                          Q ${cx + cxTop} ${throatTopY + 4}, ${cx + cxTop - wTop} ${throatTopY + 10} Z`}
+                      d={`M ${cx + cxTop - wTop} ${throatTopY + 16}
+                          Q ${cx + cxTop - wTop * 0.7} ${throatMidY}, ${cx + cxBot - wBot} ${throatBottomY - 10}
+                          Q ${cx + cxBot} ${throatBottomY - 4}, ${cx + cxBot + wBot} ${throatBottomY - 10}
+                          Q ${cx + cxTop + wTop * 0.7} ${throatMidY}, ${cx + cxTop + wTop} ${throatTopY + 16}
+                          Q ${cx + cxTop} ${throatTopY + 8}, ${cx + cxTop - wTop} ${throatTopY + 16} Z`}
                       fill="#000000"
                     />
                   );
@@ -1513,30 +1566,53 @@ function RacquetIllustration3D({
 
             {beamOrientation === "diagonal" &&
               (() => {
-                // 1 beam: two triangular holes either side of a single
-                // central diagonal divider (a V-shaped solid strut left
-                // standing). 2 beams: four smaller triangular holes
-                // around a full X-shaped solid divider — genuinely more
-                // (and smaller) openings, not the same two re-angled.
-                const margin = 10;
+                // Matches a Bullpadel-Vertex-style diagonal bridge: the
+                // X (or V for 1 beam) sits fully inside the throat's
+                // triangular silhouette, with a clearly solid frame
+                // border all around it — the holes are the open
+                // triangular wedges on either side of the diagonal
+                // strut(s), sized as the minority of the throat area,
+                // not holes that consume nearly the whole shape.
+                const inset = outerThroatHalf * 0.18; // solid border kept along the outer edges
+                const topL = -outerThroatHalf + inset, topR = outerThroatHalf - inset;
+                const botL = -innerNeckHalf - 1, botR = innerNeckHalf + 1;
+                const apexY = throatBottomY - 14;
+                const strutHalfW = beamCount >= 2 ? 6 : 7;
+
                 if (beamCount <= 1) {
+                  // single V: one open wedge on each side of a central
+                  // diagonal strut pair meeting near the bottom center
                   return (
                     <>
-                      <path d={`M ${cx - outerThroatHalf + margin} ${throatTopY + 10} L ${cx - margin} ${throatBottomY - 10} L ${cx - innerNeckHalf - 2} ${throatBottomY - 10} L ${cx - outerThroatHalf + margin + 6} ${throatTopY + 14} Z`} fill="#000000" />
-                      <path d={`M ${cx + outerThroatHalf - margin} ${throatTopY + 10} L ${cx + margin} ${throatBottomY - 10} L ${cx + innerNeckHalf + 2} ${throatBottomY - 10} L ${cx + outerThroatHalf - margin - 6} ${throatTopY + 14} Z`} fill="#000000" />
+                      <path
+                        d={`M ${cx + topL} ${throatTopY + 14}
+                            L ${cx - strutHalfW} ${apexY}
+                            L ${cx + botL} ${throatBottomY - 6}
+                            L ${cx + botL} ${throatBottomY - 16}
+                            L ${cx + topL + 10} ${throatTopY + 20} Z`}
+                        fill="#000000"
+                      />
+                      <path
+                        d={`M ${cx + topR} ${throatTopY + 14}
+                            L ${cx + strutHalfW} ${apexY}
+                            L ${cx + botR} ${throatBottomY - 6}
+                            L ${cx + botR} ${throatBottomY - 16}
+                            L ${cx + topR - 10} ${throatTopY + 20} Z`}
+                        fill="#000000"
+                      />
                     </>
                   );
                 }
-                // 2 beams: split each side into two smaller triangles
-                // flanking the X's crossing point, so the lattice reads
-                // as denser/more reinforced than the single-V case.
-                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.5;
+                // full X: four open triangular wedges (top-left,
+                // top-right, bottom-left, bottom-right) around the
+                // crossing point near the throat's center
+                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.42;
                 return (
                   <>
-                    <path d={`M ${cx - outerThroatHalf + margin} ${throatTopY + 10} L ${cx - 6} ${crossY} L ${cx - innerNeckHalf - 2} ${crossY + 4} L ${cx - outerThroatHalf + margin + 4} ${throatTopY + 16} Z`} fill="#000000" />
-                    <path d={`M ${cx - innerNeckHalf - 2} ${crossY - 4} L ${cx - 6} ${crossY} L ${cx - margin} ${throatBottomY - 10} L ${cx - innerNeckHalf - 2} ${throatBottomY - 14} Z`} fill="#000000" />
-                    <path d={`M ${cx + outerThroatHalf - margin} ${throatTopY + 10} L ${cx + 6} ${crossY} L ${cx + innerNeckHalf + 2} ${crossY + 4} L ${cx + outerThroatHalf - margin - 4} ${throatTopY + 16} Z`} fill="#000000" />
-                    <path d={`M ${cx + innerNeckHalf + 2} ${crossY - 4} L ${cx + 6} ${crossY} L ${cx + margin} ${throatBottomY - 10} L ${cx + innerNeckHalf + 2} ${throatBottomY - 14} Z`} fill="#000000" />
+                    <path d={`M ${cx + topL} ${throatTopY + 14} L ${cx - strutHalfW} ${crossY} L ${cx + topL + 14} ${throatTopY + 20} Z`} fill="#000000" />
+                    <path d={`M ${cx + topR} ${throatTopY + 14} L ${cx + strutHalfW} ${crossY} L ${cx + topR - 14} ${throatTopY + 20} Z`} fill="#000000" />
+                    <path d={`M ${cx + botL} ${throatBottomY - 8} L ${cx - strutHalfW} ${crossY} L ${cx + botL + 4} ${throatBottomY - 16} Z`} fill="#000000" />
+                    <path d={`M ${cx + botR} ${throatBottomY - 8} L ${cx + strutHalfW} ${crossY} L ${cx + botR - 4} ${throatBottomY - 16} Z`} fill="#000000" />
                   </>
                 );
               })()}
