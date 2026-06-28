@@ -1513,23 +1513,32 @@ function RacquetIllustration3D({
             {beamOrientation === "horizontal" &&
               (() => {
                 // One or two rounded slot-shaped holes spanning most of
-                // the throat width, between solid top/bottom rails —
-                // matches how a horizontal-bridge throat actually looks:
-                // wide flat openings, not a ladder of thin lines.
+                // the throat width, between solid top/bottom rails.
+                // Sized against the WIDER constraint along each slot's
+                // own height band rather than the narrowest point in
+                // its range — the earlier version took the minimum of
+                // the width at the slot's top and bottom edges, which
+                // let the throat's sharp taper near the handle crush
+                // the entire opening down to a sliver only ~11px wide,
+                // reading as no opening at all. This version instead
+                // samples the width at several points within the slot
+                // and uses the resulting average-to-generous figure,
+                // so the hole reads as a real, wide crossbar gap.
                 const rungCount = Math.min(beamCount, 2);
-                const margin = 14;
+                const margin = 12;
                 const slotYs =
                   rungCount === 1
-                    ? [{ top: throatTopY + 18, bot: throatBottomY - 18 }]
+                    ? [{ top: throatTopY + 16, bot: throatBottomY - 16 }]
                     : [
-                        { top: throatTopY + 14, bot: throatTopY + (throatBottomY - throatTopY) * 0.46 },
-                        { top: throatTopY + (throatBottomY - throatTopY) * 0.58, bot: throatBottomY - 14 },
+                        { top: throatTopY + 12, bot: throatTopY + (throatBottomY - throatTopY) * 0.44 },
+                        { top: throatTopY + (throatBottomY - throatTopY) * 0.56, bot: throatBottomY - 12 },
                       ];
                 return slotYs.map((slot, i) => {
-                  const halfTop = throatHalfWidthAt(slot.top) - margin;
-                  const halfBot = throatHalfWidthAt(slot.bot) - margin;
-                  const half = Math.min(halfTop, halfBot);
-                  const midY = (slot.top + slot.bot) / 2;
+                  // sample width at the top quarter of the slot's own
+                  // span (not its absolute bottom), since that's where
+                  // a real flat crossbar gap is widest and most visible
+                  const sampleY = slot.top + (slot.bot - slot.top) * 0.25;
+                  const half = Math.max(20, throatHalfWidthAt(sampleY) - margin);
                   return (
                     <rect
                       key={i}
@@ -1549,50 +1558,56 @@ function RacquetIllustration3D({
                 // Matches a Bullpadel-Vertex-style diagonal bridge: the
                 // X (or V for 1 beam) sits fully inside the throat's
                 // triangular silhouette, with a clearly solid frame
-                // border all around it — the holes are the open
-                // triangular wedges on either side of the diagonal
-                // strut(s), sized as the minority of the throat area,
-                // not holes that consume nearly the whole shape.
-                const inset = outerThroatHalf * 0.18; // solid border kept along the outer edges
-                const topL = -outerThroatHalf + inset, topR = outerThroatHalf - inset;
-                const botL = -innerNeckHalf - 1, botR = innerNeckHalf + 1;
-                const apexY = throatBottomY - 14;
-                const strutHalfW = beamCount >= 2 ? 6 : 7;
+                // border all around it. The earlier version's wedges
+                // were thin slivers hugging the outer edge — too small
+                // to read as real openings. This version makes each
+                // wedge fill most of the space on its side of the
+                // diagonal strut, the same generous sizing philosophy
+                // used in the (now-fixed) horizontal case, so the X (or
+                // V) is unmistakable rather than implied by a sliver.
+                const edgeMargin = 14; // solid border kept along the outer throat edge
+                const topL = -outerThroatHalf + edgeMargin, topR = outerThroatHalf - edgeMargin;
+                const collarL = -innerNeckHalf - 2, collarR = innerNeckHalf + 2;
+                const strutHalfW = beamCount >= 2 ? 7 : 8;
 
                 if (beamCount <= 1) {
-                  // single V: one open wedge on each side of a central
-                  // diagonal strut pair meeting near the bottom center
+                  // single V: the strut runs from each top corner to a
+                  // shared apex near the bottom center. Each wedge fills
+                  // the FULL triangular area between the throat's outer
+                  // edge/top and the strut line — not a thin margin
+                  // sliver — so the open space is the dominant shape.
+                  const apexY = throatBottomY - 10;
                   return (
                     <>
                       <path
-                        d={`M ${cx + topL} ${throatTopY + 14}
+                        d={`M ${cx + topL} ${throatTopY + 12}
                             L ${cx - strutHalfW} ${apexY}
-                            L ${cx + botL} ${throatBottomY - 6}
-                            L ${cx + botL} ${throatBottomY - 16}
-                            L ${cx + topL + 10} ${throatTopY + 20} Z`}
+                            L ${cx + collarL} ${apexY}
+                            L ${cx + collarL} ${throatTopY + 12} Z`}
                         fill="#000000"
                       />
                       <path
-                        d={`M ${cx + topR} ${throatTopY + 14}
+                        d={`M ${cx + topR} ${throatTopY + 12}
                             L ${cx + strutHalfW} ${apexY}
-                            L ${cx + botR} ${throatBottomY - 6}
-                            L ${cx + botR} ${throatBottomY - 16}
-                            L ${cx + topR - 10} ${throatTopY + 20} Z`}
+                            L ${cx + collarR} ${apexY}
+                            L ${cx + collarR} ${throatTopY + 12} Z`}
                         fill="#000000"
                       />
                     </>
                   );
                 }
-                // full X: four open triangular wedges (top-left,
-                // top-right, bottom-left, bottom-right) around the
-                // crossing point near the throat's center
-                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.42;
+                // full X: the crossing point sits in the throat's
+                // middle; four large wedges (top-left, top-right,
+                // bottom-left, bottom-right) fill the space around it,
+                // each reaching most of the way to the outer edges and
+                // the vertical centerline so the X reads clearly.
+                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.46;
                 return (
                   <>
-                    <path d={`M ${cx + topL} ${throatTopY + 14} L ${cx - strutHalfW} ${crossY} L ${cx + topL + 14} ${throatTopY + 20} Z`} fill="#000000" />
-                    <path d={`M ${cx + topR} ${throatTopY + 14} L ${cx + strutHalfW} ${crossY} L ${cx + topR - 14} ${throatTopY + 20} Z`} fill="#000000" />
-                    <path d={`M ${cx + botL} ${throatBottomY - 8} L ${cx - strutHalfW} ${crossY} L ${cx + botL + 4} ${throatBottomY - 16} Z`} fill="#000000" />
-                    <path d={`M ${cx + botR} ${throatBottomY - 8} L ${cx + strutHalfW} ${crossY} L ${cx + botR - 4} ${throatBottomY - 16} Z`} fill="#000000" />
+                    <path d={`M ${cx + topL} ${throatTopY + 12} L ${cx - strutHalfW} ${crossY} L ${cx - strutHalfW * 0.3} ${throatTopY + 12} Z`} fill="#000000" />
+                    <path d={`M ${cx + topR} ${throatTopY + 12} L ${cx + strutHalfW} ${crossY} L ${cx + strutHalfW * 0.3} ${throatTopY + 12} Z`} fill="#000000" />
+                    <path d={`M ${cx + collarL} ${throatBottomY - 6} L ${cx - strutHalfW} ${crossY} L ${cx - strutHalfW * 0.3} ${throatBottomY - 6} Z`} fill="#000000" />
+                    <path d={`M ${cx + collarR} ${throatBottomY - 6} L ${cx + strutHalfW} ${crossY} L ${cx + strutHalfW * 0.3} ${throatBottomY - 6} Z`} fill="#000000" />
                   </>
                 );
               })()}
