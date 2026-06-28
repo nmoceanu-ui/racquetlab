@@ -1448,9 +1448,9 @@ function RacquetIllustration3D({
             cutouts via mask below, not a same-color shape drawn on top)
             show real contrast against it. */}
         <linearGradient id="throatGrad3d" x1="20%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%" stopColor={frameObj?.id === "fiberglass-frame" ? "#F0ECDE" : frameObj?.id === "basalt-frame" ? "#9C7654" : "#82828C"} />
-          <stop offset="55%" stopColor={frameObj?.id === "fiberglass-frame" ? "#D4CEB8" : frameObj?.id === "basalt-frame" ? "#7A5638" : "#5C5C68"} />
-          <stop offset="100%" stopColor={frameObj?.id === "fiberglass-frame" ? "#B8B098" : frameObj?.id === "basalt-frame" ? "#5C4028" : "#3E3E48"} />
+          <stop offset="0%" stopColor={frameObj?.id === "fiberglass-frame" ? "#F0ECDE" : frameObj?.id === "basalt-frame" ? "#C49A6E" : "#A8A8B2"} />
+          <stop offset="55%" stopColor={frameObj?.id === "fiberglass-frame" ? "#D4CEB8" : frameObj?.id === "basalt-frame" ? "#A07850" : "#86868E"} />
+          <stop offset="100%" stopColor={frameObj?.id === "fiberglass-frame" ? "#B8B098" : frameObj?.id === "basalt-frame" ? "#825E3A" : "#68686E"} />
         </linearGradient>
 
         <linearGradient id="handleGrad3d" x1="8%" y1="0%" x2="92%" y2="0%">
@@ -1469,26 +1469,6 @@ function RacquetIllustration3D({
         <filter id="shadowBlur3d" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" />
         </filter>
-      </defs>
-
-      {/* THROAT — one continuous, solid piece of the SAME dark glossy
-          frame material as the head's rim (url(#rimGrad3d), not a
-          separate lighter color) — this is the key correction from the
-          previous version: real open-bridge throats are one molded
-          piece with holes punched through it, not a different-colored
-          set of struts floating in front of a dark background. The
-          beam openings are real cut-through holes (rendered via mask,
-          revealing the actual dark card background behind), small and
-          rounded like the reference photo's punched throat holes —
-          not light-colored bars. */}
-      <path
-        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
-        fill="url(#rimGrad3d)"
-        mask={bridgeId === "open" ? "url(#throatHoleMask)" : undefined}
-      />
-
-      {bridgeId === "open" && (
-        <defs>
           <mask id="throatHoleMask">
             <rect x={cx - outerThroatHalf - 20} y={throatTopY - 10} width={(outerThroatHalf + 20) * 2} height={throatHeight + 20} fill="#FFFFFF" />
 
@@ -1617,8 +1597,24 @@ function RacquetIllustration3D({
                 );
               })()}
           </mask>
-        </defs>
-      )}
+      </defs>
+
+      {/* THROAT — one continuous, solid piece of the SAME dark glossy
+          frame material as the head's rim (url(#rimGrad3d), not a
+          separate lighter color) — this is the key correction from the
+          previous version: real open-bridge throats are one molded
+          piece with holes punched through it, not a different-colored
+          set of struts floating in front of a dark background. The
+          beam openings are real cut-through holes (rendered via mask,
+          revealing the actual dark card background behind), small and
+          rounded like the reference photo's punched throat holes —
+          not light-colored bars. */}
+      <path
+        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+        fill="url(#rimGrad3d)"
+        mask={bridgeId === "open" ? "url(#throatHoleMask)" : undefined}
+      />
+
 
       {/* HEAD — drawn on top of the throat's upper overlap, so the join
           is fully hidden; no rotation, so it stays perfectly aligned
