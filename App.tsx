@@ -1469,167 +1469,121 @@ function RacquetIllustration3D({
         <filter id="shadowBlur3d" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" />
         </filter>
-          <mask id="throatHoleMask">
-            <rect x={cx - outerThroatHalf - 20} y={throatTopY - 10} width={(outerThroatHalf + 20) * 2} height={throatHeight + 20} fill="#FFFFFF" />
-
-            {beamOrientation === "vertical" &&
-              (() => {
-                // N-1 openings between N struts. Sizing is margin-based:
-                // each opening is inset by a FRACTION of its available
-                // span (not a fixed pixel amount subtracted from a huge
-                // span), so the solid throat frame always remains the
-                // visual majority — a real open-bridge throat is mostly
-                // solid material with modest triangular holes cut into
-                // it, not mostly hole with a sliver of frame left.
-                const positions = strutOffsets.length > 0 ? strutOffsets : [0];
-                const strutTopPos = (offset: number) => (offset / innerNeckHalf) * outerThroatHalf;
-                const topBoundaries = [-outerThroatHalf, ...positions.map(strutTopPos), outerThroatHalf];
-                const botBoundaries = [-innerNeckHalf, ...positions, innerNeckHalf];
-                const holes = [];
-                for (let i = 0; i < topBoundaries.length - 1; i++) {
-                  const leftTop = topBoundaries[i], rightTop = topBoundaries[i + 1];
-                  const leftBot = botBoundaries[i], rightBot = botBoundaries[i + 1];
-                  const spanTop = rightTop - leftTop, spanBot = rightBot - leftBot;
-                  // hole occupies 45% of the available span at top,
-                  // tapering to 35% at bottom — leaves a clearly solid
-                  // frame border on every side at every height
-                  const wTop = spanTop * 0.225, wBot = Math.max(3, spanBot * 0.175);
-                  const cxTop = (leftTop + rightTop) / 2, cxBot = (leftBot + rightBot) / 2;
-                  holes.push(
-                    <path
-                      key={i}
-                      d={`M ${cx + cxTop - wTop} ${throatTopY + 16}
-                          Q ${cx + cxTop - wTop * 0.7} ${throatMidY}, ${cx + cxBot - wBot} ${throatBottomY - 10}
-                          Q ${cx + cxBot} ${throatBottomY - 4}, ${cx + cxBot + wBot} ${throatBottomY - 10}
-                          Q ${cx + cxTop + wTop * 0.7} ${throatMidY}, ${cx + cxTop + wTop} ${throatTopY + 16}
-                          Q ${cx + cxTop} ${throatTopY + 8}, ${cx + cxTop - wTop} ${throatTopY + 16} Z`}
-                      fill="#000000"
-                    />
-                  );
-                }
-                return holes;
-              })()}
-
-            {beamOrientation === "horizontal" &&
-              (() => {
-                // One or two rounded slot-shaped holes spanning most of
-                // the throat width, between solid top/bottom rails.
-                // Sized against the WIDER constraint along each slot's
-                // own height band rather than the narrowest point in
-                // its range — the earlier version took the minimum of
-                // the width at the slot's top and bottom edges, which
-                // let the throat's sharp taper near the handle crush
-                // the entire opening down to a sliver only ~11px wide,
-                // reading as no opening at all. This version instead
-                // samples the width at several points within the slot
-                // and uses the resulting average-to-generous figure,
-                // so the hole reads as a real, wide crossbar gap.
-                const rungCount = Math.min(beamCount, 2);
-                const margin = 12;
-                const slotYs =
-                  rungCount === 1
-                    ? [{ top: throatTopY + 16, bot: throatBottomY - 16 }]
-                    : [
-                        { top: throatTopY + 12, bot: throatTopY + (throatBottomY - throatTopY) * 0.44 },
-                        { top: throatTopY + (throatBottomY - throatTopY) * 0.56, bot: throatBottomY - 12 },
-                      ];
-                return slotYs.map((slot, i) => {
-                  // sample width at the top quarter of the slot's own
-                  // span (not its absolute bottom), since that's where
-                  // a real flat crossbar gap is widest and most visible
-                  const sampleY = slot.top + (slot.bot - slot.top) * 0.25;
-                  const half = Math.max(20, throatHalfWidthAt(sampleY) - margin);
-                  return (
-                    <rect
-                      key={i}
-                      x={cx - half}
-                      y={slot.top}
-                      width={half * 2}
-                      height={slot.bot - slot.top}
-                      rx={Math.min(10, (slot.bot - slot.top) / 2)}
-                      fill="#000000"
-                    />
-                  );
-                });
-              })()}
-
-            {beamOrientation === "diagonal" &&
-              (() => {
-                // Matches a Bullpadel-Vertex-style diagonal bridge: the
-                // X (or V for 1 beam) sits fully inside the throat's
-                // triangular silhouette, with a clearly solid frame
-                // border all around it. The earlier version's wedges
-                // were thin slivers hugging the outer edge — too small
-                // to read as real openings. This version makes each
-                // wedge fill most of the space on its side of the
-                // diagonal strut, the same generous sizing philosophy
-                // used in the (now-fixed) horizontal case, so the X (or
-                // V) is unmistakable rather than implied by a sliver.
-                const edgeMargin = 14; // solid border kept along the outer throat edge
-                const topL = -outerThroatHalf + edgeMargin, topR = outerThroatHalf - edgeMargin;
-                const collarL = -innerNeckHalf - 2, collarR = innerNeckHalf + 2;
-                const strutHalfW = beamCount >= 2 ? 7 : 8;
-
-                if (beamCount <= 1) {
-                  // single V: the strut runs from each top corner to a
-                  // shared apex near the bottom center. Each wedge fills
-                  // the FULL triangular area between the throat's outer
-                  // edge/top and the strut line — not a thin margin
-                  // sliver — so the open space is the dominant shape.
-                  const apexY = throatBottomY - 10;
-                  return (
-                    <>
-                      <path
-                        d={`M ${cx + topL} ${throatTopY + 12}
-                            L ${cx - strutHalfW} ${apexY}
-                            L ${cx + collarL} ${apexY}
-                            L ${cx + collarL} ${throatTopY + 12} Z`}
-                        fill="#000000"
-                      />
-                      <path
-                        d={`M ${cx + topR} ${throatTopY + 12}
-                            L ${cx + strutHalfW} ${apexY}
-                            L ${cx + collarR} ${apexY}
-                            L ${cx + collarR} ${throatTopY + 12} Z`}
-                        fill="#000000"
-                      />
-                    </>
-                  );
-                }
-                // full X: the crossing point sits in the throat's
-                // middle; four large wedges (top-left, top-right,
-                // bottom-left, bottom-right) fill the space around it,
-                // each reaching most of the way to the outer edges and
-                // the vertical centerline so the X reads clearly.
-                const crossY = throatTopY + (throatBottomY - throatTopY) * 0.46;
-                return (
-                  <>
-                    <path d={`M ${cx + topL} ${throatTopY + 12} L ${cx - strutHalfW} ${crossY} L ${cx - strutHalfW * 0.3} ${throatTopY + 12} Z`} fill="#000000" />
-                    <path d={`M ${cx + topR} ${throatTopY + 12} L ${cx + strutHalfW} ${crossY} L ${cx + strutHalfW * 0.3} ${throatTopY + 12} Z`} fill="#000000" />
-                    <path d={`M ${cx + collarL} ${throatBottomY - 6} L ${cx - strutHalfW} ${crossY} L ${cx - strutHalfW * 0.3} ${throatBottomY - 6} Z`} fill="#000000" />
-                    <path d={`M ${cx + collarR} ${throatBottomY - 6} L ${cx + strutHalfW} ${crossY} L ${cx + strutHalfW * 0.3} ${throatBottomY - 6} Z`} fill="#000000" />
-                  </>
-                );
-              })()}
-          </mask>
       </defs>
 
-      {/* THROAT — one continuous, solid piece of the SAME dark glossy
-          frame material as the head's rim (url(#rimGrad3d), not a
-          separate lighter color) — this is the key correction from the
-          previous version: real open-bridge throats are one molded
-          piece with holes punched through it, not a different-colored
-          set of struts floating in front of a dark background. The
-          beam openings are real cut-through holes (rendered via mask,
-          revealing the actual dark card background behind), small and
-          rounded like the reference photo's punched throat holes —
-          not light-colored bars. */}
-      <path
-        d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
-        fill="url(#rimGrad3d)"
-        mask={bridgeId === "open" ? "url(#throatHoleMask)" : undefined}
-      />
+      {/* THROAT — built without any SVG <mask>, since masks have a real,
+          documented history of inconsistent cross-browser support
+          (notably Safari) and couldn't be verified rendering correctly
+          in this environment. Instead, every beam configuration is
+          built from explicit POSITIVE shapes only: solid outer rails
+          plus the actual strut/crossbar pieces, with the open gaps
+          being genuine empty space (nothing drawn there at all) rather
+          than a cutout from a larger solid shape. This is the same
+          technique already proven to work for the flat spec-view
+          diagram's throat rendering. */}
+      {bridgeId === "closed" ? (
+        <path
+          d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
+          fill="url(#throatGrad3d)"
+        />
+      ) : (
+        <g>
+          {/* Outer side rails — present for every open-bridge
+              orientation, since a real open throat always keeps a
+              visible solid rim along its outer edges. */}
+          <path
+            d={`M ${cx - outerThroatHalf} ${throatTopY + 4} L ${cx - outerThroatHalf + 11} ${throatTopY + 4} L ${cx - innerNeckHalf + 4} ${throatBottomY - 2} L ${cx - innerNeckHalf} ${throatBottomY - 2} Z`}
+            fill="url(#throatGrad3d)"
+          />
+          <path
+            d={`M ${cx + outerThroatHalf} ${throatTopY + 4} L ${cx + outerThroatHalf - 11} ${throatTopY + 4} L ${cx + innerNeckHalf - 4} ${throatBottomY - 2} L ${cx + innerNeckHalf} ${throatBottomY - 2} Z`}
+            fill="url(#throatGrad3d)"
+          />
 
+          {beamOrientation === "vertical" &&
+            (() => {
+              // Each strut is its own solid tapering quadrilateral,
+              // running from the throat's top edge to the handle
+              // collar — the gaps between them are simply the absence
+              // of any shape, guaranteed visible regardless of mask
+              // support.
+              const positions = strutOffsets.length > 0 ? strutOffsets : [0];
+              const strutTopPos = (offset: number) => (offset / innerNeckHalf) * outerThroatHalf;
+              const strutHalfW = 7;
+              return positions.map((offset, i) => {
+                const topCenter = strutTopPos(offset);
+                return (
+                  <path
+                    key={i}
+                    d={`M ${cx + topCenter - strutHalfW} ${throatTopY + 4}
+                        L ${cx + topCenter + strutHalfW} ${throatTopY + 4}
+                        L ${cx + offset + strutHalfW * 0.6} ${throatBottomY - 2}
+                        L ${cx + offset - strutHalfW * 0.6} ${throatBottomY - 2} Z`}
+                    fill="url(#throatGrad3d)"
+                  />
+                );
+              });
+            })()}
+
+          {beamOrientation === "horizontal" &&
+            (() => {
+              // One or two solid rounded crossbars spanning between the
+              // side rails — real positive shapes with real empty space
+              // above/below/between them.
+              const rungCount = Math.min(beamCount, 2);
+              const rungHeight = 12;
+              const rungYs =
+                rungCount === 1
+                  ? [throatTopY + (throatBottomY - throatTopY) * 0.5]
+                  : [throatTopY + (throatBottomY - throatTopY) * 0.32, throatTopY + (throatBottomY - throatTopY) * 0.68];
+              return rungYs.map((y, i) => {
+                const half = throatHalfWidthAt(y) - 11;
+                return (
+                  <rect
+                    key={i}
+                    x={cx - half}
+                    y={y - rungHeight / 2}
+                    width={half * 2}
+                    height={rungHeight}
+                    rx={rungHeight * 0.3}
+                    fill="url(#throatGrad3d)"
+                  />
+                );
+              });
+            })()}
+
+          {beamOrientation === "diagonal" &&
+            (() => {
+              // 1 beam: a solid V — two diagonal struts meeting at a
+              // shared apex near the bottom center, each a real strip
+              // of positive material. 2 beams: the same V, PLUS a
+              // second crossing pair of strips forming the other
+              // diagonal of the X — genuinely more material drawn, not
+              // a re-angled version of the same two pieces, so 1-beam
+              // and 2-beam read as clearly different structures.
+              const strutHalfW = 7;
+              const apexY = throatBottomY - 6;
+              const topL = -outerThroatHalf + 11, topR = outerThroatHalf - 11;
+              const diagonalStrut = (fromX: number, toX: number, toY: number) => {
+                const dx = toX - fromX, dy = toY - (throatTopY + 4);
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = (-dy / len) * strutHalfW, ny = (dx / len) * strutHalfW;
+                return `M ${cx + fromX + nx} ${throatTopY + 4 + ny} L ${cx + fromX - nx} ${throatTopY + 4 - ny} L ${cx + toX - nx} ${toY - ny} L ${cx + toX + nx} ${toY + ny} Z`;
+              };
+              const struts = [
+                <path key="v-left" d={diagonalStrut(topL, 0, apexY)} fill="url(#throatGrad3d)" />,
+                <path key="v-right" d={diagonalStrut(topR, 0, apexY)} fill="url(#throatGrad3d)" />,
+              ];
+              if (beamCount >= 2) {
+                struts.push(
+                  <path key="x-left" d={diagonalStrut(topL, innerNeckHalf, throatBottomY - 8)} fill="url(#throatGrad3d)" />,
+                  <path key="x-right" d={diagonalStrut(topR, -innerNeckHalf, throatBottomY - 8)} fill="url(#throatGrad3d)" />
+                );
+              }
+              return struts;
+            })()}
+        </g>
+      )}
 
       {/* HEAD — drawn on top of the throat's upper overlap, so the join
           is fully hidden; no rotation, so it stays perfectly aligned
