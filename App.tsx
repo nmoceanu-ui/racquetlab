@@ -83,10 +83,10 @@ const BEAM_ORIENTATIONS = [
 
 const HOLE_COUNT_OPTIONS = [
   { id: "none", label: "None (0)", rows: 0, cols: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
-  { id: "minimal", label: "Minimal (1–10)", rows: 3, cols: 3, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
-  { id: "low", label: "Low (~30–40)", rows: 5, cols: 4, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
-  { id: "standard", label: "Standard (~50–60)", rows: 7, cols: 5, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
-  { id: "high", label: "High (~70–80)", rows: 8, cols: 6, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
+  { id: "minimal", label: "Minimal (1–10)", rows: 4, cols: 4, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
+  { id: "low", label: "Low (~30–40)", rows: 8, cols: 6, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
+  { id: "standard", label: "Standard (~50–60)", rows: 9, cols: 9, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
+  { id: "high", label: "High (~70–80)", rows: 11, cols: 10, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
 ];
 
 const HOLE_PATTERN_STYLES = [
@@ -1511,6 +1511,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
 function RacquetIllustration3D({
   shape,
   faceId,
+  surfaceId,
   gripShapeId,
   holeCountId,
   holePatternId,
@@ -1862,6 +1863,59 @@ function RacquetIllustration3D({
           with the throat beneath it */}
       <path d={outline} fill="url(#rimGrad3d)" />
       <path d={innerOutline} fill="url(#faceGrad3d)" />
+
+      {/* Surface texture — kept deliberately subtle (low opacity, small
+          scale) since the face already carries the weave-free smooth
+          finish, holes, and lighting; the goal is a felt difference on
+          close inspection, not a busy/competing pattern. Smooth adds
+          nothing (the material finish alone IS the smooth look).
+          Rough gets a fine, randomly-scattered stipple — matching its
+          real sandpaper-like grain. 3D-print gets a sparse, REGULAR
+          grid of small raised dot-clusters — visually distinct from
+          rough's randomness, matching real 3D-printed grip patterns'
+          deliberate geometric repetition rather than random grain. */}
+      {surfaceId === "rough" && (
+        <g clipPath="url(#illustInnerClip)" opacity="0.22">
+          {(() => {
+            let seed = 11;
+            const rand = () => {
+              seed = (seed * 9301 + 49297) % 233280;
+              return seed / 233280;
+            };
+            const dots = [];
+            for (let i = 0; i < 90; i++) {
+              dots.push({
+                x: cx - halfWidth + rand() * halfWidth * 2,
+                y: topY + rand() * headHeight,
+                r: 0.6 + rand() * 0.7,
+              });
+            }
+            return dots.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#000000" />);
+          })()}
+        </g>
+      )}
+      {surfaceId === "3d-print" && (
+        <g clipPath="url(#illustInnerClip)" opacity="0.28">
+          {(() => {
+            const spacing = 24;
+            const dots = [];
+            let row = 0;
+            for (let y = topY - spacing; y < topY + headHeight + spacing; y += spacing) {
+              const xOffset = row % 2 === 0 ? 0 : spacing / 2;
+              for (let x = cx - halfWidth - spacing; x < cx + halfWidth + spacing; x += spacing) {
+                dots.push({ x: x + xOffset, y });
+              }
+              row++;
+            }
+            return dots.map((d, i) => (
+              <g key={i}>
+                <circle cx={d.x} cy={d.y + 0.4} r={1.8} fill="#000000" opacity="0.5" />
+                <circle cx={d.x} cy={d.y} r={1.8} fill="#FFFFFF" opacity="0.6" />
+              </g>
+            ));
+          })()}
+        </g>
+      )}
 
       <path
         d={outline}
@@ -2688,7 +2742,7 @@ export default function App() {
 
   // Shared diagram props
   const diagramProps = {
-    shape: shapeId, faceId, gripShapeId, holeCountId, holePatternId,
+    shape: shapeId, faceId, surfaceId, gripShapeId, holeCountId, holePatternId,
     lengthMm, widthMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
     bridgeId, beamCount, beamOrientation,
   };
@@ -2935,7 +2989,7 @@ export default function App() {
             <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Swingweight</div>
               <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.swingweightKgCm2.toFixed(1)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·cm²</span></div>
-              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt. Higher = harder to swing, more mass behind contact.</div>
+              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt — depends on WHERE mass sits, not just how much there is. A heavier but head-light build can score lower here than a lighter, head-heavy one. Same units and pivot convention used for tennis swingweight; there's no meaningful way to express this in grams, since it isn't a mass measurement.</div>
             </div>
             <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Twistweight</div>
