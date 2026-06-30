@@ -3124,7 +3124,7 @@ export default function App() {
 
       {/* ── HEADER ── */}
       <header style={{ background:"rgba(8,11,16,0.95)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,0.07)", position:"sticky", top:0, zIndex:50 }}>
-        <div style={{ maxWidth:1024, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+        <div className="header-row" style={{ maxWidth:1024, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             {/* Racquet icon */}
             <div style={{ width:32, height:32, borderRadius:8, background:"rgba(174,251,0,0.15)", border:"1px solid rgba(174,251,0,0.25)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -3140,6 +3140,7 @@ export default function App() {
             </div>
           </div>
 
+          <div className="header-actions" style={{ display:"flex", alignItems:"center", gap:10 }}>
           {/* Save & Share */}
           <button
             onClick={handleSaveBuild}
@@ -3184,6 +3185,7 @@ export default function App() {
               }}>{m.icon}{m.label}</button>
             ))}
           </div>
+          </div>
         </div>
       </header>
 
@@ -3220,6 +3222,8 @@ export default function App() {
               .left-col { display: none !important; }
               .right-col { display: none !important; }
               .desktop-right-tabs { display: none !important; }
+              .header-row { flex-wrap: wrap; }
+              .header-actions { flex: 1 1 100%; justify-content: space-between; margin-top: 8px; }
             }
           `}</style>
 
@@ -3254,7 +3258,7 @@ export default function App() {
 
       {/* ── MOBILE LAYOUT ── */}
       {/* Mobile main scroll area */}
-      <div className="mobile-only main-scroll" style={{ paddingBottom:"calc(72px + env(safe-area-inset-bottom))", overflowY:"auto" }}>
+      <div className="mobile-only main-scroll" style={{ paddingBottom:"calc(72px + env(safe-area-inset-bottom))", WebkitOverflowScrolling:"touch" }}>
         {tabContent[activeTab]}
       </div>
 
@@ -3265,6 +3269,7 @@ export default function App() {
         borderTop:"1px solid rgba(255,255,255,0.08)",
         paddingBottom:"env(safe-area-inset-bottom)",
         display:"flex",
+        transform:"translateZ(0)", WebkitTransform:"translateZ(0)", willChange:"transform",
       }}>
         {tabDefs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} style={{
