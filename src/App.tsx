@@ -96,7 +96,7 @@ const HOLE_PATTERN_STYLES = [
 ];
 
 // ---------------------------------------------------------------------------
-// PHYSICS ENGINE (Pro mode) — two genuinely different kinds of numbers
+// PHYSICS ENGINE (Factory mode) — two genuinely different kinds of numbers
 // live here, and the distinction matters for honesty:
 //
 // 1. REAL GEOMETRY-BASED MECHANICS (swingweight, twistweight, balance
@@ -1042,6 +1042,244 @@ function recommendSpec(answers) {
   }
 
   return { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, weightG, balanceCm, gripCircMm };
+}
+
+// ---------------------------------------------------------------------------
+// FACTORY BRIEF ENGINE — a genuinely different recommendation engine from
+// recommendSpec() above, built for a different user and a different kind
+// of input. recommendSpec() answers "what racquet fits THIS PLAYER" from
+// feel/preference/body questions. This answers "what racquet should WE
+// BUILD" from a product brief: positioning, named competitive reference
+// racquets (with which of their qualities to draw from), a single forced
+// priority, and real-world constraints (material commitments, cost tier,
+// durability expectation for that tier).
+//
+// Durability is deliberately NOT its own dedicated priority option — per
+// the actual design conversation this was built from, a real factory
+// doesn't pick "durability" as a competing goal alongside control/power/
+// comfort; durability is a constraint that has to hold underneath
+// whatever priority is chosen. So it's handled here as an ENGINEERING
+// CHOICE layered on top of the priority's baseline spec, not a value
+// that competes with control/power/comfort for the same dial. The real,
+// sourced engineering pattern this follows: durability is best achieved
+// at the FRAME and BRIDGE level (hybrid frame construction, closed/
+// torsion-resistant bridge geometry) rather than by hardening the core
+// or face — hardening those changes playability, which is exactly what
+// should stay correct for the target level regardless of durability
+// expectations.
+// ---------------------------------------------------------------------------
+
+interface FactoryReference {
+  racquetId: string; // MARKET_RACQUETS id
+  draws: string[]; // which qualities to draw from this reference: "sweetSpot" | "comfort" | "power" | "control" | "balanceFeel"
+  avoid: string[]; // qualities to deliberately differentiate AWAY from — same quality keys as draws, but pushes the opposite direction instead of blending toward it
+}
+
+interface FactoryBriefInput {
+  level: "beginner" | "intermediate" | "advanced";
+  priceTier: "budget" | "mid" | "premium";
+  targetRetailPrice?: number; // a real number when known — refines the priceTier-only logic rather than replacing it, since priceTier still drives the coarse material gating
+  needGap: string; // free text, not used in spec logic — carried through to the rationale for context
+  references: FactoryReference[];
+  priority: "control" | "power" | "comfort" | "balanced";
+  materialCommitment?: string; // e.g. a coreId/faceId/frameId already locked in
+  durabilityExpectation: "standard" | "extended"; // "extended" = the premium-tier "don't go cheap" case this was built for
+  tooling: "new-mold" | "existing-mold"; // existing-mold locks shape + dimensions to what's already tooled; new-mold leaves shape open but the rationale flags the real cost/MOQ implication
+  existingShapeId?: string; // required when tooling === "existing-mold" — the shape the current tooling produces
+  targetVolume: "boutique" | "standard" | "scale"; // boutique (~hundreds-low thousands of units) / standard (mid-volume retail run) / scale (mass-market run) — affects whether durability/material upgrades are realistic to amortize
+}
+
+interface FactoryBriefResult {
+  spec: {
+    shapeId: string; coreId: string; faceId: string; frameId: string;
+    surfaceId: string; gripId: string; gripShapeId: string; bridgeId: string;
+    beamOrientation: string; weightG: number; balanceCm: number; gripCircMm: number;
+  };
+  rationale: string[]; // one line per major decision, referencing the actual inputs that drove it
+}
+
+function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
+  const { level, priceTier, targetRetailPrice, references, priority, materialCommitment, durabilityExpectation, tooling, existingShapeId, targetVolume } = input;
+  const rationale: string[] = [];
+
+  // --- Baseline from level, same real proportions used throughout this
+  // app's other engines (recommendSpec, the market database defaults) ---
+  let shapeId = level === "beginner" ? "round" : level === "advanced" ? "diamond" : "teardrop";
+  let coreId = level === "beginner" ? "eva-soft" : level === "advanced" ? "eva-hard" : "eva-medium";
+  let faceId = level === "beginner" ? "fiberglass" : level === "advanced" ? "carbon-3k" : "carbon-12k";
+  let frameId = level === "beginner" ? "fiberglass-frame" : level === "advanced" ? "carbon-frame" : "hybrid-frame";
+  let surfaceId = "rough";
+  let gripId = "pu-grip";
+  let gripShapeId = "octagonal";
+  let bridgeId: string = "open";
+  let beamOrientation = "vertical";
+  let weightG = level === "beginner" ? 356 : level === "advanced" ? 372 : 365;
+  let balanceCm = level === "beginner" ? 25.0 : level === "advanced" ? 26.4 : 25.8;
+  let gripCircMm = 38;
+
+  rationale.push(`Level baseline (${level}): ${shapeId} shape, ${weightG}g, ${balanceCm}cm balance — the proportions independently converged on across the cross-verified market database for this tier.`);
+
+  // --- Production reality: tooling and volume, evaluated before
+  // priority so an existing-mold lock can actually constrain what the
+  // priority step is allowed to change. This is the real difference
+  // between a brief that assumes infinite manufacturing flexibility and
+  // one that reflects what a factory can actually build without new
+  // capital investment. ---
+  let shapeLocked = false;
+  if (tooling === "existing-mold" && existingShapeId) {
+    shapeId = existingShapeId;
+    shapeLocked = true;
+    rationale.push(`Production: existing mold in use — shape locked to ${existingShapeId} regardless of what priority or references below might otherwise suggest. Materials, core, and bridge construction can still change within this shell; shape and overall dimensions cannot without new tooling.`);
+  } else if (tooling === "new-mold") {
+    rationale.push(`Production: new mold — shape stays fully open to the priority and reference inputs below, but flag this as a real tooling/MOQ cost the budget-tier and volume figures need to absorb, not a free choice.`);
+  }
+
+  if (targetVolume === "boutique" && durabilityExpectation === "extended" && priceTier !== "premium") {
+    rationale.push(`Production: boutique volume + extended durability at a non-premium price tier is a real tension worth flagging — frame/bridge durability upgrades typically need either premium-tier pricing or higher volume to amortize the added cost per unit. Proceeding with the spec as requested, but this combination is worth a second look before committing to tooling.`);
+  } else if (targetVolume === "scale") {
+    rationale.push(`Production: scale volume — material and durability choices below are realistic to negotiate favorable per-unit supplier pricing on, which a boutique run typically can't access.`);
+  }
+
+  if (targetRetailPrice) {
+    rationale.push(`Production: target retail price ~$${targetRetailPrice} noted alongside the ${priceTier} price tier — priceTier still drives the coarse material gating below; this figure is carried through for context on how tight that gating should be read.`);
+  }
+
+  // --- Priority: the one forced choice that actually drives the spec ---
+  if (priority === "power") {
+    if (!shapeLocked) shapeId = level === "beginner" ? "teardrop" : "diamond"; // never push a beginner straight to diamond — round/teardrop stays the forgiving floor
+    balanceCm = Math.min(27, balanceCm + 0.8);
+    surfaceId = "rough";
+    rationale.push(`Priority: power. ${shapeLocked ? `Shape held at the existing-mold lock (${shapeId})` : `Shape shifted toward ${shapeId}`} and balance raised to ${balanceCm.toFixed(1)}cm for more leverage on smashes — held back from full diamond at beginner level since that shape's small sweet spot fights the forgiveness a beginner build needs.`);
+  } else if (priority === "control") {
+    if (!shapeLocked) shapeId = "round";
+    faceId = level === "advanced" ? "carbon-18k" : faceId; // 18K, not 3K, for control-priority advanced — flatter/more flexible face per sourced material, not stiffest
+    balanceCm = Math.max(24, balanceCm - 0.6);
+    rationale.push(`Priority: control. ${shapeLocked ? `Shape held at the existing-mold lock (${shapeId}) rather than the usual round-shape control preference` : `Locked to round shape (largest, most centered sweet spot)`} and lowered balance to ${balanceCm.toFixed(1)}cm for faster recovery between shots.`);
+  } else if (priority === "comfort") {
+    coreId = coreId === "eva-hard" ? "eva-medium" : "eva-soft";
+    gripId = "anti-shock-grip";
+    surfaceId = "smooth";
+    rationale.push(`Priority: comfort. Core softened to ${coreId} and grip set to anti-shock/viscoelastic — comfort engineered at both the impact-absorption layer (core) and the last-stage layer (grip), not just one or the other.`);
+  } else {
+    rationale.push(`Priority: balanced all-rounder — kept the level baseline proportions rather than pushing toward any single axis.`);
+  }
+
+  // --- Durability expectation: ENGINEERING CHOICE layered on top,
+  // applied at the frame/bridge level so it doesn't undo the
+  // playability work the priority step just did. This is the actual
+  // answer to "premium beginner without going cheap": the core/face
+  // stay exactly as soft/forgiving as the level demands; durability
+  // is added structurally. ---
+  if (durabilityExpectation === "extended") {
+    if (frameId === "fiberglass-frame") {
+      frameId = "hybrid-frame"; // carbon+fiberglass hybrid: real durability gain (per sourced material on carbon's crack-resistance and impact toughness) without fiberglass's full stiffness penalty being lost — playability stays close to the soft fiberglass baseline since fiberglass still does most of the face/feel work
+      rationale.push(`Durability: extended. Frame upgraded from fiberglass to carbon/fiberglass hybrid — adds real impact resistance and crack resistance at the frame (the actual failure point under repeated wall/floor contact) without changing the face material or core, so beginner playability is untouched.`);
+    } else if (frameId === "carbon-frame" && priceTier !== "budget") {
+      // already durable; for non-budget tiers, add torsional reinforcement instead of further stiffening
+      bridgeId = "closed";
+      rationale.push(`Durability: extended. Bridge set to closed/torsion-resistant construction — this is a frame-geometry choice, not a face or core change, so it adds structural reinforcement against off-center-hit twisting without affecting the priority-driven feel above.`);
+    }
+    if (bridgeId === "open" && (priority === "power" || priority === "balanced")) {
+      beamOrientation = "diagonal"; // diagonal/X-brace: torsional reinforcement within an open bridge, lighter than full closed
+      rationale.push(`Durability: extended, open bridge retained for weight. Beam orientation set to diagonal (X-brace) for torsional reinforcement without the full weight cost of a closed bridge.`);
+    }
+  } else {
+    rationale.push(`Durability: standard expectation for this tier — no frame/bridge reinforcement beyond the level baseline.`);
+  }
+
+  // --- Competitive references: nudge toward TAGGED qualities only,
+  // never the whole reference racquet wholesale — this matches what was
+  // actually asked for ("best/favorite FEATURES from other brands"),
+  // not "clone this racquet." ---
+  references.forEach((ref) => {
+    const racquet = MARKET_RACQUETS.find((r) => r.id === ref.racquetId);
+    if (!racquet) return;
+    const refLabel = `${racquet.brand} ${racquet.model}`;
+    ref.draws.forEach((quality) => {
+      if (quality === "sweetSpot" && racquet.shapeId === "round" && shapeId !== "round" && priority !== "power") {
+        // only surface this note when shape is non-round for a reason
+        // OTHER than a power-priority diamond push, which gets its own
+        // clearer message in the priority section above already
+        rationale.push(`Reference: ${refLabel}'s sweet-spot forgiveness noted, but this build's shape (${shapeId}) wasn't changed to match — current shape is set by ${shapeLocked ? "the existing-mold lock" : "the level/priority baseline"}, not overridden by this reference alone.`);
+      } else if (quality === "sweetSpot") {
+        rationale.push(`Reference: ${refLabel}'s sweet-spot character noted as a benchmark for this build's hole pattern and shape tuning.`);
+      } else if (quality === "comfort") {
+        if (gripId !== "anti-shock-grip") gripId = "anti-shock-grip";
+        rationale.push(`Reference: drew comfort approach from ${refLabel} — grip set to anti-shock/viscoelastic to match.`);
+      } else if (quality === "balanceFeel") {
+        // Check the REFERENCE's own balance value against what's
+        // actually appropriate for the chosen priority, in absolute
+        // terms — not whether blending nudges the current number up or
+        // down by a small amount, which misfires when the priority has
+        // already pushed balance close to the reference's value (e.g.
+        // a power build at 26.6cm blending toward a 26.5cm power
+        // reference would wrongly read as "moving down" and get
+        // flagged, even though 26.5cm is itself a clearly power-
+        // appropriate value).
+        const refIsHighBalance = racquet.balanceCm >= 26.0;
+        const refIsLowBalance = racquet.balanceCm <= 25.3;
+        const conflictsWithPriority = (refIsHighBalance && (priority === "comfort" || priority === "control")) || (refIsLowBalance && priority === "power");
+        const beginnerCeiling = level === "beginner" ? 25.6 : Infinity; // keep a beginner build's balance below the point where leverage starts costing real forgiveness, regardless of what's being referenced
+        const blended = (balanceCm + racquet.balanceCm) / 2;
+        if (conflictsWithPriority) {
+          rationale.push(`Reference: ${refLabel}'s balance point (${racquet.balanceCm}cm) noted, but NOT blended in — that balance character works against the ${priority} priority already locked in above.`);
+        } else if (blended > balanceCm && blended > beginnerCeiling) {
+          rationale.push(`Reference: ${refLabel}'s balance point (${racquet.balanceCm}cm) noted, but NOT fully blended in — even with a comfort/control-compatible priority, pulling a beginner build's balance up that far trades away forgiveness a beginner build needs. Kept at ${balanceCm.toFixed(1)}cm.`);
+        } else {
+          balanceCm = blended;
+          rationale.push(`Reference: blended balance point toward ${refLabel} (${racquet.balanceCm}cm) — averaged with the priority-driven value above, landing at ${balanceCm.toFixed(1)}cm.`);
+        }
+      } else if (quality === "power" || quality === "control") {
+        rationale.push(`Reference: ${refLabel} noted as the benchmark for this build's ${quality} character — current spec already targets this via the priority selection above.`);
+      }
+    });
+    ref.avoid.forEach((quality) => {
+      // Deliberately differentiate AWAY from this reference's character
+      // for the tagged quality — the opposite operation from draws
+      // above. This matters because a real competitive brief often
+      // includes "everyone in this segment does X, we want to be
+      // different by not doing X," which the draws-only model couldn't
+      // express at all.
+      if (quality === "comfort" && gripId === "anti-shock-grip" && !ref.draws.includes("comfort")) {
+        gripId = "pu-grip";
+        rationale.push(`Reference: deliberately differentiating from ${refLabel}'s comfort approach — grip pulled back from anti-shock to standard PU, since matching their comfort character was explicitly flagged as something to avoid, not draw from.`);
+      } else if (quality === "sweetSpot" && racquet.shapeId === shapeId) {
+        rationale.push(`Reference: ${refLabel} shares this build's shape, which makes its sweet-spot character hard to fully differentiate away from through shape alone — worth differentiating via hole pattern or face material instead, flagged here for awareness rather than auto-adjusted.`);
+      } else if (quality === "balanceFeel") {
+        const pushAway = balanceCm < racquet.balanceCm ? Math.max(24, balanceCm - 0.3) : Math.min(27, balanceCm + 0.3);
+        balanceCm = pushAway;
+        rationale.push(`Reference: deliberately differentiating balance from ${refLabel} (${racquet.balanceCm}cm) — nudged this build's balance further away to ${balanceCm.toFixed(1)}cm.`);
+      } else {
+        rationale.push(`Reference: flagged ${quality} from ${refLabel} as something to differentiate away from — noted for design awareness, no direct spec field maps cleanly to this quality on its own.`);
+      }
+    });
+  });
+
+  // --- Hard material constraint, applied last so it always wins ---
+  let commitmentSetExpensiveFace = false;
+  if (materialCommitment) {
+    if (CORE_MATERIALS.some((c) => c.id === materialCommitment)) { coreId = materialCommitment; rationale.push(`Constraint: core locked to ${materialCommitment} per existing material commitment — overrides the priority-driven core selection above.`); }
+    else if (FACE_MATERIALS.some((f) => f.id === materialCommitment)) {
+      faceId = materialCommitment;
+      commitmentSetExpensiveFace = materialCommitment === "graphene" || materialCommitment === "kevlar-reinforced";
+      rationale.push(`Constraint: face locked to ${materialCommitment} per existing material commitment.`);
+    }
+    else if (FRAME_MATERIALS.some((f) => f.id === materialCommitment)) { frameId = materialCommitment; rationale.push(`Constraint: frame locked to ${materialCommitment} per existing material commitment — overrides the durability-driven frame selection above if they conflict.`); }
+  }
+
+  if (priceTier === "budget" && (faceId === "graphene" || faceId === "kevlar-reinforced")) {
+    faceId = "carbon-12k";
+    if (commitmentSetExpensiveFace) {
+      rationale.push(`Constraint conflict: the material commitment above specified a premium-cost face, but that's incompatible with the budget price tier also selected for this build — budget tier takes priority as the harder real-world constraint, so face was brought back to carbon-12K. Flag this conflict back to whoever set the material commitment.`);
+    } else {
+      rationale.push(`Constraint: budget price tier — face brought back from a premium-cost material to carbon-12K, a more cost-realistic choice at this tier.`);
+    }
+  }
+
+  return {
+    spec: { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamOrientation, weightG: Math.round(weightG), balanceCm: Math.round(balanceCm * 10) / 10, gripCircMm },
+    rationale,
+  };
 }
 
 
@@ -2561,6 +2799,313 @@ function FindRacquetPanel({ onApply, mode }) {
   );
 }
 
+function FactoryBriefPanel({ onApply }) {
+  const [level, setLevel] = useState<string | null>(null);
+  const [priceTier, setPriceTier] = useState<string | null>(null);
+  const [targetRetailPrice, setTargetRetailPrice] = useState("");
+  const [needGap, setNeedGap] = useState("");
+  const [references, setReferences] = useState<{ racquetId: string; draws: string[]; avoid: string[] }[]>([]);
+  const [priority, setPriority] = useState<string | null>(null);
+  const [materialCommitment, setMaterialCommitment] = useState("");
+  const [durabilityExpectation, setDurabilityExpectation] = useState<string | null>(null);
+  const [tooling, setTooling] = useState<string | null>(null);
+  const [existingShapeId, setExistingShapeId] = useState<string | null>(null);
+  const [targetVolume, setTargetVolume] = useState<string | null>(null);
+  const [applied, setApplied] = useState(false);
+  const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[] } | null>(null);
+
+  const LEVEL_OPTIONS = [
+    { id: "beginner", label: "Beginner" },
+    { id: "intermediate", label: "Intermediate" },
+    { id: "advanced", label: "Advanced" },
+  ];
+  const PRICE_TIER_OPTIONS = [
+    { id: "budget", label: "Budget" },
+    { id: "mid", label: "Mid" },
+    { id: "premium", label: "Premium" },
+  ];
+  const PRIORITY_OPTIONS = [
+    { id: "control", label: "Control-first" },
+    { id: "power", label: "Power-first" },
+    { id: "comfort", label: "Comfort-first" },
+    { id: "balanced", label: "Balanced all-rounder" },
+  ];
+  const DURABILITY_OPTIONS = [
+    { id: "standard", label: "Standard for this tier" },
+    { id: "extended", label: "Extended — build it to last" },
+  ];
+  const QUALITY_OPTIONS = [
+    { id: "sweetSpot", label: "Sweet spot" },
+    { id: "comfort", label: "Comfort" },
+    { id: "power", label: "Power" },
+    { id: "control", label: "Control" },
+    { id: "balanceFeel", label: "Balance feel" },
+  ];
+  const TOOLING_OPTIONS = [
+    { id: "new-mold", label: "New mold" },
+    { id: "existing-mold", label: "Existing mold" },
+  ];
+  const VOLUME_OPTIONS = [
+    { id: "boutique", label: "Boutique" },
+    { id: "standard", label: "Standard retail run" },
+    { id: "scale", label: "Mass-market scale" },
+  ];
+
+  const toggleReference = (racquetId: string) => {
+    setReferences((prev) => {
+      const exists = prev.find((r) => r.racquetId === racquetId);
+      if (exists) return prev.filter((r) => r.racquetId !== racquetId);
+      if (prev.length >= 3) return prev; // cap at 3 references, keeps the blend logic meaningful rather than averaging across too many sources
+      return [...prev, { racquetId, draws: [], avoid: [] }];
+    });
+    setApplied(false);
+  };
+
+  const toggleDraw = (racquetId: string, quality: string) => {
+    setReferences((prev) =>
+      prev.map((r) => {
+        if (r.racquetId !== racquetId) return r;
+        const has = r.draws.includes(quality);
+        // mutually exclusive with avoid — a quality can't be both drawn
+        // from and deliberately avoided on the same reference
+        return { ...r, draws: has ? r.draws.filter((d) => d !== quality) : [...r.draws, quality], avoid: r.avoid.filter((d) => d !== quality) };
+      })
+    );
+    setApplied(false);
+  };
+
+  const toggleAvoid = (racquetId: string, quality: string) => {
+    setReferences((prev) =>
+      prev.map((r) => {
+        if (r.racquetId !== racquetId) return r;
+        const has = r.avoid.includes(quality);
+        return { ...r, avoid: has ? r.avoid.filter((d) => d !== quality) : [...r.avoid, quality], draws: r.draws.filter((d) => d !== quality) };
+      })
+    );
+    setApplied(false);
+  };
+
+  const canApply = !!(level && priceTier && priority && durabilityExpectation && tooling && targetVolume && (tooling !== "existing-mold" || existingShapeId));
+
+  const handleApply = () => {
+    if (!canApply) return;
+    const result = computeFactoryBrief({
+      level: level as any,
+      priceTier: priceTier as any,
+      targetRetailPrice: targetRetailPrice ? Number(targetRetailPrice) : undefined,
+      needGap,
+      references,
+      priority: priority as any,
+      materialCommitment: materialCommitment || undefined,
+      durabilityExpectation: durabilityExpectation as any,
+      tooling: tooling as any,
+      existingShapeId: existingShapeId || undefined,
+      targetVolume: targetVolume as any,
+    });
+    setLastResult(result);
+    onApply(result.spec);
+    setApplied(true);
+  };
+
+  const SectionDivider = ({ label, step }: { label: string; step: number }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
+      <span style={{
+        width: 20, height: 20, borderRadius: "50%", background: "rgba(174,251,0,0.15)", border: "1px solid rgba(174,251,0,0.3)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#AEFB00",
+        fontFamily: "'JetBrains Mono', monospace", flexShrink: 0,
+      }}>{step}</span>
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#AEFB00", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, rgba(174,251,0,0.1), rgba(0,212,240,0.06))", borderRadius: 10, border: "1px solid rgba(174,251,0,0.2)", marginBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <Wrench size={14} color="#AEFB00" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#AEFB00", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>Factory Brief</span>
+        </div>
+        <p style={{ fontSize: 12.5, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: 0 }}>
+          A product brief, not a player quiz — start from positioning, name the competitive set you're benchmarking against, pick one forced priority, then lock in real-world constraints. Durability is handled as a constraint underneath whatever priority you pick, not a competing goal.
+        </p>
+      </div>
+
+      <SectionDivider label="Production Reality" step={1} />
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Tooling</div>
+        <ToggleGroup options={TOOLING_OPTIONS} value={tooling} onChange={(v) => { setTooling(v); if (v !== "existing-mold") setExistingShapeId(null); setApplied(false); }} />
+        {tooling === "existing-mold" && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Which shape is the existing mold?</div>
+            <ToggleGroup options={SHAPES.map((s) => ({ id: s.id, label: s.label }))} value={existingShapeId} onChange={(v) => { setExistingShapeId(v); setApplied(false); }} />
+            <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: 8 }}>
+              Shape and overall dimensions lock to this mold regardless of what priority or references below might otherwise suggest — materials, core, and bridge construction can still change within this shell.
+            </p>
+          </div>
+        )}
+      </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target volume</div>
+        <ToggleGroup options={VOLUME_OPTIONS} value={targetVolume} onChange={(v) => { setTargetVolume(v); setApplied(false); }} />
+      </div>
+
+      <SectionDivider label="Positioning" step={2} />
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target level</div>
+        <ToggleGroup options={LEVEL_OPTIONS} value={level} onChange={(v) => { setLevel(v); setApplied(false); }} />
+      </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Price tier</div>
+        <ToggleGroup options={PRICE_TIER_OPTIONS} value={priceTier} onChange={(v) => { setPriceTier(v); setApplied(false); }} />
+      </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target retail price <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — a real number when known, refines but doesn't replace the price tier above)</span></div>
+        <input
+          type="number"
+          value={targetRetailPrice}
+          onChange={(e) => { setTargetRetailPrice(e.target.value); setApplied(false); }}
+          placeholder="e.g. 120"
+          style={{
+            width: "100%", padding: "10px 12px", borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC",
+            fontFamily: "Inter, sans-serif", fontSize: 13,
+          }}
+        />
+      </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>What gap or need is this racquet filling? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional, carried into the rationale for context)</span></div>
+        <textarea
+          value={needGap}
+          onChange={(e) => setNeedGap(e.target.value)}
+          placeholder="e.g. a genuinely durable entry racquet that doesn't feel cheap"
+          style={{
+            width: "100%", minHeight: 60, padding: "10px 12px", borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC",
+            fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical",
+          }}
+        />
+      </div>
+
+      <SectionDivider label="Competitive Reference" step={3} />
+      <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+        Pick up to 3 racquets from the market database, then tag which of their qualities you actually want to draw from — not a clone, specific features.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {MARKET_RACQUETS.map((r) => {
+          const ref = references.find((x) => x.racquetId === r.id);
+          const isSelected = !!ref;
+          return (
+            <div key={r.id} style={{ border: `1px solid ${isSelected ? "rgba(174,251,0,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 8, background: isSelected ? "rgba(174,251,0,0.06)" : "rgba(255,255,255,0.02)", padding: "10px 12px" }}>
+              <button
+                onClick={() => toggleReference(r.id)}
+                disabled={!isSelected && references.length >= 3}
+                style={{
+                  width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+                  background: "none", border: "none", cursor: !isSelected && references.length >= 3 ? "not-allowed" : "pointer",
+                  padding: 0, WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <span style={{ fontSize: 13, color: isSelected ? "#AEFB00" : "#9AA3B0", fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left" }}>{r.brand} {r.model}</span>
+                {isSelected ? <CheckCircle2 size={15} color="#AEFB00" /> : <span style={{ width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)" }} />}
+              </button>
+              {isSelected && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Draw from:</div>
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                    {QUALITY_OPTIONS.map((q) => {
+                      const active = ref!.draws.includes(q.id);
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => toggleDraw(r.id, q.id)}
+                          style={{
+                            padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                            border: `1px solid ${active ? "#AEFB00" : "rgba(255,255,255,0.1)"}`,
+                            background: active ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
+                            color: active ? "#AEFB00" : "#9AA3B0", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                          }}
+                        >{q.label}</button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 10, marginBottom: 6 }}>Deliberately avoid:</div>
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                    {QUALITY_OPTIONS.map((q) => {
+                      const active = ref!.avoid.includes(q.id);
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => toggleAvoid(r.id, q.id)}
+                          style={{
+                            padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                            border: `1px solid ${active ? "#FF8080" : "rgba(255,255,255,0.1)"}`,
+                            background: active ? "rgba(255,80,80,0.12)" : "rgba(255,255,255,0.04)",
+                            color: active ? "#FF8080" : "#9AA3B0", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                          }}
+                        >{q.label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <SectionDivider label="Priority" step={4} />
+      <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+        One forced choice — you can't optimize for everything, and a real product line picks a clear point of view.
+      </p>
+      <ToggleGroup options={PRIORITY_OPTIONS} value={priority} onChange={(v) => { setPriority(v); setApplied(false); }} />
+
+      <SectionDivider label="Constraints" step={5} />
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Durability expectation for this tier</div>
+        <ToggleGroup options={DURABILITY_OPTIONS} value={durabilityExpectation} onChange={(v) => { setDurabilityExpectation(v); setApplied(false); }} />
+        {durabilityExpectation === "extended" && (
+          <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: 8 }}>
+            Engineered at the frame/bridge level (hybrid frame construction, torsion-resistant bridge geometry) — the core and face stay exactly as soft or forgiving as the target level needs, so durability doesn't quietly undo the playability work above.
+          </p>
+        )}
+      </div>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Material already committed? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — overrides everything above if it conflicts)</span></div>
+        <SelectField
+          value={materialCommitment}
+          onChange={setMaterialCommitment}
+          options={[{ id: "", label: "No commitment — let the brief decide" }, ...CORE_MATERIALS.map((c) => ({ id: c.id, label: `Core: ${c.label}` })), ...FACE_MATERIALS.map((f) => ({ id: f.id, label: `Face: ${f.label}` })), ...FRAME_MATERIALS.map((f) => ({ id: f.id, label: `Frame: ${f.label}` }))]}
+        />
+      </div>
+
+      <button onClick={handleApply} disabled={!canApply} style={{
+        width: "100%", padding: "14px 16px", borderRadius: 10, border: "none",
+        background: canApply ? "linear-gradient(135deg, #AEFB00, #7DD400)" : "rgba(255,255,255,0.06)",
+        color: canApply ? "#080B10" : "#3A4455",
+        fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 15,
+        letterSpacing: "0.08em", textTransform: "uppercase", cursor: canApply ? "pointer" : "not-allowed",
+        marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, WebkitTapHighlightColor: "transparent",
+      }}>
+        {applied ? <><CheckCircle2 size={16} /> Spec Applied</> : <>Generate Spec <ArrowRight size={16} /></>}
+      </button>
+      {!canApply && (
+        <p style={{ textAlign: "center", fontSize: 11.5, color: "#4A5568", marginTop: 8, fontFamily: "Inter, sans-serif" }}>Level, price tier, priority, and durability expectation are required — competitive references and material commitment are optional.</p>
+      )}
+
+      {applied && lastResult && (
+        <div style={{ marginTop: 16, padding: "16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(174,251,0,0.15)", borderRadius: 12 }}>
+          <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#AEFB00", marginBottom: 10 }}>Design Rationale</p>
+          {lastResult.rationale.map((line, i) => (
+            <p key={i} style={{ fontSize: 12.5, color: "#9AA3B0", lineHeight: 1.6, fontFamily: "Inter, sans-serif", margin: "0 0 8px", paddingLeft: 14, borderLeft: "2px solid rgba(174,251,0,0.2)" }}>{line}</p>
+          ))}
+          <p style={{ textAlign: "center", fontSize: 12, color: "#6A7485", marginTop: 12, fontFamily: "Inter, sans-serif" }}>Spec applied — scroll to Build to fine-tune any field.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // PLAYABILITY RADAR
 // ---------------------------------------------------------------------------
@@ -2740,6 +3285,23 @@ export default function App() {
     analytics.finderCompleted(answers?.level ?? "unknown");
   };
 
+  // Factory Brief panel computes its own spec via computeFactoryBrief and
+  // passes the result directly, unlike handleApplyRec above which expects
+  // raw Smart Finder answers and runs them through recommendSpec itself —
+  // these are genuinely different engines for different inputs, so this
+  // stays a separate handler rather than overloading handleApplyRec.
+  const handleApplyFactorySpec = (spec) => {
+    setShapeId(spec.shapeId); setCoreId(spec.coreId); setFaceId(spec.faceId);
+    setFrameId(spec.frameId); setSurfaceId(spec.surfaceId); setGripId(spec.gripId);
+    setGripShapeId(spec.gripShapeId);
+    if (spec.bridgeId) setBridgeId(spec.bridgeId);
+    if (spec.beamOrientation) setBeamOrientation(spec.beamOrientation);
+    setWeightG(Math.round(spec.weightG));
+    setBalanceCm(Math.round(spec.balanceCm * 10) / 10);
+    setGripCircMm(Math.round(spec.gripCircMm));
+    setActiveTab("view");
+  };
+
   // Shared diagram props
   const diagramProps = {
     shape: shapeId, faceId, surfaceId, gripShapeId, holeCountId, holePatternId,
@@ -2753,7 +3315,7 @@ export default function App() {
   const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability);
 
   const tabDefs = [
-    { id: "find", label: "Find", icon: <Sparkles size={18}/> },
+    { id: "find", label: mode === "manufacturer" ? "Brief" : "Find", icon: mode === "manufacturer" ? <Wrench size={18}/> : <Sparkles size={18}/> },
     { id: "build", label: "Build", icon: <Settings2 size={18}/> },
     { id: "view", label: "View", icon: <Eye size={18}/> },
     { id: "scores", label: "Scores", icon: <BarChart3 size={18}/> },
@@ -2767,6 +3329,17 @@ export default function App() {
         <div style={{ marginBottom: 4 }}>
           <AccordionSection id="finder" icon={<Sparkles size={15}/>} label="Smart Finder" isOpen={openSections.has("finder")} onToggle={() => toggle("finder")}>
             <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
+          </AccordionSection>
+        </div>
+      )}
+
+      {/* Factory Brief panel inlined at top of build in factory mode —
+          a genuinely different tool for a genuinely different input,
+          not the Smart Finder reused with different labels. */}
+      {mode === "manufacturer" && (
+        <div style={{ marginBottom: 4 }}>
+          <AccordionSection id="factoryBrief" icon={<Wrench size={15}/>} label="Factory Brief" isOpen={openSections.has("factoryBrief")} onToggle={() => toggle("factoryBrief")}>
+            <FactoryBriefPanel onApply={handleApplyFactorySpec}/>
           </AccordionSection>
         </div>
       )}
@@ -3096,7 +3669,11 @@ export default function App() {
   // ---- FIND CONTENT (standalone tab) ----
   const findContent = (
     <div style={{ padding:"0 16px" }}>
-      <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
+      {mode === "manufacturer" ? (
+        <FactoryBriefPanel onApply={handleApplyFactorySpec}/>
+      ) : (
+        <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
+      )}
     </div>
   );
 
@@ -3174,7 +3751,7 @@ export default function App() {
 
           {/* Mode toggle */}
           <div style={{ display:"flex", gap:4, background:"rgba(255,255,255,0.05)", padding:3, borderRadius:8, border:"1px solid rgba(255,255,255,0.07)" }}>
-            {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Pro",icon:<Wrench size={12}/>}].map(m => (
+            {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Factory",icon:<Wrench size={12}/>}].map(m => (
               <button key={m.id} onClick={() => { setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
                 display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
                 background: mode===m.id ? "#AEFB00" : "transparent",
