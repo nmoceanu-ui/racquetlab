@@ -1358,72 +1358,88 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
       rationale.push(`Priority: control within locked ${shapeId}. ${shapeNote}`);
     }
     balanceCm = shapeId === "diamond" ? Math.max(24.5, balanceCm - 1.4) : Math.max(24.0, balanceCm - 0.6);
-    // Core: hybrid-core is a genuine option here — soft-zone near the throat
-    // for comfort, firmer toward the hitting zone for feedback. More nuanced
-    // than pure eva-soft for an advanced control player.
     coreId = level === "advanced" ? "hybrid-core" : "eva-soft";
-    // Face: 18K for per-panel flex (larger flat-weave = more flex in bending)
+    // Face: 18K for per-panel flex — not gated by level for control, since
+    // an intermediate control player benefits as much as an advanced one
     faceId = level === "beginner" ? "fiberglass" : "carbon-18k";
-    // Frame: basalt-frame is a real option for control — better thermal
-    // stability than fiberglass, slightly stiffer, but more vibration-friendly
-    // than full carbon. Underused commercially, genuinely different story.
-    frameId = level === "advanced" ? "basalt-frame" : frameId;
+    // Frame: basalt for advanced control; hybrid for others (better damping than fiberglass-only)
+    frameId = level === "advanced" ? "basalt-frame" : "hybrid-frame";
     if (!surfaceLocked) surfaceId = "smooth";
-    rationale.push(`Control levers: balance to ${balanceCm.toFixed(1)}cm${shapeId === "diamond" ? " (primary taming lever for diamond — pulls mass centroid back, widens effective sweet spot)" : ""}; core ${coreId}${level === "advanced" ? " (hybrid dual-density: soft at throat for comfort, firmer toward hitting zone for feedback — more nuanced than pure soft EVA)" : " (maximum dwell)"}; face ${faceId}${level !== "beginner" ? " (18K flat-weave gives more per-panel flex than fine 3K, despite the market treating K-count as a stiffness number)" : ""}${level === "advanced" ? `; frame basalt (volcanic-fiber — better thermal stability than fiberglass, less vibration than carbon, a genuinely differentiated construction story almost no padel brand uses)` : ""}${!surfaceLocked ? "; surface smooth" : ""}.`);
+    rationale.push(`Control levers: balance to ${balanceCm.toFixed(1)}cm${shapeId === "diamond" ? " (primary taming lever for diamond)" : ""}; core ${coreId}; face ${faceId} (18K flat-weave per-panel flex); frame ${frameId}${!surfaceLocked ? "; surface smooth" : ""}.`);
 
   } else if (priority === "power") {
     if (!shapeLocked) {
       shapeId = level === "beginner" ? "teardrop" : "diamond";
-      rationale.push(`Priority: power. Shape set to ${shapeId} — ${level === "beginner" ? "teardrop at beginner level; diamond's small sweet spot costs more in consistency than it gains in raw power" : "diamond maximizes swing inertia for smash leverage"}.`);
+      rationale.push(`Priority: power. Shape set to ${shapeId} — ${level === "beginner" ? "teardrop at beginner level; diamond's small sweet spot costs more in consistency than it gains" : "diamond maximizes swing inertia for smash leverage"}.`);
     } else {
-      rationale.push(`Priority: power within locked ${shapeId}. ${shapeId !== "diamond" ? `Maximum power config for ${shapeId}. Diamond would extract more, but shape is locked.` : "Diamond already maximizes geometry; materials extract the rest."}`);
+      rationale.push(`Priority: power within locked ${shapeId}. ${shapeId !== "diamond" ? `Maximum power config for ${shapeId}. Diamond would extract more but shape is locked.` : "Diamond already maximizes geometry; materials extract the rest."}`);
     }
     balanceCm = Math.min(27.0, balanceCm + 0.8);
+    // Core: hard EVA for advanced/intermediate power; medium for beginners
+    // (pure hard EVA on a beginner build trades too much comfort for a
+    // player whose swing mechanics don't fully exploit it yet)
     coreId = level === "beginner" ? "eva-medium" : "eva-hard";
-    // Face: graphene is the legitimate premium power face — genuinely stiffer
-    // structural reinforcement, higher energy transfer. Reachable at premium tier.
-    // At mid tier: carbon-3k for advanced, carbon-12k for intermediate.
-    faceId = (level === "advanced" && priceTier === "premium") ? "graphene"
+    // Face: graphene at premium regardless of level — a premium beginner
+    // racquet with graphene face is a real product category, not impossible
+    faceId = priceTier === "premium" ? "graphene"
            : level === "advanced" ? "carbon-3k"
            : "carbon-12k";
-    // Frame: full carbon for power — stiffest, most energy-transmitting
-    frameId = "carbon-frame";
-    // Surface: 3D-print is the highest-spin surface in the data model.
-    // A premium power build should be able to propose this.
-    if (!surfaceLocked) surfaceId = (priceTier === "premium") ? "3d-print" : "rough";
-    rationale.push(`Power levers: balance to ${balanceCm.toFixed(1)}cm; core ${coreId} for immediate energy transfer; face ${faceId}${faceId === "graphene" ? " (graphene-enhanced: genuinely stiffer structural carbon layup, highest energy transfer in the data model — premium tier justifies the cost)" : ""}; frame carbon${!surfaceLocked ? `; surface ${surfaceId}${surfaceId === "3d-print" ? " (3D-printed raised micro-texture — maximum spin ceiling, differentiated from the standard rough-texture market default)" : ""}` : ""}.`);
+    // Frame: carbon for advanced power; hybrid for beginner/intermediate
+    // (full carbon on a beginner power build transmits too much shock for
+    // a player who makes frequent off-center contact)
+    frameId = level === "advanced" ? "carbon-frame" : "hybrid-frame";
+    if (!surfaceLocked) surfaceId = priceTier === "premium" ? "3d-print" : "rough";
+    rationale.push(`Power levers: balance to ${balanceCm.toFixed(1)}cm; core ${coreId}; face ${faceId}${faceId === "graphene" ? " (graphene — premium face, now gated only by price tier not level)" : ""}; frame ${frameId}${!surfaceLocked ? `; surface ${surfaceId}` : ""}.`);
 
   } else if (priority === "comfort") {
     if (!shapeLocked) {
-      rationale.push(`Priority: comfort. Shape kept at ${shapeId} — comfort lives in the damping chain (core→face→frame→grip), not the shape.`);
+      rationale.push(`Priority: comfort. Shape kept at ${shapeId} — comfort lives in the damping chain, not the shape.`);
     } else {
-      rationale.push(`Priority: comfort within locked ${shapeId}. Comfort is shape-independent — fully achievable within any frame geometry through the damping chain.`);
+      rationale.push(`Priority: comfort within locked ${shapeId}. Comfort is shape-independent — achievable within any frame geometry through the damping chain.`);
     }
-    // Core: foam-pe for beginners — softest, most elastic, max vibration
-    // absorption, lower durability is acceptable at recreational use rates.
-    // eva-soft for intermediate/advanced comfort — better durability under
-    // heavier use patterns while still maximizing absorption over eva-medium.
     coreId = level === "beginner" ? "foam-pe" : "eva-soft";
     gripId = "anti-shock-grip";
-    // Surface: comfort priority should default smooth but NOT force it when
-    // explicitly locked — a comfort-priority player who wants rough surface
-    // for spin is making a valid design choice
+    // Grip shape: round handle for comfort — reduces grip tension and
+    // forearm fatigue. Previously this never changed. Now it does.
+    gripShapeId = "grip-round";
     if (!surfaceLocked) surfaceId = "smooth";
-    frameId = frameId === "carbon-frame" ? "hybrid-frame" : frameId;
-    rationale.push(`Comfort levers: core ${coreId}${coreId === "foam-pe" ? " (polyethylene foam — softer and more elastic than EVA, strongest vibration absorption in the data model, underused in padel commercially)" : " (maximum EVA absorption)"}; anti-shock grip (last-stage damping before the hand)${!surfaceLocked ? "; smooth surface (reduced impact variability)" : " surface kept at explicit selection"}; ${frameId === "hybrid-frame" ? "hybrid frame (carbon for strength, fiberglass for flex — meaningfully more vibration-absorbing than pure carbon)" : "frame unchanged (already flex-dominant)"}.`);
+    // Frame: honeycomb-reinforced is the right comfort frame — structural
+    // damping independent of face stiffness. Previously comfort only went
+    // to hybrid-frame (a step down from carbon, but not an innovation).
+    // Honeycomb is the genuinely different, comfort-optimized choice.
+    frameId = priceTier === "premium" ? "honeycomb-reinforced-frame" : frameId === "carbon-frame" ? "hybrid-frame" : frameId;
+    rationale.push(`Comfort levers: core ${coreId}; anti-shock grip; round handle cross-section (reduces grip tension fatigue — standard in tennis, rare in padel); surface smooth; frame ${frameId}${frameId === "honeycomb-reinforced-frame" ? " (structural damping from honeycomb internal geometry — premium comfort engineering, not just material softness)" : " (vibration-absorbing over full carbon)"}.`);
 
   } else {
     if (!shapeLocked) {
-      rationale.push(`Priority: balanced all-rounder. Shape at ${shapeId} (level default). Small improvements across all axes.`);
+      rationale.push(`Priority: balanced all-rounder. Shape at ${shapeId} (level default).`);
     } else {
-      rationale.push(`Priority: balanced all-rounder within locked ${shapeId}. Optimized for all-round performance within this geometry.`);
+      rationale.push(`Priority: balanced all-rounder within locked ${shapeId}.`);
     }
-    // Balanced: hybrid-core is actually ideal here — it's the definition of
-    // "different feel on offense vs defense" which is exactly what balanced means
     coreId = "hybrid-core";
+    // Face: balanced doesn't mean "freeze at level default" — 12K is
+    // genuinely the right mid-point face, but at premium tier, 18K gives
+    // slightly more per-panel nuance without sacrificing power ceiling
+    faceId = priceTier === "premium" ? "carbon-18k" : "carbon-12k";
     if (shapeId === "diamond") balanceCm = Math.max(25.5, balanceCm - 0.5);
-    rationale.push(`Balanced config: hybrid dual-density core (soft at throat for defense/comfort, firmer toward hitting zone for attacking shots — genuinely the most versatile core in the data model); balance at ${balanceCm.toFixed(1)}cm.`);
+    rationale.push(`Balanced config: hybrid-core (soft throat / firmer tip); face ${faceId}; balance at ${balanceCm.toFixed(1)}cm.`);
   }
+
+  // Weight adjustment for innovative frame types — hollow tubular and
+  // honeycomb-reinforced frames weigh meaningfully less than solid foam-fill
+  // frames at the same geometry. Previously weight was frozen at a level
+  // lookup regardless of what frame the engine chose. Now it adjusts.
+  if (frameId === "hollow-tubular-frame") {
+    weightG = Math.max(330, weightG - 15);
+    rationale.push(`Weight adjusted: hollow tubular frame is meaningfully lighter than solid foam-fill construction (same relationship as tennis — hollow tubes weigh less per unit stiffness). Adjusted to ${weightG}g.`);
+  } else if (frameId === "honeycomb-reinforced-frame") {
+    weightG = Math.max(340, weightG - 8);
+    rationale.push(`Weight adjusted: honeycomb-reinforced frame saves ~8g over a solid carbon equivalent at the same structural rigidity. Adjusted to ${weightG}g.`);
+  } else if (frameId === "auxetic-frame") {
+    weightG = Math.max(345, weightG - 5);
+    rationale.push(`Weight adjusted: auxetic fiber geometry allows slightly lighter construction than standard carbon woven at comparable stiffness. Adjusted to ${weightG}g.`);
+  }
+
 
   // -------------------------------------------------------------------------
   // STEP 4 — DURABILITY ENGINEERING (frame/bridge layer, doesn't touch
