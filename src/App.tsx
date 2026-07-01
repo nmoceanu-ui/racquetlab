@@ -3435,9 +3435,22 @@ function FactoryBriefPanel({ onApply }) {
       }}>
         {applied ? <><CheckCircle2 size={16} /> Spec Applied</> : <>Generate Spec <ArrowRight size={16} /></>}
       </button>
-      {!canApply && (
-        <p style={{ textAlign: "center", fontSize: 11.5, color: "#4A5568", marginTop: 8, fontFamily: "Inter, sans-serif" }}>Level, price tier, priority, and durability expectation are required — competitive references and material commitment are optional.</p>
-      )}
+      {!canApply && (() => {
+        const missing: string[] = [];
+        if (!tooling) missing.push("Tooling (step 1 — New mold or Existing mold)");
+        if (tooling === "existing-mold" && !existingMoldRacquetId) missing.push("Which mold / reference racquet (step 1)");
+        if (!targetVolume) missing.push("Target volume (step 1)");
+        if (!level) missing.push("Target level (step 2)");
+        if (!priceTier) missing.push("Price tier (step 2)");
+        if (!priority) missing.push("Priority (step 4)");
+        if (!durabilityExpectation) missing.push("Durability expectation (step 5)");
+        return (
+          <div style={{ marginTop: 10, padding: "10px 12px", background: "rgba(255,100,50,0.08)", border: "1px solid rgba(255,100,50,0.2)", borderRadius: 8 }}>
+            <p style={{ fontSize: 11.5, color: "#C87060", fontFamily: "Inter, sans-serif", margin: "0 0 6px", fontWeight: 600 }}>Still needed before generating:</p>
+            {missing.map((m, i) => <p key={i} style={{ fontSize: 11.5, color: "#9A5848", fontFamily: "Inter, sans-serif", margin: "2px 0" }}>· {m}</p>)}
+          </div>
+        );
+      })()}
 
       {applied && lastResult && (
         <div style={{ marginTop: 16, padding: "16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(174,251,0,0.15)", borderRadius: 12 }}>
