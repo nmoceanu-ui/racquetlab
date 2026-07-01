@@ -64,7 +64,7 @@ const GRIP_MATERIALS = [
 const GRIP_SHAPES = [
   { id: "octagonal", label: "Octagonal (Standard)", sides: 8, note: "Eight flat facets give tactile reference for hand position and racket face angle. The industry-standard handle cross-section." },
   { id: "hexagonal", label: "Hexagonal (Hesacore-type)", sides: 6, note: "Honeycomb-pattern grip over the standard handle. Marketed for a larger contact area against the palm and reduced vibration transfer." },
-  { id: "round", label: "Round Handle", sides: 0, note: "Fully cylindrical cross-section with no flat facets. Allows free rotation in the hand for wrist-driven shots. Unusual in padel — common in squash. Worth exploring for touch-and-spin oriented players." },
+  { id: "grip-round", label: "Round Handle", sides: 0, note: "Fully cylindrical cross-section with no flat facets. Allows free rotation in the hand for wrist-driven shots. Unusual in padel — common in squash. Worth exploring for touch-and-spin oriented players." },
   { id: "anatomical", label: "Anatomical / Contoured", sides: 0, note: "Shaped to conform to the natural curve of a gripping hand. Reduces grip effort and muscle fatigue on long sessions. Standard in some tennis grips, rare in padel." },
 ];
 
@@ -162,6 +162,7 @@ const HOLE_PATTERN_STYLES = [
 function headWidthProfileAt(t: number, shape: string): number {
   if (shape === "round") return Math.sin(t * Math.PI) * 0.92 + 0.06;
   if (shape === "diamond") return t < 0.32 ? (t / 0.32) * 0.94 : 0.94 - ((t - 0.32) / 0.68) * 0.5;
+  if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45; // wider peak and slower taper than standard diamond — the defining geometric difference
   return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
 }
 
@@ -402,12 +403,12 @@ function computeStability({ core, face, frame, bridgeId, beamOrientation, widthM
 }
 
 function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth }) {
-  const baseYFrac = shape === "round" ? 0.56 : shape === "diamond" ? 0.36 : 0.48;
+  const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
   const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
   const y = topY + headHeight * yFrac;
   const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG });
-  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : 40;
+  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : shape === "diamond-wide" ? 38 : 40; // wide diamond gets a bigger base sweet spot radius than standard diamond
   const stabilityScale = 0.78 + stability * 0.5;
   let r = baseR * stabilityScale;
   const holeBoost = { none: 0.85, minimal: 0.9, low: 0.97, standard: 1.0, high: 1.08 }[holeCountId] ?? 1.0;
@@ -1531,7 +1532,7 @@ function explainGripCirc(mm) {
   return "Narrow grip — frees wrist snap for spin and reflex volleys. Tighter squeeze required on power shots.";
 }
 function sweetSpotPosLabel(shapeId, balanceCm) {
-  const sw = shapeId === "round" ? "low / centered" : shapeId === "diamond" ? "high, near the tip" : "mid-face";
+  const sw = shapeId === "round" ? "low / centered" : shapeId === "diamond" ? "high, near the tip" : shapeId === "diamond-wide" ? "high, wider than standard diamond" : "mid-face";
   const bw = balanceCm >= 26.5 ? "shifted up by high balance" : balanceCm < 25.3 ? "pulled down by low balance" : "near shape baseline";
   return `${sw} — ${bw}`;
 }
@@ -1549,6 +1550,11 @@ function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight) {
   if (shape === "diamond") {
     const mid = t + headHeight * 0.32;
     return `M ${cx} ${t+6} C ${cx+ww*0.32} ${t-2}, ${cx+ww*0.78} ${t+headHeight*0.05}, ${cx+ww*0.94} ${mid-headHeight*0.05} C ${cx+ww*1.02} ${mid+headHeight*0.02}, ${cx+ww*0.86} ${mid+headHeight*0.14}, ${cx+ww*0.7} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.7} ${b-headHeight*0.12} C ${cx-ww*0.86} ${mid+headHeight*0.14}, ${cx-ww*1.02} ${mid+headHeight*0.02}, ${cx-ww*0.94} ${mid-headHeight*0.05} C ${cx-ww*0.78} ${t+headHeight*0.05}, ${cx-ww*0.32} ${t-2}, ${cx} ${t+6} Z`;
+  }
+  if (shape === "diamond-wide") {
+    // Same peak position as standard diamond but wider through the shoulders — the defining geometric difference
+    const mid = t + headHeight * 0.30;
+    return `M ${cx} ${t+6} C ${cx+ww*0.38} ${t-2}, ${cx+ww*0.88} ${t+headHeight*0.05}, ${cx+ww*1.0} ${mid-headHeight*0.03} C ${cx+ww*1.06} ${mid+headHeight*0.04}, ${cx+ww*0.92} ${mid+headHeight*0.16}, ${cx+ww*0.72} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.72} ${b-headHeight*0.12} C ${cx-ww*0.92} ${mid+headHeight*0.16}, ${cx-ww*1.06} ${mid+headHeight*0.04}, ${cx-ww*1.0} ${mid-headHeight*0.03} C ${cx-ww*0.88} ${t+headHeight*0.05}, ${cx-ww*0.38} ${t-2}, ${cx} ${t+6} Z`;
   }
   const mid = t + headHeight * 0.42;
   return `M ${cx} ${t} C ${cx+ww*0.86} ${t+2}, ${cx+ww} ${mid-headHeight*0.18}, ${cx+ww*0.95} ${mid} C ${cx+ww*0.88} ${b-headHeight*0.2}, ${cx+ww*0.46} ${b-4}, ${cx} ${b} C ${cx-ww*0.46} ${b-4}, ${cx-ww*0.88} ${b-headHeight*0.2}, ${cx-ww*0.95} ${mid} C ${cx-ww} ${mid-headHeight*0.18}, ${cx-ww*0.86} ${t+2}, ${cx} ${t} Z`;
@@ -1707,7 +1713,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
     for (let r = 0; r < rows; r++) {
       const rowProgress = rows > 1 ? r/(rows-1) : 0.5;
       const fy = topY + headHeight*0.14 + rowProgress*(headHeight*0.66);
-      const shapeTaper = shape === "diamond" ? 1 - Math.abs(rowProgress-0.5)*0.85 : shape === "teardrop" ? 0.6 + rowProgress*0.4 : Math.sin(rowProgress*Math.PI)*0.45 + 0.6;
+      const shapeTaper = (shape === "diamond" || shape === "diamond-wide") ? 1 - Math.abs(rowProgress-0.5)*0.85 : shape === "teardrop" ? 0.6 + rowProgress*0.4 : Math.sin(rowProgress*Math.PI)*0.45 + 0.6;
       const vertBias = holePatternId === "centered" ? 0.55+0.45*(1-Math.abs(rowProgress-0.5)*2) : holePatternId === "edge" ? 0.85+0.15*Math.abs(rowProgress-0.5)*2 : 1;
       const rowHalf = (halfWidth - 26) * Math.min(1, shapeTaper+0.35) * vertBias;
       for (let c = 0; c < cols; c++) {
@@ -2001,6 +2007,7 @@ function RacquetIllustration3D({
   const innerFaceHalfWidthFrac = (t: number) => {
     if (shape === "round") return Math.sin(t * Math.PI) * 0.92 + 0.06;
     if (shape === "diamond") return t < 0.32 ? (t / 0.32) * 0.94 : 0.94 - ((t - 0.32) / 0.68) * 0.5;
+    if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45;
     return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
   };
   const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
@@ -2031,7 +2038,7 @@ function RacquetIllustration3D({
   // Head half-width at its own bottom edge (where the throat taper
   // begins), sampled from the actual outline geometry rather than
   // assumed, so the join always matches the selected shape exactly.
-  const headBottomHalfWidth = halfWidth * (shape === "diamond" ? 0.5 : shape === "teardrop" ? 0.46 : 0.74);
+  const headBottomHalfWidth = halfWidth * ((shape === "diamond" || shape === "diamond-wide") ? 0.5 : shape === "teardrop" ? 0.46 : 0.74);
 
   const throatHalfWidthAt = (y: number) => {
     const t = Math.max(0, Math.min(1, (y - throatTopY) / (throatBottomY - throatTopY)));
@@ -3106,28 +3113,33 @@ function FactoryBriefPanel({ onApply }) {
 
   const handleApply = () => {
     if (!canApply) return;
-    const result = computeFactoryBrief({
-      level: level as any,
-      priceTier: priceTier as any,
-      targetRetailPrice: targetRetailPrice ? Number(targetRetailPrice) : undefined,
-      needGap,
-      whatToFix: whatToFix || undefined,
-      existingMoldRacquetId: existingMoldRacquetId || undefined,
-      explicitShape: explicitShape || undefined,
-      explicitBridge: explicitBridge || undefined,
-      explicitBeamOrientation: explicitBeamOrientation || undefined,
-      explicitSurface: explicitSurface || undefined,
-      references,
-      priority: priority as any,
-      materialCommitment: materialCommitment || undefined,
-      durabilityExpectation: durabilityExpectation as any,
-      tooling: tooling as any,
-      existingShapeId: existingShapeId || undefined,
-      targetVolume: targetVolume as any,
-    });
-    setLastResult(result);
-    onApply(result.spec);
-    setApplied(true);
+    try {
+      const result = computeFactoryBrief({
+        level: level as any,
+        priceTier: priceTier as any,
+        targetRetailPrice: targetRetailPrice ? Number(targetRetailPrice) : undefined,
+        needGap,
+        whatToFix: whatToFix || undefined,
+        existingMoldRacquetId: existingMoldRacquetId || undefined,
+        explicitShape: explicitShape || undefined,
+        explicitBridge: explicitBridge || undefined,
+        explicitBeamOrientation: explicitBeamOrientation || undefined,
+        explicitSurface: explicitSurface || undefined,
+        references,
+        priority: priority as any,
+        materialCommitment: materialCommitment || undefined,
+        durabilityExpectation: durabilityExpectation as any,
+        tooling: tooling as any,
+        existingShapeId: existingShapeId || undefined,
+        targetVolume: targetVolume as any,
+      });
+      setLastResult(result);
+      onApply(result.spec);
+      setApplied(true);
+    } catch (err) {
+      console.error("Factory Brief engine error:", err);
+      setLastResult({ spec: {} as any, rationale: [`Engine error: ${err instanceof Error ? err.message : String(err)} — check console for details.`] });
+    }
   };
 
   const SectionDivider = ({ label, step }: { label: string; step: number }) => (
