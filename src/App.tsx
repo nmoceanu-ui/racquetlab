@@ -1152,7 +1152,7 @@ interface FactoryBriefInput {
   durabilityExpectation: "standard" | "extended"; // "extended" = the premium-tier "don't go cheap" case this was built for
   tooling: "new-mold" | "existing-mold"; // existing-mold locks shape + dimensions to what's already tooled; new-mold leaves shape open but the rationale flags the real cost/MOQ implication
   existingShapeId?: string; // required when tooling === "existing-mold" — the shape the current tooling produces
-  targetVolume: "boutique" | "standard" | "scale"; // boutique (~hundreds-low thousands of units) / standard (mid-volume retail run) / scale (mass-market run) — affects whether durability/material upgrades are realistic to amortize
+  targetVolume: "custom" | "retail"; // custom: spec locked to a specific recipient (pro player, team, academy) — retail: open inventory that needs to make margin at the price point
 }
 
 interface FactoryBriefAlternative {
@@ -1230,16 +1230,7 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
     rationale.push(`Production: retail distribution — building open inventory that needs to make margin at the selected price point. Material choices below should be ones that can be replicated consistently at production quantities.`);
   }
 
-  if (targetRetailPrice) {
-    // This check runs early to flag obvious mismatches, but the real
-    // cost validation at the bottom of the engine runs after all
-    // materials are finalized — so this is an early-warning flag only.
-    const quickOEM = BASE_OEM_COST + (FACE_OEM_COST_DELTA[faceId] ?? 10) + (CORE_OEM_COST_DELTA[coreId] ?? 3) + (FRAME_OEM_COST_DELTA[frameId] ?? 8);
-    const [retailLow, retailHigh] = oemToRetailRange(quickOEM);
-    if (targetRetailPrice < retailLow * 0.8) {
-      rationale.push(`Price tension (early flag): target retail $${targetRetailPrice} is below the realistic floor (~$${retailLow}) for the current level baseline materials. This will be re-evaluated after priority logic sets final materials.`);
-    }
-  }
+  // targetRetailPrice is validated against finalized materials at the end of the engine (Step 7)
 
   // -------------------------------------------------------------------------
   // STEP 2 — SET LEVEL-APPROPRIATE MATERIAL STARTING POINTS
@@ -1503,6 +1494,7 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
     spec: { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId,
             beamOrientation, weightG: Math.round(weightG), balanceCm: Math.round(balanceCm * 10) / 10, gripCircMm },
     rationale,
+    alternatives: [], // populated by computeFactoryBriefWithAlternatives
   };
 }
 
@@ -1593,7 +1585,7 @@ function computeFactoryBriefWithAlternatives(input: FactoryBriefInput): FactoryB
       "structural-innovation": {
         trackLabel: "Structural Innovation",
         philosophy: "Wide-body diamond shape as the geometric approach to balance — retains power ceiling but broader frame increases twistweight and widens the effective sweet spot without requiring soft materials.",
-        overrides: { coreId: "hybrid-core", faceId: "carbon-12k" },
+        overrides: { shapeId: "diamond-wide", coreId: "hybrid-core", faceId: "carbon-12k" },
         extraRationale: "Structural Innovation track: wide-body diamond is a genuine market gap (your own brief document identified this). Broader than standard diamond = higher twistweight = more forgiving on off-center contact, while retaining the shape's power ceiling. Balance achieved through geometry, not material compromise.",
       },
       "damping-chain": {
@@ -1607,8 +1599,10 @@ function computeFactoryBriefWithAlternatives(input: FactoryBriefInput): FactoryB
 
   const tracks = TRACK_OVERRIDES[input.priority] ?? TRACK_OVERRIDES.balanced;
   const alternatives: FactoryBriefAlternative[] = [];
+  console.log("[FactoryBrief] Primary done. Running", Object.keys(tracks).length, "alternative tracks for priority:", input.priority);
 
   (Object.entries(tracks) as [string, TrackOverride][]).forEach(([trackId, track]) => {
+    console.log("[FactoryBrief] Running track:", trackId);
     const altBase = computeFactoryBrief(input);
     const altSpec = { ...altBase.spec, ...track.overrides };
 
@@ -3255,6 +3249,7 @@ function FactoryBriefPanel({ onApply }) {
   const handleApply = () => {
     if (!canApply) return;
     try {
+      console.log("[FactoryBrief] Starting engine...");
       const result = computeFactoryBriefWithAlternatives({
         level: level as any,
         priceTier: priceTier as any,
@@ -3286,7 +3281,8 @@ function FactoryBriefPanel({ onApply }) {
       setApplied(true);
     } catch (err) {
       console.error("Factory Brief engine error:", err);
-      setLastResult({ spec: {} as any, rationale: [`Engine error: ${err instanceof Error ? err.message : String(err)} — check console for details.`], alternatives: [] });
+      setLastResult({ spec: {} as any, rationale: [`Engine error: ${err instanceof Error ? err.message : String(err)}`], alternatives: [] });
+      setApplied(true); // must set true so the error message actually renders
     }
   };
 
@@ -3614,7 +3610,18 @@ function FactoryBriefPanel({ onApply }) {
 
       {applied && lastResult && (
         <div style={{ marginTop: 16 }}>
+          {/* Error state */}
+          {lastResult.alternatives.length === 0 && lastResult.rationale.length > 0 && (
+            <div style={{ padding: "12px 14px", background: "rgba(255,80,50,0.08)", border: "1px solid rgba(255,80,50,0.25)", borderRadius: 10, marginBottom: 12 }}>
+              <p style={{ fontSize: 12.5, color: "#FF8060", fontFamily: "Inter, sans-serif", margin: 0, fontWeight: 600 }}>Engine error</p>
+              {lastResult.rationale.map((line, i) => (
+                <p key={i} style={{ fontSize: 12, color: "#C06050", fontFamily: "Inter, sans-serif", margin: "4px 0 0" }}>{line}</p>
+              ))}
+            </div>
+          )}
+
           {/* Track switcher */}
+          {lastResult.alternatives.length > 0 && <>
           <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#AEFB00", marginBottom: 8 }}>3 Design Approaches — Same Brief</p>
           <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>Each is a different engineering philosophy for the same goal. Select one to apply it to the Build tab.</p>
 
@@ -3662,6 +3669,7 @@ function FactoryBriefPanel({ onApply }) {
               );
             })}
           </div>
+          </>}
         </div>
       )}
     </div>
