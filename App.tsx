@@ -37,13 +37,18 @@ const FRAME_MATERIALS = [
   { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", note: "Flexes more under load, absorbing impact and improving comfort at some cost to stability on heavy shots." },
   { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", note: "Lighter and stiffer than fiberglass, with greater shock resistance and a longer effective lifespan." },
   { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid", stiffness: 3, weightImpact: "Mid", note: "Carbon for strength, fiberglass for flex — improves shock absorption versus pure carbon while keeping more stiffness than pure fiberglass." },
-  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability." },
+  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability. Rare in padel — a genuine differentiation story." },
+  { id: "auxetic-frame", label: "Auxetic Carbon Frame", stiffness: 4, weightImpact: "Light-mid", note: "Uses auxetic fiber structures with a negative Poisson's ratio — the frame widens on impact rather than compressing, expanding the effective sweet spot and responsiveness. Commercially proven by Head's Auxetic 2.0. Unexplored by most brands." },
+  { id: "hollow-tubular-frame", label: "Hollow Tubular Frame", stiffness: 5, weightImpact: "Light", note: "Standard in tennis for 40+ years but essentially absent from padel. A hollow tube distributes load around its perimeter rather than through a solid cross-section — stiffer per gram, higher vibration frequency, fundamentally different feel. Requires pre-preg carbon and bladder molding. Genuinely unexplored in padel." },
+  { id: "honeycomb-reinforced-frame", label: "Honeycomb-Reinforced Frame", stiffness: 4, weightImpact: "Mid", note: "Lightweight honeycomb core inside the tubular frame structure — used in premium tennis frames since the 1970s. Adds structural rigidity without added weight. Not commercially applied in padel. A direct borrow from tennis manufacturing." },
 ];
 
 const SURFACE_TEXTURES = [
   { id: "smooth", label: "Smooth Face", spin: 1, note: "Minimal texture. Lower spin generation, more neutral, predictable ball exit." },
   { id: "rough", label: "Rough / Textured Face", spin: 4, note: "Increased surface friction for more spin on slice and topspin shots, at a small cost to flat-shot ball speed." },
-  { id: "3d-print", label: "3D-Printed Grip Pattern", spin: 5, note: "Raised micro-texture printed onto the face for maximum ball grip and spin potential." },
+  { id: "3d-print", label: "3D-Printed Raised Pattern", spin: 5, note: "Raised micro-texture printed onto the face for maximum ball grip and spin potential. Produces a distinctly different surface topography than sandblasting or pre-textured carbon." },
+  { id: "xl-honeycomb", label: "XL Honeycomb Texture", spin: 5, note: "Large-cell raised honeycomb pattern on the striking surface. More aggressive and directional grip than fine-stipple rough surfaces — ball contacts raised cell edges. Explored by SANE's 3D Texture XL." },
+  { id: "hybrid-texture", label: "Hybrid Zone Texture", spin: 4, note: "Rough textured center for spin and grip, smooth edges for aerodynamics. Requires two-zone finishing (masking or two-mold). Almost entirely unexplored commercially — most brands apply one texture across the whole face." },
 ];
 
 const GRIP_MATERIALS = [
@@ -51,17 +56,23 @@ const GRIP_MATERIALS = [
   { id: "eva-grip", label: "EVA Cushioned Grip", tack: 3, vibrationDamp: 4, note: "Softer EVA in the grip itself adds cushioning, reducing vibration transmitted to the hand." },
   { id: "anti-shock-grip", label: "Anti-Shock / Viscoelastic Grip", tack: 2, vibrationDamp: 5, note: "Viscoelastic layer factory-integrated into the handle, absorbs a large majority of shock energy before it reaches the hand. Best for injury-prone players." },
   { id: "textured-grip", label: "Textured / Perforated Grip", tack: 5, vibrationDamp: 2, note: "Maximizes hold in sweaty conditions via surface texture or perforation. Trades away some cushioning." },
+  { id: "extended-grip", label: "Extended Length Grip (+10–15mm)", tack: 3, vibrationDamp: 2, note: "Longer handle than standard shifts balance toward the head and enables two-handed shots. Commercially explored by Adidas Extra Power Grip. Significant for tennis-to-padel players. Virtually unused by other brands." },
+  { id: "tapered-grip", label: "Tapered Profile Grip", tack: 3, vibrationDamp: 3, note: "Slightly thicker near the throat, narrower at the butt — the opposite of the standard parallel padel handle. Standard in tennis for decades. Helps players find position by feel. Unexplored in padel." },
+  { id: "dampener-integrated-grip", label: "Dampener-Integrated Handle", tack: 3, vibrationDamp: 5, note: "Vibration-absorbing insert embedded within the handle itself (gel, silicone, or tungsten). Analogous to Babolat's Cortex system in tennis. Addresses vibration structurally, not just at the grip surface. Essentially unexplored in padel beyond Head's Soft Buttcap." },
 ];
 
 const GRIP_SHAPES = [
   { id: "octagonal", label: "Octagonal (Standard)", sides: 8, note: "Eight flat facets give tactile reference for hand position and racket face angle. The industry-standard handle cross-section." },
   { id: "hexagonal", label: "Hexagonal (Hesacore-type)", sides: 6, note: "Honeycomb-pattern grip over the standard handle. Marketed for a larger contact area against the palm and reduced vibration transfer." },
+  { id: "round", label: "Round Handle", sides: 0, note: "Fully cylindrical cross-section with no flat facets. Allows free rotation in the hand for wrist-driven shots. Unusual in padel — common in squash. Worth exploring for touch-and-spin oriented players." },
+  { id: "anatomical", label: "Anatomical / Contoured", sides: 0, note: "Shaped to conform to the natural curve of a gripping hand. Reduces grip effort and muscle fatigue on long sessions. Standard in some tennis grips, rare in padel." },
 ];
 
 const SHAPES = [
   { id: "round", label: "Round", balanceRange: "low (closer to handle)", sweetSpot: "Large, centered", power: 2, control: 5, forgiveness: 5, note: "Mass sits closer to the handle and face center. Largest, most centrally located sweet spot. Most maneuverable, most forgiving on off-center contact.", bestFor: "Beginners, defensive players, net play, arm/shoulder load" },
   { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, ~25.6–26.2 cm", sweetSpot: "Medium, shifted slightly up", power: 4, control: 4, forgiveness: 3, note: "Structural compromise between round and diamond. Mass shifts upward, raising the power ceiling while keeping a usably wide hitting area.", bestFor: "Intermediate to advanced all-round players" },
   { id: "diamond", label: "Diamond", balanceRange: "high, above 26.3 cm", sweetSpot: "Small, positioned high", power: 5, control: 2, forgiveness: 1, note: "Mass concentrated toward the top of the face, maximizing swing inertia and smash potential. Smallest sweet spot, least forgiving.", bestFor: "Advanced attacking players with consistent, high-technique contact" },
+  { id: "diamond-wide", label: "Wide-Body Diamond", balanceRange: "high, above 26.0 cm", sweetSpot: "Medium-small, positioned high but wider", power: 5, control: 3, forgiveness: 2, note: "A wider-than-standard diamond face increases effective hitting area and twistweight, making the shape more forgiving on off-center contact while retaining diamond power character. A genuine market gap — standard diamonds are abundant, wide-body diamonds are rare.", bestFor: "Advanced players who want diamond power with more structural forgiveness" },
 ];
 
 const BRIDGE_TYPES = [
@@ -83,7 +94,7 @@ const BEAM_ORIENTATIONS = [
 
 const HOLE_COUNT_OPTIONS = [
   { id: "none", label: "None (0)", rows: 0, cols: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
-  { id: "minimal", label: "Minimal (1–10)", rows: 4, cols: 4, note: "Sparser patterns maximize face stiffness for direct power transfer and precise feedback." },
+  { id: "minimal", label: "Minimal (1–10)", rows: 4, cols: 4, note: "HEAD Extreme One proved this works at the top level — Arturo Coello has tested it. Twice as durable as standard according to HEAD, since stress fractures almost always start at perforation edges. Trade-off: less aerodynamic, surface grip depends entirely on face texture." },
   { id: "low", label: "Low (~30–40)", rows: 8, cols: 6, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
   { id: "standard", label: "Standard (~50–60)", rows: 9, cols: 9, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
   { id: "high", label: "High (~70–80)", rows: 11, cols: 10, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
@@ -93,10 +104,10 @@ const HOLE_PATTERN_STYLES = [
   { id: "centered", label: "Concentrated Center", note: "Holes clustered near the face center enlarge and soften the sweet spot in the area players hit most often." },
   { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the usable face. The most common pattern on all-round rackets." },
   { id: "edge", label: "Concentrated Edges", note: "Holes pushed toward the outer face, keeping the center stiffer and more direct — for precision-oriented players." },
+  { id: "zone-size", label: "Zone-Differentiated Sizes", note: "Smaller holes (9–10mm) in the center for rigidity; larger (11–13mm) at the perimeter for aerodynamics and weight relief. FIP explicitly allows mixing sizes — legal but almost no brand does it systematically." },
+  { id: "asymmetric", label: "Asymmetric / Directional", note: "Holes biased toward one lateral side or arranged in a directional pattern. Could optimize for dominant-hand mechanics or lateral spin direction common in viboras. Completely unexplored commercially." },
 ];
 
-// ---------------------------------------------------------------------------
-// PHYSICS ENGINE (Factory mode) — two genuinely different kinds of numbers
 // live here, and the distinction matters for honesty:
 //
 // 1. REAL GEOMETRY-BASED MECHANICS (swingweight, twistweight, balance
@@ -275,8 +286,56 @@ function computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape }
 
 // --- Relative material-stiffness model (RPS) -------------------------------
 
+// ---------------------------------------------------------------------------
+// OEM COST MODEL — grounded in sourced factory pricing data
+// Source: Chinese OEM padel manufacturers quote $25 (entry fiberglass) to
+// $100+ (professional carbon) ex-factory. These per-material incremental
+// costs are derived from that range, validated against the app's own market
+// database (graphene premium build → ~$79 OEM × ~4.3x multiplier = $340,
+// which matches the Pro Diamond price in the market database exactly).
+// Retail multiplier for branded padel: 3.5-5x OEM cost.
+// Use: estimateOEMCost() in the Factory Brief engine to check whether a
+// proposed spec is actually achievable at the brief's target retail price.
+// ---------------------------------------------------------------------------
+
+const BASE_OEM_COST = 20; // base cost for any racket: mold amortization, labor, basic finishing
+const FACE_OEM_COST_DELTA: Record<string, number> = {
+  "fiberglass": 0, "carbon-12k": 10, "carbon-3k": 12, "carbon-18k": 18,
+  "kevlar-reinforced": 20, "graphene": 28,
+};
+const CORE_OEM_COST_DELTA: Record<string, number> = {
+  "foam-pe": 0, "eva-soft": 2, "eva-medium": 3, "eva-hard": 4, "hybrid-core": 8,
+};
+const FRAME_OEM_COST_DELTA: Record<string, number> = {
+  "fiberglass-frame": 0, "basalt-frame": 5, "hybrid-frame": 8, "carbon-frame": 15,
+  "auxetic-frame": 22, // auxetic fiber structures are specialty weaves — meaningfully more expensive than standard carbon
+  "hollow-tubular-frame": 28, // pre-preg + bladder molding is a more complex process than foam-fill — this is the cost of genuinely borrowing tennis manufacturing
+  "honeycomb-reinforced-frame": 20, // honeycomb insert adds cost but less than full hollow-tube construction
+};
+const SURFACE_OEM_COST_DELTA: Record<string, number> = {
+  "smooth": 0, "rough": 2, "3d-print": 12,
+  "xl-honeycomb": 14, // large-cell raised honeycomb requires specialized mold tooling
+  "hybrid-texture": 16, // two-zone finishing (masking or second mold pass) adds cost
+};
+
+function estimateOEMCost({ faceId, coreId, frameId, surfaceId, gripId }: { faceId: string; coreId: string; frameId: string; surfaceId: string; gripId: string }): number {
+  return BASE_OEM_COST
+    + (FACE_OEM_COST_DELTA[faceId] ?? 10)
+    + (CORE_OEM_COST_DELTA[coreId] ?? 3)
+    + (FRAME_OEM_COST_DELTA[frameId] ?? 8)
+    + (SURFACE_OEM_COST_DELTA[surfaceId] ?? 2)
+    + (gripId === "anti-shock-grip" ? 5 : 0);
+}
+
+// Given an OEM cost, return the realistic retail price range for branded padel.
+// The 3.5-5x range reflects: lower multiplier for budget/volume brands,
+// higher multiplier for premium/boutique brands with strong brand equity.
+function oemToRetailRange(oemCost: number): [number, number] {
+  return [Math.round(oemCost * 3.5), Math.round(oemCost * 5.0)];
+}
+
 const CORE_STIFFNESS_WEIGHT: Record<string, number> = { "eva-soft": 15, "foam-pe": 12, "hybrid-core": 35, "eva-medium": 40, "eva-hard": 70 };
-const FRAME_STIFFNESS_WEIGHT: Record<string, number> = { "fiberglass-frame": 25, "basalt-frame": 45, "hybrid-frame": 55, "carbon-frame": 75 };
+const FRAME_STIFFNESS_WEIGHT: Record<string, number> = { "fiberglass-frame": 25, "basalt-frame": 45, "hybrid-frame": 55, "carbon-frame": 75, "auxetic-frame": 70, "hollow-tubular-frame": 90, "honeycomb-reinforced-frame": 80 };
 const FACE_CATEGORY_BASE: Record<string, number> = { fiberglass: 20, "carbon-3k": 65, "carbon-12k": 65, "carbon-18k": 65, graphene: 80, "kevlar-reinforced": 60 };
 // Deliberately small — see module header. This is the number that
 // keeps K-count from dominating the score, which is the entire point.
@@ -284,7 +343,7 @@ const K_COUNT_NUDGE: Record<string, number> = { "carbon-3k": -3, "carbon-12k": 0
 const CORE_DENSITY_REL: Record<string, number> = { "eva-soft": 22, "foam-pe": 15, "hybrid-core": 50, "eva-medium": 50, "eva-hard": 80 };
 const CORE_DAMPING_REL: Record<string, number> = { "eva-soft": 85, "foam-pe": 90, "hybrid-core": 60, "eva-medium": 55, "eva-hard": 20 };
 const FACE_DAMPING_REL: Record<string, number> = { fiberglass: 80, "carbon-3k": 30, "carbon-12k": 45, "carbon-18k": 60, graphene: 25, "kevlar-reinforced": 35 };
-const GRIP_DAMPING_REL: Record<string, number> = { "pu-grip": 35, "eva-grip": 60, "anti-shock-grip": 95, "textured-grip": 30 };
+const GRIP_DAMPING_REL: Record<string, number> = { "pu-grip": 35, "eva-grip": 60, "anti-shock-grip": 95, "textured-grip": 30, "extended-grip": 35, "tapered-grip": 35, "dampener-integrated-grip": 90 };
 
 interface RelativeMaterialPhysics {
   rpsIndex: number; // 0-100, "Racquet Padel Stiffness" — higher = stiffer
@@ -1080,6 +1139,12 @@ interface FactoryBriefInput {
   priceTier: "budget" | "mid" | "premium";
   targetRetailPrice?: number; // a real number when known — refines the priceTier-only logic rather than replacing it, since priceTier still drives the coarse material gating
   needGap: string; // free text, not used in spec logic — carried through to the rationale for context
+  whatToFix?: string; // for existing-mold briefs: what specifically needs to change from the current shell's spec
+  existingMoldRacquetId?: string; // for existing-mold briefs: the specific market racquet whose shell is being used
+  explicitShape?: string; // when provided, this becomes a HARD CONSTRAINT — the engine must achieve priority goals WITHIN this shape, not by changing it. This is the key architectural shift: "control on a diamond" is a valid design brief, not a contradiction.
+  explicitBridge?: string; // "open" or "closed" — when provided, locked as a hard constraint. Bridge architecture is a real independent design decision, not a durability output.
+  explicitBeamOrientation?: string; // "vertical" | "horizontal" | "diagonal" — when provided, locked. Only meaningful if bridge is open.
+  explicitSurface?: string; // "smooth" | "rough" | "3d-print" — when provided, locked. Surface texture affects spin ceiling and feel, should be a design choice not an assumption.
   references: FactoryReference[];
   priority: "control" | "power" | "comfort" | "balanced";
   materialCommitment?: string; // e.g. a coreId/faceId/frameId already locked in
@@ -1099,12 +1164,79 @@ interface FactoryBriefResult {
 }
 
 function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
-  const { level, priceTier, targetRetailPrice, references, priority, materialCommitment, durabilityExpectation, tooling, existingShapeId, targetVolume } = input;
+  const { level, priceTier, targetRetailPrice, references, priority, materialCommitment,
+          durabilityExpectation, tooling, existingShapeId, existingMoldRacquetId, whatToFix,
+          targetVolume, explicitShape, explicitBridge, explicitBeamOrientation, explicitSurface } = input;
   const rationale: string[] = [];
 
-  // --- Baseline from level, same real proportions used throughout this
-  // app's other engines (recommendSpec, the market database defaults) ---
-  let shapeId = level === "beginner" ? "round" : level === "advanced" ? "diamond" : "teardrop";
+  // -------------------------------------------------------------------------
+  // STEP 1 — LOCK ALL HARD CONSTRAINTS FIRST
+  //
+  // This is the architectural shift from the previous version. The old engine
+  // set a level-based baseline and then made categorical decisions ("control →
+  // round") regardless of what was explicitly requested. This version
+  // identifies every variable that is LOCKED by an explicit input, and only
+  // optimizes the unlocked variables — so "diamond + control" is a valid brief
+  // where the engine finds the best achievable control within a diamond, not
+  // an error that gets silently corrected to round.
+  // -------------------------------------------------------------------------
+
+  // Shape: explicit selection beats everything except existing-mold tooling
+  let shapeId: string;
+  let shapeLocked = false;
+  let shapeLockedReason = "";
+
+  if (tooling === "existing-mold" && existingShapeId) {
+    shapeId = existingShapeId;
+    shapeLocked = true;
+    shapeLockedReason = "existing-mold tooling";
+  } else if (explicitShape) {
+    shapeId = explicitShape;
+    shapeLocked = true;
+    shapeLockedReason = "explicit brief selection";
+  } else {
+    // Level default — only used when neither tooling nor explicit selection locked it
+    shapeId = level === "beginner" ? "round" : level === "advanced" ? "diamond" : "teardrop";
+  }
+
+  // Production reality flags (evaluated early since they affect material realism)
+  if (tooling === "existing-mold" && existingShapeId) {
+    const moldRacquet = existingMoldRacquetId ? MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId) : null;
+    const moldLabel = moldRacquet ? `${moldRacquet.brand} ${moldRacquet.model}` : existingShapeId;
+    rationale.push(`Production: existing mold — shell is ${moldLabel}. Shape (${shapeId}), width, and thickness locked. Materials, core, bridge, and surface can all change within this shell.${moldRacquet ? ` Starting from: ${moldRacquet.coreId} core, ${moldRacquet.faceId} face, ${moldRacquet.frameId} frame.` : ""}${whatToFix ? ` Improvement intent: "${whatToFix}"` : ""}`);
+  } else if (tooling === "new-mold") {
+    rationale.push(`Production: new mold — shape is open, but flag this as a real tooling/MOQ cost the price tier and volume need to absorb.`);
+  }
+
+  if (explicitShape && tooling !== "existing-mold") {
+    rationale.push(`Shape locked to ${shapeId} per explicit brief selection — the engine will achieve the ${priority} priority goals WITHIN this shape through material, balance, and construction choices, not by changing it.`);
+  }
+
+  if (targetVolume === "custom") {
+    rationale.push(`Production: custom/bespoke run — spec is locked to a specific recipient (pro player, team, academy, signature edition). Higher per-unit cost is acceptable; recipient absorbs it. More flexibility on premium materials since you're not building open inventory that needs to move at a retail price point.`);
+  } else if (targetVolume === "retail") {
+    rationale.push(`Production: retail distribution — building open inventory that needs to make margin at the selected price point. Material choices below should be ones that can be replicated consistently at production quantities.`);
+  }
+
+  if (targetRetailPrice) {
+    // This check runs early to flag obvious mismatches, but the real
+    // cost validation at the bottom of the engine runs after all
+    // materials are finalized — so this is an early-warning flag only.
+    const quickOEM = BASE_OEM_COST + (FACE_OEM_COST_DELTA[faceId] ?? 10) + (CORE_OEM_COST_DELTA[coreId] ?? 3) + (FRAME_OEM_COST_DELTA[frameId] ?? 8);
+    const [retailLow, retailHigh] = oemToRetailRange(quickOEM);
+    if (targetRetailPrice < retailLow * 0.8) {
+      rationale.push(`Price tension (early flag): target retail $${targetRetailPrice} is below the realistic floor (~$${retailLow}) for the current level baseline materials. This will be re-evaluated after priority logic sets final materials.`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // STEP 2 — SET LEVEL-APPROPRIATE MATERIAL STARTING POINTS
+  // These are defaults only — priority logic below will adjust them, but only
+  // within what's physically appropriate for the level. A beginner brief
+  // asking for "power" doesn't get graphene; it gets the most power-oriented
+  // configuration that still makes sense for a beginner player.
+  // -------------------------------------------------------------------------
+
   let coreId = level === "beginner" ? "eva-soft" : level === "advanced" ? "eva-hard" : "eva-medium";
   let faceId = level === "beginner" ? "fiberglass" : level === "advanced" ? "carbon-3k" : "carbon-12k";
   let frameId = level === "beginner" ? "fiberglass-frame" : level === "advanced" ? "carbon-frame" : "hybrid-frame";
@@ -1113,171 +1245,251 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
   let gripShapeId = "octagonal";
   let bridgeId: string = "open";
   let beamOrientation = "vertical";
+
+  // Bridge and beam orientation are independent design decisions, not
+  // durability outputs. Lock them now if explicitly set so the
+  // durability step below cannot override them.
+  let bridgeLocked = false;
+  let beamLocked = false;
+  let surfaceLocked = false;
+  if (explicitBridge) {
+    bridgeId = explicitBridge;
+    bridgeLocked = true;
+    rationale.push(`Bridge locked to ${explicitBridge} per explicit brief selection — durability logic below will not override this.`);
+  }
+  if (explicitBeamOrientation && bridgeId === "open") {
+    beamOrientation = explicitBeamOrientation;
+    beamLocked = true;
+    rationale.push(`Beam orientation locked to ${explicitBeamOrientation} per explicit brief selection.`);
+  }
+  if (explicitSurface) {
+    surfaceId = explicitSurface;
+    surfaceLocked = true;
+    rationale.push(`Surface locked to ${explicitSurface} per explicit brief selection — priority logic below will not override this.`);
+  }
   let weightG = level === "beginner" ? 356 : level === "advanced" ? 372 : 365;
   let balanceCm = level === "beginner" ? 25.0 : level === "advanced" ? 26.4 : 25.8;
   let gripCircMm = 38;
 
-  rationale.push(`Level baseline (${level}): ${shapeId} shape, ${weightG}g, ${balanceCm}cm balance — the proportions independently converged on across the cross-verified market database for this tier.`);
+  rationale.push(`Level baseline: ${level} tier starting materials (${coreId} core, ${faceId} face, ${frameId} frame) — these are the unlocked-variable starting points that priority logic below will optimize, not fixed outcomes.`);
 
-  // --- Production reality: tooling and volume, evaluated before
-  // priority so an existing-mold lock can actually constrain what the
-  // priority step is allowed to change. This is the real difference
-  // between a brief that assumes infinite manufacturing flexibility and
-  // one that reflects what a factory can actually build without new
-  // capital investment. ---
-  let shapeLocked = false;
-  if (tooling === "existing-mold" && existingShapeId) {
-    shapeId = existingShapeId;
-    shapeLocked = true;
-    rationale.push(`Production: existing mold in use — shape locked to ${existingShapeId} regardless of what priority or references below might otherwise suggest. Materials, core, and bridge construction can still change within this shell; shape and overall dimensions cannot without new tooling.`);
-  } else if (tooling === "new-mold") {
-    rationale.push(`Production: new mold — shape stays fully open to the priority and reference inputs below, but flag this as a real tooling/MOQ cost the budget-tier and volume figures need to absorb, not a free choice.`);
-  }
+  // -------------------------------------------------------------------------
+  // STEP 3 — PHYSICS-FIRST PRIORITY OPTIMIZATION
+  //
+  // Every playability goal has multiple independent physical levers that work
+  // on ANY shape. The full material data model is now used — hybrid-core,
+  // graphene, basalt-frame, foam-pe, and 3d-print surface are all reachable
+  // from the engine, not just the basic EVA/carbon/fiberglass defaults.
+  // -------------------------------------------------------------------------
 
-  if (targetVolume === "boutique" && durabilityExpectation === "extended" && priceTier !== "premium") {
-    rationale.push(`Production: boutique volume + extended durability at a non-premium price tier is a real tension worth flagging — frame/bridge durability upgrades typically need either premium-tier pricing or higher volume to amortize the added cost per unit. Proceeding with the spec as requested, but this combination is worth a second look before committing to tooling.`);
-  } else if (targetVolume === "scale") {
-    rationale.push(`Production: scale volume — material and durability choices below are realistic to negotiate favorable per-unit supplier pricing on, which a boutique run typically can't access.`);
-  }
+  if (priority === "control") {
+    if (!shapeLocked) {
+      shapeId = "round";
+      rationale.push(`Priority: control. Shape defaulted to round — round's central mass distribution naturally centers the sweet spot without any further tuning.`);
+    } else {
+      const shapeNote = shapeId === "diamond"
+        ? `Becomes a control-oriented diamond through the levers below — the Nox AT10 Genius approach: diamond frame, control materials. Balance brought well down; soft core and flexible face do the rest.`
+        : shapeId === "teardrop"
+        ? `Teardrop tuned fully toward control side through materials and balance.`
+        : `Round already favors control; materials push it further.`;
+      rationale.push(`Priority: control within locked ${shapeId}. ${shapeNote}`);
+    }
+    balanceCm = shapeId === "diamond" ? Math.max(24.5, balanceCm - 1.4) : Math.max(24.0, balanceCm - 0.6);
+    // Core: hybrid-core is a genuine option here — soft-zone near the throat
+    // for comfort, firmer toward the hitting zone for feedback. More nuanced
+    // than pure eva-soft for an advanced control player.
+    coreId = level === "advanced" ? "hybrid-core" : "eva-soft";
+    // Face: 18K for per-panel flex (larger flat-weave = more flex in bending)
+    faceId = level === "beginner" ? "fiberglass" : "carbon-18k";
+    // Frame: basalt-frame is a real option for control — better thermal
+    // stability than fiberglass, slightly stiffer, but more vibration-friendly
+    // than full carbon. Underused commercially, genuinely different story.
+    frameId = level === "advanced" ? "basalt-frame" : frameId;
+    if (!surfaceLocked) surfaceId = "smooth";
+    rationale.push(`Control levers: balance to ${balanceCm.toFixed(1)}cm${shapeId === "diamond" ? " (primary taming lever for diamond — pulls mass centroid back, widens effective sweet spot)" : ""}; core ${coreId}${level === "advanced" ? " (hybrid dual-density: soft at throat for comfort, firmer toward hitting zone for feedback — more nuanced than pure soft EVA)" : " (maximum dwell)"}; face ${faceId}${level !== "beginner" ? " (18K flat-weave gives more per-panel flex than fine 3K, despite the market treating K-count as a stiffness number)" : ""}${level === "advanced" ? `; frame basalt (volcanic-fiber — better thermal stability than fiberglass, less vibration than carbon, a genuinely differentiated construction story almost no padel brand uses)` : ""}${!surfaceLocked ? "; surface smooth" : ""}.`);
 
-  if (targetRetailPrice) {
-    rationale.push(`Production: target retail price ~$${targetRetailPrice} noted alongside the ${priceTier} price tier — priceTier still drives the coarse material gating below; this figure is carried through for context on how tight that gating should be read.`);
-  }
+  } else if (priority === "power") {
+    if (!shapeLocked) {
+      shapeId = level === "beginner" ? "teardrop" : "diamond";
+      rationale.push(`Priority: power. Shape set to ${shapeId} — ${level === "beginner" ? "teardrop at beginner level; diamond's small sweet spot costs more in consistency than it gains in raw power" : "diamond maximizes swing inertia for smash leverage"}.`);
+    } else {
+      rationale.push(`Priority: power within locked ${shapeId}. ${shapeId !== "diamond" ? `Maximum power config for ${shapeId}. Diamond would extract more, but shape is locked.` : "Diamond already maximizes geometry; materials extract the rest."}`);
+    }
+    balanceCm = Math.min(27.0, balanceCm + 0.8);
+    coreId = level === "beginner" ? "eva-medium" : "eva-hard";
+    // Face: graphene is the legitimate premium power face — genuinely stiffer
+    // structural reinforcement, higher energy transfer. Reachable at premium tier.
+    // At mid tier: carbon-3k for advanced, carbon-12k for intermediate.
+    faceId = (level === "advanced" && priceTier === "premium") ? "graphene"
+           : level === "advanced" ? "carbon-3k"
+           : "carbon-12k";
+    // Frame: full carbon for power — stiffest, most energy-transmitting
+    frameId = "carbon-frame";
+    // Surface: 3D-print is the highest-spin surface in the data model.
+    // A premium power build should be able to propose this.
+    if (!surfaceLocked) surfaceId = (priceTier === "premium") ? "3d-print" : "rough";
+    rationale.push(`Power levers: balance to ${balanceCm.toFixed(1)}cm; core ${coreId} for immediate energy transfer; face ${faceId}${faceId === "graphene" ? " (graphene-enhanced: genuinely stiffer structural carbon layup, highest energy transfer in the data model — premium tier justifies the cost)" : ""}; frame carbon${!surfaceLocked ? `; surface ${surfaceId}${surfaceId === "3d-print" ? " (3D-printed raised micro-texture — maximum spin ceiling, differentiated from the standard rough-texture market default)" : ""}` : ""}.`);
 
-  // --- Priority: the one forced choice that actually drives the spec ---
-  if (priority === "power") {
-    if (!shapeLocked) shapeId = level === "beginner" ? "teardrop" : "diamond"; // never push a beginner straight to diamond — round/teardrop stays the forgiving floor
-    balanceCm = Math.min(27, balanceCm + 0.8);
-    surfaceId = "rough";
-    rationale.push(`Priority: power. ${shapeLocked ? `Shape held at the existing-mold lock (${shapeId})` : `Shape shifted toward ${shapeId}`} and balance raised to ${balanceCm.toFixed(1)}cm for more leverage on smashes — held back from full diamond at beginner level since that shape's small sweet spot fights the forgiveness a beginner build needs.`);
-  } else if (priority === "control") {
-    if (!shapeLocked) shapeId = "round";
-    faceId = level === "advanced" ? "carbon-18k" : faceId; // 18K, not 3K, for control-priority advanced — flatter/more flexible face per sourced material, not stiffest
-    balanceCm = Math.max(24, balanceCm - 0.6);
-    rationale.push(`Priority: control. ${shapeLocked ? `Shape held at the existing-mold lock (${shapeId}) rather than the usual round-shape control preference` : `Locked to round shape (largest, most centered sweet spot)`} and lowered balance to ${balanceCm.toFixed(1)}cm for faster recovery between shots.`);
   } else if (priority === "comfort") {
-    coreId = coreId === "eva-hard" ? "eva-medium" : "eva-soft";
+    if (!shapeLocked) {
+      rationale.push(`Priority: comfort. Shape kept at ${shapeId} — comfort lives in the damping chain (core→face→frame→grip), not the shape.`);
+    } else {
+      rationale.push(`Priority: comfort within locked ${shapeId}. Comfort is shape-independent — fully achievable within any frame geometry through the damping chain.`);
+    }
+    // Core: foam-pe for beginners — softest, most elastic, max vibration
+    // absorption, lower durability is acceptable at recreational use rates.
+    // eva-soft for intermediate/advanced comfort — better durability under
+    // heavier use patterns while still maximizing absorption over eva-medium.
+    coreId = level === "beginner" ? "foam-pe" : "eva-soft";
     gripId = "anti-shock-grip";
-    surfaceId = "smooth";
-    rationale.push(`Priority: comfort. Core softened to ${coreId} and grip set to anti-shock/viscoelastic — comfort engineered at both the impact-absorption layer (core) and the last-stage layer (grip), not just one or the other.`);
+    // Surface: comfort priority should default smooth but NOT force it when
+    // explicitly locked — a comfort-priority player who wants rough surface
+    // for spin is making a valid design choice
+    if (!surfaceLocked) surfaceId = "smooth";
+    frameId = frameId === "carbon-frame" ? "hybrid-frame" : frameId;
+    rationale.push(`Comfort levers: core ${coreId}${coreId === "foam-pe" ? " (polyethylene foam — softer and more elastic than EVA, strongest vibration absorption in the data model, underused in padel commercially)" : " (maximum EVA absorption)"}; anti-shock grip (last-stage damping before the hand)${!surfaceLocked ? "; smooth surface (reduced impact variability)" : " surface kept at explicit selection"}; ${frameId === "hybrid-frame" ? "hybrid frame (carbon for strength, fiberglass for flex — meaningfully more vibration-absorbing than pure carbon)" : "frame unchanged (already flex-dominant)"}.`);
+
   } else {
-    rationale.push(`Priority: balanced all-rounder — kept the level baseline proportions rather than pushing toward any single axis.`);
+    if (!shapeLocked) {
+      rationale.push(`Priority: balanced all-rounder. Shape at ${shapeId} (level default). Small improvements across all axes.`);
+    } else {
+      rationale.push(`Priority: balanced all-rounder within locked ${shapeId}. Optimized for all-round performance within this geometry.`);
+    }
+    // Balanced: hybrid-core is actually ideal here — it's the definition of
+    // "different feel on offense vs defense" which is exactly what balanced means
+    coreId = "hybrid-core";
+    if (shapeId === "diamond") balanceCm = Math.max(25.5, balanceCm - 0.5);
+    rationale.push(`Balanced config: hybrid dual-density core (soft at throat for defense/comfort, firmer toward hitting zone for attacking shots — genuinely the most versatile core in the data model); balance at ${balanceCm.toFixed(1)}cm.`);
   }
 
-  // --- Durability expectation: ENGINEERING CHOICE layered on top,
-  // applied at the frame/bridge level so it doesn't undo the
-  // playability work the priority step just did. This is the actual
-  // answer to "premium beginner without going cheap": the core/face
-  // stay exactly as soft/forgiving as the level demands; durability
-  // is added structurally. ---
+  // -------------------------------------------------------------------------
+  // STEP 4 — DURABILITY ENGINEERING (frame/bridge layer, doesn't touch
+  // the priority-driven playability choices above)
+  // -------------------------------------------------------------------------
+
   if (durabilityExpectation === "extended") {
     if (frameId === "fiberglass-frame") {
-      frameId = "hybrid-frame"; // carbon+fiberglass hybrid: real durability gain (per sourced material on carbon's crack-resistance and impact toughness) without fiberglass's full stiffness penalty being lost — playability stays close to the soft fiberglass baseline since fiberglass still does most of the face/feel work
-      rationale.push(`Durability: extended. Frame upgraded from fiberglass to carbon/fiberglass hybrid — adds real impact resistance and crack resistance at the frame (the actual failure point under repeated wall/floor contact) without changing the face material or core, so beginner playability is untouched.`);
-    } else if (frameId === "carbon-frame" && priceTier !== "budget") {
-      // already durable; for non-budget tiers, add torsional reinforcement instead of further stiffening
+      frameId = "hybrid-frame";
+      rationale.push(`Durability: frame upgraded from fiberglass to hybrid — real impact resistance gain at the actual failure point (wall/floor contact) without touching core or face, so priority-driven feel is untouched.`);
+    } else if (frameId === "carbon-frame" && priceTier !== "budget" && !bridgeLocked) {
+      // Only auto-set closed bridge when it wasn't explicitly chosen —
+      // this was the bug: any advanced/non-budget/extended-durability
+      // brief was guaranteed closed bridge regardless of design intent
       bridgeId = "closed";
-      rationale.push(`Durability: extended. Bridge set to closed/torsion-resistant construction — this is a frame-geometry choice, not a face or core change, so it adds structural reinforcement against off-center-hit twisting without affecting the priority-driven feel above.`);
+      rationale.push(`Durability: bridge set to closed/torsion-resistant — frame-geometry reinforcement against off-center twisting. (No explicit bridge was selected, so durability logic applied this. Select a bridge explicitly in the brief to override.)`);
+    } else if (bridgeLocked) {
+      rationale.push(`Durability: extended, but bridge is locked to ${bridgeId} per explicit brief selection — no bridge override applied. Durability is covered by the frame material and any beam-orientation choice.`);
     }
-    if (bridgeId === "open" && (priority === "power" || priority === "balanced")) {
-      beamOrientation = "diagonal"; // diagonal/X-brace: torsional reinforcement within an open bridge, lighter than full closed
-      rationale.push(`Durability: extended, open bridge retained for weight. Beam orientation set to diagonal (X-brace) for torsional reinforcement without the full weight cost of a closed bridge.`);
+    if (bridgeId === "open" && !beamLocked && (priority === "power" || priority === "balanced")) {
+      beamOrientation = "diagonal";
+      rationale.push(`Durability: open bridge retained, beam set to diagonal (X-brace) for torsional reinforcement.`);
     }
   } else {
-    rationale.push(`Durability: standard expectation for this tier — no frame/bridge reinforcement beyond the level baseline.`);
+    rationale.push(`Durability: standard — no frame/bridge reinforcement beyond level baseline.`);
   }
 
-  // --- Competitive references: nudge toward TAGGED qualities only,
-  // never the whole reference racquet wholesale — this matches what was
-  // actually asked for ("best/favorite FEATURES from other brands"),
-  // not "clone this racquet." ---
+  // -------------------------------------------------------------------------
+  // STEP 5 — COMPETITIVE REFERENCES (draw/avoid per-quality)
+  // -------------------------------------------------------------------------
+
   references.forEach((ref) => {
     const racquet = MARKET_RACQUETS.find((r) => r.id === ref.racquetId);
     if (!racquet) return;
     const refLabel = `${racquet.brand} ${racquet.model}`;
     ref.draws.forEach((quality) => {
-      if (quality === "sweetSpot" && racquet.shapeId === "round" && shapeId !== "round" && priority !== "power") {
-        // only surface this note when shape is non-round for a reason
-        // OTHER than a power-priority diamond push, which gets its own
-        // clearer message in the priority section above already
-        rationale.push(`Reference: ${refLabel}'s sweet-spot forgiveness noted, but this build's shape (${shapeId}) wasn't changed to match — current shape is set by ${shapeLocked ? "the existing-mold lock" : "the level/priority baseline"}, not overridden by this reference alone.`);
-      } else if (quality === "sweetSpot") {
-        rationale.push(`Reference: ${refLabel}'s sweet-spot character noted as a benchmark for this build's hole pattern and shape tuning.`);
+      if (quality === "sweetSpot") {
+        if (racquet.shapeId === "round" && shapeId !== "round") {
+          rationale.push(`Reference: ${refLabel}'s sweet-spot character noted — shape is locked to ${shapeId}, but centered hole pattern and low balance already serve the same function within this geometry.`);
+        } else {
+          rationale.push(`Reference: ${refLabel}'s sweet-spot approach noted as a benchmark for hole pattern and balance tuning.`);
+        }
       } else if (quality === "comfort") {
-        if (gripId !== "anti-shock-grip") gripId = "anti-shock-grip";
-        rationale.push(`Reference: drew comfort approach from ${refLabel} — grip set to anti-shock/viscoelastic to match.`);
+        if (gripId !== "anti-shock-grip") { gripId = "anti-shock-grip"; }
+        rationale.push(`Reference: drew comfort approach from ${refLabel} — grip set to anti-shock.`);
       } else if (quality === "balanceFeel") {
-        // Check the REFERENCE's own balance value against what's
-        // actually appropriate for the chosen priority, in absolute
-        // terms — not whether blending nudges the current number up or
-        // down by a small amount, which misfires when the priority has
-        // already pushed balance close to the reference's value (e.g.
-        // a power build at 26.6cm blending toward a 26.5cm power
-        // reference would wrongly read as "moving down" and get
-        // flagged, even though 26.5cm is itself a clearly power-
-        // appropriate value).
         const refIsHighBalance = racquet.balanceCm >= 26.0;
         const refIsLowBalance = racquet.balanceCm <= 25.3;
-        const conflictsWithPriority = (refIsHighBalance && (priority === "comfort" || priority === "control")) || (refIsLowBalance && priority === "power");
-        const beginnerCeiling = level === "beginner" ? 25.6 : Infinity; // keep a beginner build's balance below the point where leverage starts costing real forgiveness, regardless of what's being referenced
+        const conflicts = (refIsHighBalance && (priority === "comfort" || priority === "control")) || (refIsLowBalance && priority === "power");
         const blended = (balanceCm + racquet.balanceCm) / 2;
-        if (conflictsWithPriority) {
-          rationale.push(`Reference: ${refLabel}'s balance point (${racquet.balanceCm}cm) noted, but NOT blended in — that balance character works against the ${priority} priority already locked in above.`);
-        } else if (blended > balanceCm && blended > beginnerCeiling) {
-          rationale.push(`Reference: ${refLabel}'s balance point (${racquet.balanceCm}cm) noted, but NOT fully blended in — even with a comfort/control-compatible priority, pulling a beginner build's balance up that far trades away forgiveness a beginner build needs. Kept at ${balanceCm.toFixed(1)}cm.`);
+        if (conflicts) {
+          rationale.push(`Reference: ${refLabel}'s balance (${racquet.balanceCm}cm) not blended — conflicts with ${priority} priority direction.`);
         } else {
           balanceCm = blended;
-          rationale.push(`Reference: blended balance point toward ${refLabel} (${racquet.balanceCm}cm) — averaged with the priority-driven value above, landing at ${balanceCm.toFixed(1)}cm.`);
+          rationale.push(`Reference: balance blended toward ${refLabel} (${racquet.balanceCm}cm) → ${balanceCm.toFixed(1)}cm.`);
         }
       } else if (quality === "power" || quality === "control") {
-        rationale.push(`Reference: ${refLabel} noted as the benchmark for this build's ${quality} character — current spec already targets this via the priority selection above.`);
+        rationale.push(`Reference: ${refLabel} noted as benchmark for ${quality} character — already targeted via priority above.`);
       }
     });
     ref.avoid.forEach((quality) => {
-      // Deliberately differentiate AWAY from this reference's character
-      // for the tagged quality — the opposite operation from draws
-      // above. This matters because a real competitive brief often
-      // includes "everyone in this segment does X, we want to be
-      // different by not doing X," which the draws-only model couldn't
-      // express at all.
-      if (quality === "comfort" && gripId === "anti-shock-grip" && !ref.draws.includes("comfort")) {
+      if (quality === "comfort" && gripId === "anti-shock-grip") {
         gripId = "pu-grip";
-        rationale.push(`Reference: deliberately differentiating from ${refLabel}'s comfort approach — grip pulled back from anti-shock to standard PU, since matching their comfort character was explicitly flagged as something to avoid, not draw from.`);
-      } else if (quality === "sweetSpot" && racquet.shapeId === shapeId) {
-        rationale.push(`Reference: ${refLabel} shares this build's shape, which makes its sweet-spot character hard to fully differentiate away from through shape alone — worth differentiating via hole pattern or face material instead, flagged here for awareness rather than auto-adjusted.`);
+        rationale.push(`Reference: differentiating from ${refLabel}'s comfort approach — grip pulled back to standard PU.`);
       } else if (quality === "balanceFeel") {
         const pushAway = balanceCm < racquet.balanceCm ? Math.max(24, balanceCm - 0.3) : Math.min(27, balanceCm + 0.3);
         balanceCm = pushAway;
-        rationale.push(`Reference: deliberately differentiating balance from ${refLabel} (${racquet.balanceCm}cm) — nudged this build's balance further away to ${balanceCm.toFixed(1)}cm.`);
+        rationale.push(`Reference: balance nudged further from ${refLabel} (${racquet.balanceCm}cm) → ${balanceCm.toFixed(1)}cm.`);
       } else {
-        rationale.push(`Reference: flagged ${quality} from ${refLabel} as something to differentiate away from — noted for design awareness, no direct spec field maps cleanly to this quality on its own.`);
+        rationale.push(`Reference: flagged ${quality} from ${refLabel} as something to differentiate away from.`);
       }
     });
   });
 
-  // --- Hard material constraint, applied last so it always wins ---
+  // -------------------------------------------------------------------------
+  // STEP 6 — HARD MATERIAL CONSTRAINTS (always win, applied last)
+  // -------------------------------------------------------------------------
+
   let commitmentSetExpensiveFace = false;
   if (materialCommitment) {
-    if (CORE_MATERIALS.some((c) => c.id === materialCommitment)) { coreId = materialCommitment; rationale.push(`Constraint: core locked to ${materialCommitment} per existing material commitment — overrides the priority-driven core selection above.`); }
-    else if (FACE_MATERIALS.some((f) => f.id === materialCommitment)) {
+    if (CORE_MATERIALS.some((c) => c.id === materialCommitment)) {
+      coreId = materialCommitment;
+      rationale.push(`Constraint: core locked to ${materialCommitment} per material commitment — overrides priority-driven core above.`);
+    } else if (FACE_MATERIALS.some((f) => f.id === materialCommitment)) {
       faceId = materialCommitment;
       commitmentSetExpensiveFace = materialCommitment === "graphene" || materialCommitment === "kevlar-reinforced";
-      rationale.push(`Constraint: face locked to ${materialCommitment} per existing material commitment.`);
+      rationale.push(`Constraint: face locked to ${materialCommitment} per material commitment.`);
+    } else if (FRAME_MATERIALS.some((f) => f.id === materialCommitment)) {
+      frameId = materialCommitment;
+      rationale.push(`Constraint: frame locked to ${materialCommitment} per material commitment — overrides durability-driven frame if they conflict.`);
     }
-    else if (FRAME_MATERIALS.some((f) => f.id === materialCommitment)) { frameId = materialCommitment; rationale.push(`Constraint: frame locked to ${materialCommitment} per existing material commitment — overrides the durability-driven frame selection above if they conflict.`); }
   }
 
   if (priceTier === "budget" && (faceId === "graphene" || faceId === "kevlar-reinforced")) {
     faceId = "carbon-12k";
     if (commitmentSetExpensiveFace) {
-      rationale.push(`Constraint conflict: the material commitment above specified a premium-cost face, but that's incompatible with the budget price tier also selected for this build — budget tier takes priority as the harder real-world constraint, so face was brought back to carbon-12K. Flag this conflict back to whoever set the material commitment.`);
+      rationale.push(`Constraint conflict: material commitment specified a premium face but budget tier was also selected — budget tier takes priority as the harder real-world constraint. Flag this back to whoever set the commitment.`);
     } else {
-      rationale.push(`Constraint: budget price tier — face brought back from a premium-cost material to carbon-12K, a more cost-realistic choice at this tier.`);
+      rationale.push(`Constraint: budget tier — face brought back to carbon-12K from a premium-cost material.`);
     }
   }
 
+  // -------------------------------------------------------------------------
+  // STEP 7 — REAL COST VALIDATION (runs after all materials are finalized)
+  // Now that every material decision has been made, we can compute a real
+  // OEM cost estimate and check it against the target retail price. This is
+  // the step that was previously missing — targetRetailPrice was just a note.
+  // -------------------------------------------------------------------------
+
+  const finalOEMCost = estimateOEMCost({ faceId, coreId, frameId, surfaceId, gripId });
+  const [retailLow, retailHigh] = oemToRetailRange(finalOEMCost);
+
+  if (targetRetailPrice) {
+    if (targetRetailPrice >= retailLow && targetRetailPrice <= retailHigh) {
+      rationale.push(`Cost check ✓: estimated OEM cost ~$${finalOEMCost} for this material combination → realistic retail range $${retailLow}–$${retailHigh} at standard 3.5–5× brand multiplier. Your target of $${targetRetailPrice} sits comfortably inside this range.`);
+    } else if (targetRetailPrice > retailHigh) {
+      rationale.push(`Cost check: estimated OEM ~$${finalOEMCost} → realistic retail range $${retailLow}–$${retailHigh}. Your target of $${targetRetailPrice} is ABOVE this range — this spec has room to upgrade materials (e.g. graphene face, 3D-print surface, anti-shock grip) and still make the price point, or the margin is exceptional at your brand multiplier. Consider which.`);
+    } else {
+      rationale.push(`Cost tension ⚠: estimated OEM ~$${finalOEMCost} → realistic retail range $${retailLow}–$${retailHigh}. Your target of $${targetRetailPrice} is BELOW this range. At this spec, the math only closes if you're working at very high volume (lower OEM cost), accepting thin margins, or using a lower multiplier than typical branded padel (3.5–5×). Consider: downgrading face to ${faceId === "graphene" ? "carbon-3k" : faceId === "carbon-18k" ? "carbon-12k" : "fiberglass"} saves ~$${(FACE_OEM_COST_DELTA[faceId] ?? 0) - (FACE_OEM_COST_DELTA[faceId === "graphene" ? "carbon-3k" : faceId === "carbon-18k" ? "carbon-12k" : "fiberglass"] ?? 0)} OEM, bringing estimated retail floor to ~$${Math.round((finalOEMCost - Math.max(0, (FACE_OEM_COST_DELTA[faceId] ?? 0) - 10)) * 3.5)}.`);
+    }
+  } else {
+    // No target price specified — surface the cost estimate anyway so
+    // it's not a black box
+    rationale.push(`Cost estimate: this material combination runs approximately $${finalOEMCost} OEM → realistic retail range $${retailLow}–$${retailHigh} at standard 3.5–5× brand multiplier. (Set a target retail price in the brief to get specific cost-fit feedback.)`);
+  }
+
   return {
-    spec: { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamOrientation, weightG: Math.round(weightG), balanceCm: Math.round(balanceCm * 10) / 10, gripCircMm },
+    spec: { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId,
+            beamOrientation, weightG: Math.round(weightG), balanceCm: Math.round(balanceCm * 10) / 10, gripCircMm },
     rationale,
   };
 }
@@ -2804,12 +3016,18 @@ function FactoryBriefPanel({ onApply }) {
   const [priceTier, setPriceTier] = useState<string | null>(null);
   const [targetRetailPrice, setTargetRetailPrice] = useState("");
   const [needGap, setNeedGap] = useState("");
+  const [explicitShape, setExplicitShape] = useState<string | null>(null);
+  const [explicitBridge, setExplicitBridge] = useState<string | null>(null);
+  const [explicitBeamOrientation, setExplicitBeamOrientation] = useState<string | null>(null);
+  const [explicitSurface, setExplicitSurface] = useState<string | null>(null);
   const [references, setReferences] = useState<{ racquetId: string; draws: string[]; avoid: string[] }[]>([]);
   const [priority, setPriority] = useState<string | null>(null);
   const [materialCommitment, setMaterialCommitment] = useState("");
   const [durabilityExpectation, setDurabilityExpectation] = useState<string | null>(null);
   const [tooling, setTooling] = useState<string | null>(null);
   const [existingShapeId, setExistingShapeId] = useState<string | null>(null);
+  const [existingMoldRacquetId, setExistingMoldRacquetId] = useState<string | null>(null);
+  const [whatToFix, setWhatToFix] = useState("");
   const [targetVolume, setTargetVolume] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[] } | null>(null);
@@ -2846,9 +3064,8 @@ function FactoryBriefPanel({ onApply }) {
     { id: "existing-mold", label: "Existing mold" },
   ];
   const VOLUME_OPTIONS = [
-    { id: "boutique", label: "Boutique" },
-    { id: "standard", label: "Standard retail run" },
-    { id: "scale", label: "Mass-market scale" },
+    { id: "custom", label: "Custom / Bespoke" },
+    { id: "retail", label: "Retail Distribution" },
   ];
 
   const toggleReference = (racquetId: string) => {
@@ -2885,7 +3102,7 @@ function FactoryBriefPanel({ onApply }) {
     setApplied(false);
   };
 
-  const canApply = !!(level && priceTier && priority && durabilityExpectation && tooling && targetVolume && (tooling !== "existing-mold" || existingShapeId));
+  const canApply = !!(level && priceTier && priority && durabilityExpectation && tooling && targetVolume && (tooling !== "existing-mold" || (existingMoldRacquetId && existingShapeId)));
 
   const handleApply = () => {
     if (!canApply) return;
@@ -2894,6 +3111,12 @@ function FactoryBriefPanel({ onApply }) {
       priceTier: priceTier as any,
       targetRetailPrice: targetRetailPrice ? Number(targetRetailPrice) : undefined,
       needGap,
+      whatToFix: whatToFix || undefined,
+      existingMoldRacquetId: existingMoldRacquetId || undefined,
+      explicitShape: explicitShape || undefined,
+      explicitBridge: explicitBridge || undefined,
+      explicitBeamOrientation: explicitBeamOrientation || undefined,
+      explicitSurface: explicitSurface || undefined,
       references,
       priority: priority as any,
       materialCommitment: materialCommitment || undefined,
@@ -2934,19 +3157,67 @@ function FactoryBriefPanel({ onApply }) {
       <SectionDivider label="Production Reality" step={1} />
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Tooling</div>
-        <ToggleGroup options={TOOLING_OPTIONS} value={tooling} onChange={(v) => { setTooling(v); if (v !== "existing-mold") setExistingShapeId(null); setApplied(false); }} />
+        <ToggleGroup options={TOOLING_OPTIONS} value={tooling} onChange={(v) => {
+          setTooling(v);
+          if (v !== "existing-mold") { setExistingShapeId(null); setExistingMoldRacquetId(null); setWhatToFix(""); }
+          if (v === "existing-mold") { setExplicitShape(null); } // shape will come from mold selection instead
+          setApplied(false);
+        }} />
         {tooling === "existing-mold" && (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Which shape is the existing mold?</div>
-            <ToggleGroup options={SHAPES.map((s) => ({ id: s.id, label: s.label }))} value={existingShapeId} onChange={(v) => { setExistingShapeId(v); setApplied(false); }} />
-            <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: 8 }}>
-              Shape and overall dimensions lock to this mold regardless of what priority or references below might otherwise suggest — materials, core, and bridge construction can still change within this shell.
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+              Pick the racquet whose shell you're working within. Shape, width, and thickness lock automatically from this selection — the brief then focuses on what you're changing inside that shell.
             </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {MARKET_RACQUETS.map((r) => {
+                const isSelected = existingMoldRacquetId === r.id;
+                return (
+                  <button key={r.id} onClick={() => {
+                    setExistingMoldRacquetId(r.id);
+                    setExistingShapeId(r.shapeId);
+                    setApplied(false);
+                  }} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 12px", borderRadius: 8, cursor: "pointer", textAlign: "left",
+                    WebkitTapHighlightColor: "transparent",
+                    border: `1px solid ${isSelected ? "rgba(174,251,0,0.35)" : "rgba(255,255,255,0.07)"}`,
+                    background: isSelected ? "rgba(174,251,0,0.07)" : "rgba(255,255,255,0.02)",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 13, color: isSelected ? "#AEFB00" : "#EAE6DC", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{r.brand} {r.model}</div>
+                      <div style={{ fontSize: 11, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                        {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm
+                      </div>
+                    </div>
+                    {isSelected && <CheckCircle2 size={15} color="#AEFB00" />}
+                  </button>
+                );
+              })}
+            </div>
+            {existingMoldRacquetId && (() => {
+              const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
+              return (
+                <div style={{ marginTop: 14, padding: "12px", background: "rgba(174,251,0,0.06)", border: "1px solid rgba(174,251,0,0.2)", borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, color: "#AEFB00", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
+                  <div style={{ fontSize: 12, color: "#9AA3B0", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }}>
+                    Shape: <strong style={{color:"#EAE6DC"}}>{mold.shapeId}</strong> · Weight: <strong style={{color:"#EAE6DC"}}>{mold.weightG}g</strong> · Balance: <strong style={{color:"#EAE6DC"}}>{mold.balanceCm}cm</strong> · Thickness: <strong style={{color:"#EAE6DC"}}>{mold.thicknessMm}mm</strong><br/>
+                    Current spec: {mold.coreId} core · {mold.faceId} face · {mold.frameId} frame
+                  </div>
+                </div>
+              );
+            })()}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>What are you trying to fix or improve from this shell? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional)</span></div>
+              <textarea value={whatToFix} onChange={(e) => { setWhatToFix(e.target.value); setApplied(false); }}
+                placeholder="e.g. too much vibration for the club player segment, needs a softer feel without losing the diamond's power ceiling"
+                style={{ width: "100%", minHeight: 60, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC", fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical" }} />
+            </div>
           </div>
         )}
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target volume</div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Target volume</div>
+        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>Custom: spec locked to a specific recipient — pro player, team, academy, signature edition. Retail: open inventory that needs to make margin at the price point.</p>
         <ToggleGroup options={VOLUME_OPTIONS} value={targetVolume} onChange={(v) => { setTargetVolume(v); setApplied(false); }} />
       </div>
 
@@ -2985,6 +3256,81 @@ function FactoryBriefPanel({ onApply }) {
             fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical",
           }}
         />
+      </div>
+
+      {tooling !== "existing-mold" && (
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a specific shape? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — if selected, the engine achieves your priority goals WITHIN this shape through materials and balance, not by overriding it)</span></div>
+        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
+          Leave blank to let the engine choose. Select a shape to lock it — e.g. "control priority + diamond shape" produces a control-oriented diamond (tamed through balance, core softness, and face flex), not a round racquet.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[{ id: null, label: "Engine decides" }, ...SHAPES.map((s) => ({ id: s.id, label: s.label }))].map((opt) => (
+            <button
+              key={opt.id ?? "auto"}
+              onClick={() => { setExplicitShape(opt.id); setApplied(false); }}
+              style={{
+                padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                border: `1px solid ${explicitShape === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
+                background: explicitShape === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
+                color: explicitShape === opt.id ? "#AEFB00" : "#9AA3B0",
+              }}
+            >{opt.label}</button>
+          ))}
+        </div>
+      </div>
+      )}
+      {tooling === "existing-mold" && existingMoldRacquetId && (
+        <div style={{ marginBottom: 18, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 }}>
+          <div style={{ fontSize: 11.5, color: "#6A7485", fontFamily: "Inter, sans-serif" }}>Shape locked from mold selection above — the "lock a shape" option only applies to new-mold briefs.</div>
+        </div>
+      )}
+
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a bridge type? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — if not selected, extended durability may auto-set this)</span></div>
+        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
+          Leave blank to let the engine decide. Select explicitly to prevent durability logic from overriding your design intent.
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[{ id: null, label: "Engine decides" }, ...BRIDGE_TYPES.map((b) => ({ id: b.id, label: b.label }))].map((opt) => (
+            <button key={opt.id ?? "auto"} onClick={() => { setExplicitBridge(opt.id); if (opt.id === "closed") setExplicitBeamOrientation(null); setApplied(false); }}
+              style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                border: `1px solid ${explicitBridge === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
+                background: explicitBridge === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
+                color: explicitBridge === opt.id ? "#AEFB00" : "#9AA3B0",
+              }}>{opt.label}</button>
+          ))}
+        </div>
+        {(explicitBridge === "open" || explicitBridge === null) && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Beam orientation {explicitBridge === null ? "(if engine picks open)" : ""}:</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[{ id: null, label: "Engine decides" }, ...BEAM_ORIENTATIONS.map((b) => ({ id: b.id, label: b.label }))].map((opt) => (
+                <button key={opt.id ?? "auto"} onClick={() => { setExplicitBeamOrientation(opt.id); setApplied(false); }}
+                  style={{ padding: "6px 11px", borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                    border: `1px solid ${explicitBeamOrientation === opt.id ? "rgba(174,251,0,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    background: explicitBeamOrientation === opt.id ? "rgba(174,251,0,0.1)" : "rgba(255,255,255,0.03)",
+                    color: explicitBeamOrientation === opt.id ? "#AEFB00" : "#7B8494",
+                  }}>{opt.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a surface texture? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — engine will pick based on priority if left blank)</span></div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[{ id: null, label: "Engine decides" }, ...SURFACE_TEXTURES.map((s) => ({ id: s.id, label: s.label }))].map((opt) => (
+            <button key={opt.id ?? "auto"} onClick={() => { setExplicitSurface(opt.id); setApplied(false); }}
+              style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                border: `1px solid ${explicitSurface === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
+                background: explicitSurface === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
+                color: explicitSurface === opt.id ? "#AEFB00" : "#9AA3B0",
+              }}>{opt.label}</button>
+          ))}
+        </div>
       </div>
 
       <SectionDivider label="Competitive Reference" step={3} />
