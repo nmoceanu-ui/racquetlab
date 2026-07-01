@@ -1155,6 +1155,16 @@ interface FactoryBriefInput {
   targetVolume: "boutique" | "standard" | "scale"; // boutique (~hundreds-low thousands of units) / standard (mid-volume retail run) / scale (mass-market run) — affects whether durability/material upgrades are realistic to amortize
 }
 
+interface FactoryBriefAlternative {
+  trackId: "material-first" | "structural-innovation" | "damping-chain";
+  trackLabel: string;
+  philosophy: string; // one-sentence design philosophy summary
+  spec: FactoryBriefResult["spec"];
+  rationale: string[];
+  oem: number;
+  retailRange: [number, number];
+}
+
 interface FactoryBriefResult {
   spec: {
     shapeId: string; coreId: string; faceId: string; frameId: string;
@@ -1162,6 +1172,7 @@ interface FactoryBriefResult {
     beamOrientation: string; weightG: number; balanceCm: number; gripCircMm: number;
   };
   rationale: string[]; // one line per major decision, referencing the actual inputs that drove it
+  alternatives: FactoryBriefAlternative[]; // two additional genuinely-different design philosophies for the same brief
 }
 
 function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
@@ -1493,6 +1504,135 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
             beamOrientation, weightG: Math.round(weightG), balanceCm: Math.round(balanceCm * 10) / 10, gripCircMm },
     rationale,
   };
+}
+
+// ---------------------------------------------------------------------------
+// MULTI-SPEC WRAPPER — generates three genuinely different design approaches
+// for the same brief, each representing a distinct engineering philosophy
+// rather than a slight variation of the same approach.
+// ---------------------------------------------------------------------------
+
+function computeFactoryBriefWithAlternatives(input: FactoryBriefInput): FactoryBriefResult {
+  const primary = computeFactoryBrief(input);
+
+  type TrackOverride = {
+    trackLabel: string;
+    philosophy: string;
+    overrides: Partial<FactoryBriefResult["spec"]>;
+    extraRationale: string;
+  };
+
+  const TRACK_OVERRIDES: Record<string, Record<string, TrackOverride>> = {
+    control: {
+      "material-first": {
+        trackLabel: "Material-first",
+        philosophy: "Tune every material variable toward dwell time — hybrid-core's two-zone density, 18K face per-panel flex, basalt frame for vibration character distinct from carbon.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-18k", frameId: "basalt-frame" },
+        extraRationale: "Material-first track: every material independently maximized for dwell. Hybrid-core soft throat zone for touch, 18K flat-weave for per-panel flex, basalt frame for thermal stability.",
+      },
+      "structural-innovation": {
+        trackLabel: "Structural Innovation",
+        philosophy: "Control through structural precision — hollow tubular frame (tennis-derived load distribution, essentially absent from padel), minimal holes for more continuous and consistent face feedback.",
+        overrides: { coreId: "eva-medium", faceId: "carbon-12k", frameId: "hollow-tubular-frame", bridgeId: "open", beamOrientation: "vertical" },
+        extraRationale: "Structural Innovation track: hollow tubular frame standard in tennis for 40 years, essentially absent from padel. Distributes load around the perimeter rather than through a solid cross-section. Minimal holes (Head Extreme One principle) give a more continuous face. Control from structural precision, not material softness.",
+      },
+      "damping-chain": {
+        trackLabel: "Damping Chain",
+        philosophy: "Engineer every vibration interface in the shot path — foam-PE core, honeycomb-reinforced frame, dampener-integrated grip, closed bridge for total torsional consistency.",
+        overrides: { coreId: "foam-pe", faceId: "carbon-18k", frameId: "honeycomb-reinforced-frame", bridgeId: "closed", gripId: "dampener-integrated-grip" },
+        extraRationale: "Damping Chain track: every interface in the contact chain selected to absorb rather than transmit. Foam-PE core (most elastic), honeycomb-reinforced frame (structural damping from 1970s tennis patents), embedded dampener in handle, closed bridge for zero torsional variables on off-center hits.",
+      },
+    },
+    power: {
+      "material-first": {
+        trackLabel: "Material-first",
+        philosophy: "Maximum energy transfer through material stiffness — hard EVA core, stiffest carbon face available, full carbon frame, 3D-print surface for aggressive ball contact.",
+        overrides: { coreId: "eva-hard", frameId: "carbon-frame", surfaceId: "3d-print" },
+        extraRationale: "Material-first track: straightforward maximum-stiffness approach. Hard core for instant energy return, 3D-print surface for spin loading on smashes.",
+      },
+      "structural-innovation": {
+        trackLabel: "Structural Innovation",
+        philosophy: "Power through structural geometry — hollow tubular frame concentrates load at the perimeter (higher effective stiffness per gram than solid carbon), XL honeycomb surface for aggressive ball grip.",
+        overrides: { coreId: "eva-hard", faceId: "carbon-3k", frameId: "hollow-tubular-frame", surfaceId: "xl-honeycomb" },
+        extraRationale: "Structural Innovation track: hollow tubular frame (stiffest available geometry per gram — standard in tennis, rare in padel). XL honeycomb texture for ball contact at raised cell edges rather than continuous grit. Power from structural efficiency.",
+      },
+      "damping-chain": {
+        trackLabel: "Auxetic Rebound",
+        philosophy: "Power through frame geometry that returns energy — auxetic carbon frame widens on impact rather than compressing, returning more energy to the ball through frame behavior rather than just material hardness.",
+        overrides: { coreId: "eva-hard", faceId: "carbon-3k", frameId: "auxetic-frame" },
+        extraRationale: "Auxetic Rebound track: auxetic frame (negative Poisson's ratio — widens on impact) returns energy to the ball through frame geometry. Head's Auxetic 2.0 uses this principle. Paired with hard core for a two-lever power approach: material stiffness AND structural energy return.",
+      },
+    },
+    comfort: {
+      "material-first": {
+        trackLabel: "Material-first",
+        philosophy: "Soften every contact point independently — foam-PE core (more elastic than any EVA grade), anti-shock grip, hybrid frame, smooth surface.",
+        overrides: { coreId: "foam-pe", gripId: "anti-shock-grip", frameId: "hybrid-frame", surfaceId: "smooth" },
+        extraRationale: "Material-first track: each material component independently chosen for comfort contribution. Foam-PE is softer and more elastic than EVA, providing stronger vibration absorption at the source.",
+      },
+      "structural-innovation": {
+        trackLabel: "Structural Innovation",
+        philosophy: "Comfort through structural choices — round grip cross-section reduces grip tension and forearm fatigue, single open beam is lightest possible construction for swing fatigue reduction over long sessions.",
+        overrides: { coreId: "eva-soft", gripId: "anti-shock-grip", gripShapeId: "grip-round", frameId: "honeycomb-reinforced-frame", bridgeId: "open", beamOrientation: "vertical" },
+        extraRationale: "Structural Innovation track: comfort at the structural level. Round grip cross-section (common in squash, rare in padel) reduces the grip tension that causes forearm fatigue. Single-beam open bridge = lightest possible construction, reducing swing-cumulative fatigue over long sessions.",
+      },
+      "damping-chain": {
+        trackLabel: "Damping Chain",
+        philosophy: "Maximum vibration management from core to hand — dampener-integrated handle (analogous to Babolat Cortex in tennis), closed bridge, foam-PE core, honeycomb frame.",
+        overrides: { coreId: "foam-pe", gripId: "dampener-integrated-grip", frameId: "honeycomb-reinforced-frame", bridgeId: "closed" },
+        extraRationale: "Damping Chain track: the complete arm-protection build. Every interface engineered for absorption: foam-PE core, honeycomb frame, embedded handle dampener, closed bridge eliminating torsional feedback. The professional elbow-protection spec.",
+      },
+    },
+    balanced: {
+      "material-first": {
+        trackLabel: "Material-first",
+        philosophy: "Hybrid-core as the foundational choice — soft near the throat for defense and touch, firmer toward the hitting zone for attacking shots. The only core designed for within-session versatility.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-12k" },
+        extraRationale: "Material-first track: hybrid dual-density core as the primary philosophy. Soft at the throat (defensive shots, touch volleys), firmer toward the tip (overhead smashes, attacking shots). No other core in the data model is built for this kind of positional versatility.",
+      },
+      "structural-innovation": {
+        trackLabel: "Structural Innovation",
+        philosophy: "Wide-body diamond shape as the geometric approach to balance — retains power ceiling but broader frame increases twistweight and widens the effective sweet spot without requiring soft materials.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-12k" },
+        extraRationale: "Structural Innovation track: wide-body diamond is a genuine market gap (your own brief document identified this). Broader than standard diamond = higher twistweight = more forgiving on off-center contact, while retaining the shape's power ceiling. Balance achieved through geometry, not material compromise.",
+      },
+      "damping-chain": {
+        trackLabel: "Auxetic Balance",
+        philosophy: "Auxetic frame distributes ball impact across the whole hitting zone rather than at a point — structurally balanced response rather than a material-averaged compromise.",
+        overrides: { coreId: "hybrid-core", frameId: "auxetic-frame", faceId: "carbon-12k" },
+        extraRationale: "Auxetic Balance track: auxetic frame widens on impact across the full hitting area, distributing ball energy more evenly than a standard frame. This is structural balance — the frame responds uniformly regardless of where contact occurs. Head uses Auxetic 2.0 but hasn't applied it to a balanced-priority brief.",
+      },
+    },
+  };
+
+  const tracks = TRACK_OVERRIDES[input.priority] ?? TRACK_OVERRIDES.balanced;
+  const alternatives: FactoryBriefAlternative[] = [];
+
+  (Object.entries(tracks) as [string, TrackOverride][]).forEach(([trackId, track]) => {
+    const altBase = computeFactoryBrief(input);
+    const altSpec = { ...altBase.spec, ...track.overrides };
+
+    // Hard constraints always survive into alternatives
+    if (input.explicitShape) altSpec.shapeId = input.explicitShape;
+    if (input.tooling === "existing-mold" && input.existingShapeId) altSpec.shapeId = input.existingShapeId;
+    if (input.explicitBridge) altSpec.bridgeId = input.explicitBridge;
+    if (input.explicitSurface) altSpec.surfaceId = input.explicitSurface;
+
+    const oem = estimateOEMCost(altSpec);
+    const [lo, hi] = oemToRetailRange(oem);
+
+    alternatives.push({
+      trackId: trackId as any,
+      trackLabel: track.trackLabel,
+      philosophy: track.philosophy,
+      spec: altSpec,
+      rationale: [track.extraRationale],
+      oem,
+      retailRange: [lo, hi],
+    });
+  });
+
+  return { ...primary, alternatives };
 }
 
 
@@ -3037,7 +3177,8 @@ function FactoryBriefPanel({ onApply }) {
   const [whatToFix, setWhatToFix] = useState("");
   const [targetVolume, setTargetVolume] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
-  const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[] } | null>(null);
+  const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[]; alternatives: FactoryBriefAlternative[] } | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<string>("material-first");
 
   const LEVEL_OPTIONS = [
     { id: "beginner", label: "Beginner" },
@@ -3114,7 +3255,7 @@ function FactoryBriefPanel({ onApply }) {
   const handleApply = () => {
     if (!canApply) return;
     try {
-      const result = computeFactoryBrief({
+      const result = computeFactoryBriefWithAlternatives({
         level: level as any,
         priceTier: priceTier as any,
         targetRetailPrice: targetRetailPrice ? Number(targetRetailPrice) : undefined,
@@ -3134,11 +3275,18 @@ function FactoryBriefPanel({ onApply }) {
         targetVolume: targetVolume as any,
       });
       setLastResult(result);
-      onApply(result.spec);
+      // Auto-select first alternative and apply it to the Build tab
+      if (result.alternatives.length > 0) {
+        const firstAlt = result.alternatives[0];
+        setSelectedTrack(firstAlt.trackId);
+        onApply(firstAlt.spec);
+      } else {
+        onApply(result.spec);
+      }
       setApplied(true);
     } catch (err) {
       console.error("Factory Brief engine error:", err);
-      setLastResult({ spec: {} as any, rationale: [`Engine error: ${err instanceof Error ? err.message : String(err)} — check console for details.`] });
+      setLastResult({ spec: {} as any, rationale: [`Engine error: ${err instanceof Error ? err.message : String(err)} — check console for details.`], alternatives: [] });
     }
   };
 
@@ -3465,12 +3613,55 @@ function FactoryBriefPanel({ onApply }) {
       })()}
 
       {applied && lastResult && (
-        <div style={{ marginTop: 16, padding: "16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(174,251,0,0.15)", borderRadius: 12 }}>
-          <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#AEFB00", marginBottom: 10 }}>Design Rationale</p>
-          {lastResult.rationale.map((line, i) => (
-            <p key={i} style={{ fontSize: 12.5, color: "#9AA3B0", lineHeight: 1.6, fontFamily: "Inter, sans-serif", margin: "0 0 8px", paddingLeft: 14, borderLeft: "2px solid rgba(174,251,0,0.2)" }}>{line}</p>
-          ))}
-          <p style={{ textAlign: "center", fontSize: 12, color: "#6A7485", marginTop: 12, fontFamily: "Inter, sans-serif" }}>Spec applied — scroll to Build to fine-tune any field.</p>
+        <div style={{ marginTop: 16 }}>
+          {/* Track switcher */}
+          <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#AEFB00", marginBottom: 8 }}>3 Design Approaches — Same Brief</p>
+          <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>Each is a different engineering philosophy for the same goal. Select one to apply it to the Build tab.</p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {lastResult.alternatives.map((alt) => {
+              const isSelected = selectedTrack === alt.trackId;
+              return (
+                <div key={alt.trackId} style={{ border: `1px solid ${isSelected ? "rgba(174,251,0,0.4)" : "rgba(255,255,255,0.08)"}`, borderRadius: 10, background: isSelected ? "rgba(174,251,0,0.06)" : "rgba(255,255,255,0.02)", overflow: "hidden" }}>
+                  <button onClick={() => {
+                    setSelectedTrack(alt.trackId);
+                    onApply(alt.spec);
+                  }} style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#AEFB00" : "#EAE6DC", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>{alt.trackLabel}</span>
+                      <span style={{ fontSize: 11, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace" }}>~${alt.oem} OEM · ${alt.retailRange[0]}–${alt.retailRange[1]}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "6px 0 0" }}>{alt.philosophy}</p>
+                  </button>
+                  {isSelected && (
+                    <div style={{ padding: "0 14px 14px" }}>
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10, marginTop: 2 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
+                          {[
+                            ["Shape", alt.spec.shapeId],
+                            ["Core", alt.spec.coreId],
+                            ["Face", alt.spec.faceId],
+                            ["Frame", alt.spec.frameId],
+                            ["Surface", alt.spec.surfaceId],
+                            ["Bridge", alt.spec.bridgeId],
+                          ].map(([k, v]) => (
+                            <div key={k} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: "5px 8px" }}>
+                              <div style={{ fontSize: 9, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
+                              <div style={{ fontSize: 12, color: "#EAE6DC", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {alt.rationale.slice(0, 2).map((line, i) => (
+                          <p key={i} style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 6px", paddingLeft: 10, borderLeft: "2px solid rgba(174,251,0,0.25)" }}>{line}</p>
+                        ))}
+                        <p style={{ fontSize: 11.5, color: "#AEFB00", fontFamily: "Inter, sans-serif", marginTop: 8, opacity: 0.8 }}>↑ Applied to Build tab — scroll up to fine-tune.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
