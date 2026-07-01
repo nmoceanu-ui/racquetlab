@@ -1176,10 +1176,18 @@ interface FactoryBriefResult {
 }
 
 function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
-  const { level, priceTier, targetRetailPrice, references, priority, materialCommitment,
+  const { level, priceTier, targetRetailPrice, needGap, references, priority, materialCommitment,
           durabilityExpectation, tooling, existingShapeId, existingMoldRacquetId, whatToFix,
           targetVolume, explicitShape, explicitBridge, explicitBeamOrientation, explicitSurface } = input;
   const rationale: string[] = [];
+
+  // Parse needGap for shape keywords — "high sweet spot", "viper", "diamond",
+  // "smash", "overhead" all signal diamond intent even when shape isn't locked
+  const gapLower = (needGap ?? "").toLowerCase();
+  const gapSignalsDiamond = gapLower.includes("diamond") || gapLower.includes("viper") || gapLower.includes("high sweet spot") || gapLower.includes("smash") || gapLower.includes("overhead") || gapLower.includes("metalbone");
+  const gapSignalsRound = gapLower.includes("round") || gapLower.includes("beginner") || gapLower.includes("forgiving") || gapLower.includes("large sweet spot");
+  const gapSignalsControl = gapLower.includes("control") || gapLower.includes("touch") || gapLower.includes("precision") || gapLower.includes("feel");
+
 
   // -------------------------------------------------------------------------
   // STEP 1 — LOCK ALL HARD CONSTRAINTS FIRST
@@ -1275,6 +1283,58 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
   let gripCircMm = 38;
 
   rationale.push(`Level baseline: ${level} tier starting materials (${coreId} core, ${faceId} face, ${frameId} frame) — these are the unlocked-variable starting points that priority logic below will optimize, not fixed outcomes.`);
+
+  // -------------------------------------------------------------------------
+  // STEP 2.5 — INFER SHAPE FROM REFERENCES (before priority runs)
+  //
+  // When shape is NOT explicitly locked and the user has selected competitive
+  // references, the shape of those references is a strong signal about what
+  // they're actually designing toward — especially when "sweet spot" or
+  // "balance feel" is tagged, since those qualities are fundamentally tied
+  // to the reference racquet's geometry.
+  //
+  // Rule: if the majority of selected references share a shape, and at least
+  // one of them has "sweetSpot" or "balanceFeel" in their draws (meaning the
+  // user specifically wants those geometry-dependent qualities), infer that
+  // shape before the priority step runs. This means "control priority + Viper
+  // reference with sweetSpot draw" correctly produces a control-oriented
+  // diamond, not a round, because the engine sees the intent first.
+  // -------------------------------------------------------------------------
+  if (!shapeLocked && references.length > 0) {
+    const shapeCounts: Record<string, number> = {};
+    const geometryDraws = ["sweetSpot", "balanceFeel"];
+    let hasGeometryDraw = false;
+    references.forEach(ref => {
+      const racquet = MARKET_RACQUETS.find(r => r.id === ref.racquetId);
+      if (!racquet) return;
+      shapeCounts[racquet.shapeId] = (shapeCounts[racquet.shapeId] ?? 0) + 1;
+      if (ref.draws.some(d => geometryDraws.includes(d))) hasGeometryDraw = true;
+    });
+    const dominantShape = Object.entries(shapeCounts).sort((a, b) => b[1] - a[1])[0];
+    // Two independent signals that can confirm shape:
+    // 1. Majority of references share a shape AND geometry-sensitive qualities were drawn
+    // 2. The need-gap text explicitly names the shape or a racquet known for that shape
+    const referenceSignal = dominantShape && hasGeometryDraw && dominantShape[1] >= Math.ceil(references.length / 2);
+    const gapReinforcesReference = dominantShape && (
+      (dominantShape[0] === "diamond" && gapSignalsDiamond) ||
+      (dominantShape[0] === "round" && gapSignalsRound)
+    );
+    if (referenceSignal || (dominantShape && gapReinforcesReference)) {
+      shapeId = dominantShape[0];
+      shapeLocked = true;
+      shapeLockedReason = "inferred from competitive references";
+      const signals = [referenceSignal ? `${dominantShape[1]}/${references.length} references are ${shapeId}` : "", gapReinforcesReference ? `need-gap text also signals ${shapeId}` : ""].filter(Boolean).join(", ");
+      rationale.push(`Shape inferred from references: ${signals}. Setting shape to ${shapeId} before priority optimization — the engine will achieve your ${priority} goals WITHIN this shape rather than picking shape independently. To override, use the explicit shape selector.`);
+    }
+  }
+
+  // Fallback: gap text alone (no references) can also signal shape
+  if (!shapeLocked && gapSignalsDiamond && !gapSignalsRound) {
+    shapeId = "diamond";
+    shapeLocked = true;
+    shapeLockedReason = "inferred from need-gap text";
+    rationale.push(`Shape inferred from brief description: need-gap text signals a diamond-character racquet. Setting shape to diamond — the engine will achieve your ${priority} goals within this shape. Use the explicit shape selector to override.`);
+  }
 
   // -------------------------------------------------------------------------
   // STEP 3 — PHYSICS-FIRST PRIORITY OPTIMIZATION
