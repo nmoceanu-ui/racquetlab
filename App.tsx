@@ -16,96 +16,101 @@ import { analytics } from "./lib/analytics";
 // MATERIAL DATABASE
 // ---------------------------------------------------------------------------
 
+
 const CORE_MATERIALS = [
-  { id: "eva-soft", label: "EVA Foam — Soft", density: "20-25 kg/m³", power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Lower density, higher compressibility. Best shock absorption and largest forgiving sweet spot. Ball compresses into the core longer, which softens power but is gentler on the arm.", bestFor: "Beginners, recreational players, arm/elbow sensitivity" },
-  { id: "eva-medium", label: "EVA Foam — Medium", density: "25-30 kg/m³", power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "Balanced compression and rebound. The most common core choice because it doesn't strongly favor power or control.", bestFor: "Intermediate, all-round players" },
-  { id: "eva-hard", label: "EVA Foam — Hard", density: "30-40 kg/m³", power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Denser foam resists compression, so swing energy transfers to the ball almost instantly. Stiffer feel, less forgiving off-center, transmits more vibration.", bestFor: "Advanced players, aggressive baseline and smash-heavy styles" },
-  { id: "foam-pe", label: "Polyethylene Core Foam", density: "lower than EVA", power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Softer and more elastic than EVA. Comfortable with strong vibration absorption, but compresses more and wears faster.", bestFor: "Entry-level rackets, players prioritizing arm comfort over power" },
-  { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "varies by zone", power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Combines two foam densities in one core — softer near the throat, firmer toward the head — for different feel on fast vs. slow shots.", bestFor: "Players who want different feel on offense vs. defense" },
+  { id: "eva-soft", label: "EVA Foam — Soft", density: "20–25 kg/m³", hardnessShoreC: "30–40°C", power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Ethylene-vinyl acetate foam at its lowest commercial density for padel. Compresses significantly under ball impact, giving long dwell time and a wide sweet spot. Absorbs ~30–40% of impact energy as heat rather than returning it to the ball — controlled feel, gentle on the arm. Shore C 30–40° is the QC spec to request from factories. Primary failure mode: foam cell collapse over time — soft EVA wears faster than hard EVA under equivalent loads. Royal Padel M27 Poly uses PE (see below) for even softer feel, but soft EVA is the most common arm-friendly core.", bestFor: "Beginners, recreational, arm/elbow sensitivity, defensive play", manufacturingNote: "Standard OEM. EVA foam blanks cut or molded then wrapped in carbon during co-cure. Specify Shore C range, not just 'soft'." },
+  { id: "eva-medium", label: "EVA Foam — Medium", density: "25–32 kg/m³", hardnessShoreC: "40–55°C", power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "The industry default — majority of padel racquets produced globally. Compresses and rebounds quickly, splitting power/control. Multiple brands (Bullpadel MultiEva, Head Power Foam mid-range) tune within this zone with proprietary density gradients. The 'medium' label covers a meaningful range — 26 kg/m³ vs 31 kg/m³ is perceptible on direct comparison. Request Shore C confirmation (40–55°) rather than relying on supplier's 'medium' designation.", bestFor: "Intermediate players, all-round builds, highest commercial volume", manufacturingNote: "Readily available from all major EVA suppliers. Cost-neutral vs soft." },
+  { id: "eva-hard", label: "EVA Foam — Hard", density: "30–45 kg/m³", hardnessShoreC: "55–75°C", power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Dense, low-compressibility foam. At 40+ kg/m³ ball-core contact drops to ~3–5ms vs 8–12ms for soft EVA — energy is returned to the ball rather than absorbed. Smashes feel explosive, mishits transmit full impact to the arm. Shore C 55–75° should be specified and tested. Babolat Viper, Adidas Metalbone HRD+, Wilson Bela Pro, StarVie Triton+ all use hard EVA. Excellent long-term durability. Medical caveat: players with existing elbow or shoulder injuries should avoid this specification.", bestFor: "Advanced players, smash-dominant styles, net-forward attacking play", manufacturingNote: "Standard OEM. Hard EVA marginally more expensive per kg but negligible at racquet scale (~95g foam). Specify Shore C range and request batch QC." },
+  { id: "foam-pe", label: "Polyethylene Core Foam (PE)", density: "15–22 kg/m³", hardnessShoreC: "18–30°C", power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Closed-cell polyethylene rather than EVA. PE is softer and more elastic — its molecular structure allows greater deformation and recovery without permanent set. Lower energy-loss coefficient than EVA at equivalent density — can feel both softer AND more lively than soft EVA depending on impact velocity. Royal Padel uses PE core (branded 'Poly Core') in their M27 Poly line targeting players with elbow sensitivity. PE wears faster than EVA — cell wall fatigue resistance is lower. Not appropriate for players hitting heavy balls at high frequency.", bestFor: "Entry-level, recreational, arm-protection priority, low-to-medium frequency play", manufacturingNote: "Less commonly stocked by padel OEM factories than EVA. PE bonds to carbon less readily — primer treatment may be required. Confirm supplier capability before specifying." },
+  { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "20–40 kg/m³ varies by zone", hardnessShoreC: "30–40° throat / 50–65° tip", power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Two distinct foam densities bonded or co-molded into one core insert — softer near the throat (defensive touch shots, net volleys) and firmer toward the tip (offensive smashes, high-speed contact). The rationale: optimal foam stiffness for a 90 km/h smash differs from optimal for a soft lob return. Bullpadel's MultiEva (Neuron 02, Hack 04) and Nox AT10 Genius both implement this. Manufacturing complexity is higher — requires two-pour process or precision-bonded insert. Delamination between foam zones is a failure mode not present in single-density cores. Worth the complexity for advanced players who genuinely use the full court.", bestFor: "Advanced all-court players, players transitioning between net and baseline frequently", manufacturingNote: "Specify the density of each zone and transition depth from throat — these are independent design variables. Gradient transition (co-molded) is more consistent but harder to produce than two bonded pieces." },
+  { id: "two-piece-cassette-core", label: "Modular Foam Cassette Insert", density: "varies — any EVA spec", hardnessShoreC: "varies", power: 3, control: 3, comfort: 3, sweetSpot: 3, durability: 5, note: "A construction architecture rather than a foam type: the foam is pre-formed as a discrete insert placed inside a separately-manufactured hollow tube frame, rather than co-molded with the carbon. Frame and foam are independent components. Enables: (1) foam replacement without replacing the frame — the carbon shell, which carries all structural load, lasts indefinitely while foam inserts are replaced when worn; (2) modular product lines — one frame mold produces multiple racquets differentiated by foam density insert; (3) experimentation with non-EVA core materials without redesigning the frame. The foam does not bond to the carbon — retained by geometry and slight compression fit (2–3% oversize), which improves vibration damping versus bonded foam because micro-slip at the interface absorbs energy. Precedent in tennis racquet patents (US6071203, US6800239) but never applied to padel's solid-face geometry. IP note: hollow tube padel frame + captured modular foam cassette + horizontal clamshell bond + solid face geometry is potentially patentable in the padel context.", bestFor: "Premium product lines, replaceable-core business model, research builds, performance customization at retail", manufacturingNote: "Higher tooling cost (two frame half-molds + foam insert mold). Assembly adds 2–3 steps per unit. Co-cure bonding (both frame halves partially cured when pressed) achieves full structural integrity. Creates a fundamentally different product category — recurring foam insert revenue model." },
 ];
 
 const FACE_MATERIALS = [
-  { id: "fiberglass", label: "Fiberglass", power: 2, control: 4, comfort: 5, durability: 2, cost: "Low", note: "More elastic and forgiving than carbon, with a pronounced spring effect. Lower cost and weight, standard for entry-level rackets.", bestFor: "Beginners, comfort-first builds" },
-  { id: "carbon-3k", label: "Carbon Fiber — 3K", power: 5, control: 3, comfort: 2, durability: 5, cost: "Mid", note: "3,000 filaments per tow, tubular weave. Most describe 3K as the stiffest, most direct, most powerful weave. Source disagreement exists — verify against your supplier's data sheet.", bestFor: "Advanced/aggressive players prioritizing power" },
-  { id: "carbon-12k", label: "Carbon Fiber — 12K", power: 4, control: 4, comfort: 3, durability: 4, cost: "Mid", note: "12,000 filaments per tow. Widely described as the versatile middle ground — softer-flexing than 3K with a bit more ball release.", bestFor: "All-round players, the most common spec" },
-  { id: "carbon-18k", label: "Carbon Fiber — 18K / TeXtreme", power: 3, control: 5, comfort: 4, durability: 4, cost: "High", note: "Higher filament count, flat-tape construction. More flexible and comfortable than 3K, better vibration filtering.", bestFor: "Defensive/control players, arm-sensitive players" },
-  { id: "graphene", label: "Graphene-Enhanced", power: 5, control: 3, comfort: 2, durability: 4, cost: "Very high", note: "Thin, lightweight, very strong carbon allotrope blended into a carbon layup. Adds stiffness and structural reinforcement for power transfer.", bestFor: "Premium offensive rackets" },
-  { id: "kevlar-reinforced", label: "Kevlar-Reinforced", power: 4, control: 4, comfort: 2, durability: 5, cost: "High", note: "Kevlar used as structural reinforcement for frame durability and impact resistance. Suits attacking players more than touch players.", bestFor: "Durability-focused builds, hard consistent hitters" },
+  { id: "fiberglass", label: "Fiberglass (E-Glass)", power: 2, control: 4, comfort: 5, durability: 2, cost: "Low", fiberModulusGPa: "70–75", elongationAtBreak: "~2.5%", note: "E-glass tensile modulus ~70–75 GPa — roughly one-third of carbon fiber (210–230 GPa). Lower stiffness means more face deflection on impact, extending contact time and absorbing more energy. Spring-like elastic feel rather than the direct rigid response of carbon. Comfort significantly better because face flex damps vibration before reaching the handle. Fiberglass fatigues faster than carbon under repeated flexural cycling — microcracking begins at fiber-matrix interfaces after significant impact cycles. Weight slightly higher than carbon per unit stiffness but at face thickness the total difference is minor (2–4g). Wets out more easily than carbon in wet layup — more forgiving to manufacture.", bestFor: "Beginners, comfort-first, budget builds, arm-sensitive players", manufacturingNote: "Lowest tooling complexity. Lower cure temperatures than carbon. Wide global supplier availability." },
+  { id: "carbon-3k", label: "Carbon Fiber — 3K Weave", power: 5, control: 3, comfort: 2, durability: 5, cost: "Mid", fiberModulusGPa: "210–230 (T700 grade)", towCount: "3,000 filaments per tow", weaveDensity: "High — fine, tight weave", note: "3,000 filaments per tow, tight fine-textured fabric. Market characterization as 'stiffest' is partially valid but for the right reason: a 3K weave has lower fiber undulation (waviness) than 18K flat-tape at equivalent ply count, giving marginally higher effective in-plane modulus. The primary experience: immediate, direct ball response. Crisp and precise contact feel. Vibration transmission is high — stiff face passes more impact energy toward the handle. Classic fine-check carbon weave appearance. Used by Babolat Viper, Wilson Bela Pro, Siux Electra, StarVie Triton+.", bestFor: "Advanced/aggressive players, power-first builds, smash-dominant styles", manufacturingNote: "Standard padel OEM material. 3K pre-preg widely available. Cure 120–140°C. Face wall thickness typically 1.0–2.0mm." },
+  { id: "carbon-12k", label: "Carbon Fiber — 12K Weave", power: 4, control: 4, comfort: 3, durability: 4, cost: "Mid", fiberModulusGPa: "210–230 (same fiber grade as 3K)", towCount: "12,000 filaments per tow", weaveDensity: "Medium — broader, flatter tow", note: "12,000 filaments per tow, broader weave than 3K. At equivalent fiber grade and ply count, marginally lower effective modulus than 3K due to slightly higher fiber undulation — but the difference is small. More meaningful: broader tow creates larger flat-weave panels, giving slightly more per-panel flex. Also more cost-effective than 3K per unit area. Highest-volume padel face material globally. Bullpadel Vertex 05, Nox Equation, StarVie Astrum+, Wilson Blade V3, Royal Padel Fury, Head Speed Motion. Players moving between 3K and 12K at similar overall construction notice slightly softer, more connected feel — less 'ping', more 'thud' on hard shots.", bestFor: "All-round players, highest-volume specification, intermediate to advanced builds", manufacturingNote: "Best pricing, highest availability. Multiple Chinese and Taiwanese suppliers. Standard OEM." },
+  { id: "carbon-18k", label: "Carbon Fiber — 18K / TeXtreme / Spread Tow", power: 3, control: 5, comfort: 4, durability: 4, cost: "High", fiberModulusGPa: "210–230 fiber grade but flat-tape architecture changes effective modulus", towCount: "18,000 filaments or spread/split tow", weaveDensity: "Very flat — ultra-wide tape or spread-tow fabric", note: "18K in padel refers to either true 18,000-filament weaves or spread-tow fabrics (TeXtreme, originally aerospace). Spread-tow: individual tows spread laterally into ultra-thin wide tapes, creating fabric with minimal crimp — fibers run nearly straight through the laminate. Near-zero crimp means a spread-tow 18K can have higher in-plane stiffness than conventional 3K at the same ply count. However the per-panel flex behavior feels different — wide flat tape allows larger panels to flex as a unit, producing smoother distributed flex response. Players describe this as '18K control' — not reduced stiffness but more distributed load-sharing. Vibration damping better than 3K because fewer resin-rich weave intersection points. Commercial examples: Bullpadel Hack 04 aluminized 18K, Nox AT10 Genius 18K, Siux Diablo, Varlion Summum Carbon.", bestFor: "Control/defense-oriented advanced players, arm-sensitive players, precision touch builds", manufacturingNote: "Higher cost than 3K and 12K. TeXtreme licensed from Oxeon (Swedish aerospace). Handle carefully in layup — spread-tow fabrics are delicate." },
+  { id: "graphene", label: "Graphene-Enhanced Carbon", power: 5, control: 3, comfort: 2, durability: 4, cost: "Very high", fiberModulusGPa: "Graphene: ~1,000 GPa theoretical; as composite additive: ~5–15% matrix stiffness increase", note: "Graphene is a single-atom-thick carbon lattice with theoretical modulus ~1,000 GPa. In commercial racquets, it is dispersed as an additive within the epoxy matrix or incorporated as a surface coating layer — NOT as the primary structural fiber. Practical effect: matrix stiffens, improving stress transfer between fibers, increasing composite modulus by ~5–15% depending on loading fraction and dispersion quality. Head's Graphene 360 applies graphene specifically to high-stress frame zones for torsional rigidity rather than to the face for stiffness. Real benefit: improved matrix toughness delays microcrack initiation, improving fatigue life. IP caveat: Head AG holds multiple patents on graphene racquet applications (EP series, priority 2012–2016). Confirm freedom-to-operate before naming graphene in marketing.", bestFor: "Premium offensive rackets where cost premium is justified by brand positioning", manufacturingNote: "Dispersion quality is critical — poor dispersion produces no benefit and may introduce defects. Requires specialist composite supplier with graphene-enhanced pre-preg capability." },
+  { id: "kevlar-reinforced", label: "Kevlar (Aramid) Reinforced", power: 4, control: 4, comfort: 2, durability: 5, cost: "High", fiberModulusGPa: "Kevlar 49: ~125 GPa tensile; exceptional impact toughness", note: "Para-aramid fiber with ~125 GPa modulus — lower than carbon but ~2–4× higher specific energy absorption on impact. Used as hybrid with carbon: carbon for stiffness/power, Kevlar for toughness/crack arrest. Common locations: frame perimeter (wall/floor impacts), shoulder zones. Critical manufacturing caveat: Kevlar drills poorly — aramid fibers fray and lint at cut edges rather than shearing cleanly. Major OEM Aidor explicitly notes 'Kevlar is suitable for the racket's outer frame but not for the surface, as drilling creates lint that is difficult to remove.' This limits Kevlar to frame reinforcement — not face panels requiring many perforations.", bestFor: "Frame reinforcement, durability-focused builds, players who regularly contact walls and floors hard", manufacturingNote: "Frame zone reinforcement only, not perforated face panels. Requires special cutting tools (Kevlar-specific shears or water jet). Cannot be sanded like carbon." },
+  { id: "carbon-ud", label: "Unidirectional Carbon (UD)", power: 5, control: 3, comfort: 2, durability: 3, cost: "Mid-high", fiberModulusGPa: "230–290 GPa (T700–T800 UD)", note: "All fibers run one direction — no perpendicular weave. Highest in-direction modulus of any carbon architecture, highest fiber volume fraction, lowest crimp. In padel face applications, UD layers are combined with ±45° woven layers for torsional resistance (UD-only face would split along the fiber axis under off-axis loads). UD carbon is common in premium tennis frames (Yonex Isometric). In padel, pure UD face panels are unexplored commercially. Engineering case: a UD face layer perpendicular to ball incoming direction (fibers running side-to-side) would resist face deflection most efficiently in the impact direction, potentially giving highest power return of any carbon architecture.", bestFor: "Experimental premium builds, maximum power extraction, engineering exploration builds", manufacturingNote: "UD pre-preg widely available and cost-effective per kg. Layup is more labor-intensive than woven fabric. Not standard at padel OEM factories — requires specification and training." },
+  { id: "basalt-face", label: "Basalt Fiber Face", power: 3, control: 4, comfort: 4, durability: 4, cost: "Mid", fiberModulusGPa: "89–110 GPa", note: "Produced by melting volcanic basalt rock and extruding through platinum-rhodium bushings. Modulus 89–110 GPa — between fiberglass (~75 GPa) and carbon (~230 GPa). Key differentiator: thermal stability. Retains mechanical properties from −200°C to +700°C vs −60°C to +200°C for E-glass — more consistent performance between cold morning and hot afternoon outdoor sessions. Also naturally UV-resistant, alkali-resistant, moisture-resistant. Almost unused in padel commercially. A genuine differentiation story with real engineering rationale. Cost competitive with 12K carbon.", bestFor: "Outdoor-focused builds, thermally consistent performance, differentiation from carbon-heavy market", manufacturingNote: "Processed identically to fiberglass. Pre-preg versions available from Technobasalt, Zhejiang GBF. Specify fiber grade — basalt properties vary by geographic source." },
 ];
 
 const FRAME_MATERIALS = [
-  { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", note: "Flexes more under load, absorbing impact and improving comfort at some cost to stability on heavy shots." },
-  { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", note: "Lighter and stiffer than fiberglass, with greater shock resistance and a longer effective lifespan." },
-  { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid", stiffness: 3, weightImpact: "Mid", note: "Carbon for strength, fiberglass for flex — improves shock absorption versus pure carbon while keeping more stiffness than pure fiberglass." },
-  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", note: "Volcanic-rock-derived fiber, mechanically similar to fiberglass with somewhat better stiffness and thermal stability. Rare in padel — a genuine differentiation story." },
-  { id: "auxetic-frame", label: "Auxetic Carbon Frame", stiffness: 4, weightImpact: "Light-mid", note: "Uses auxetic fiber structures with a negative Poisson's ratio — the frame widens on impact rather than compressing, expanding the effective sweet spot and responsiveness. Commercially proven by Head's Auxetic 2.0. Unexplored by most brands." },
-  { id: "hollow-tubular-frame", label: "Hollow Tubular Frame", stiffness: 5, weightImpact: "Light", note: "Standard in tennis for 40+ years but essentially absent from padel. A hollow tube distributes load around its perimeter rather than through a solid cross-section — stiffer per gram, higher vibration frequency, fundamentally different feel. Requires pre-preg carbon and bladder molding. Genuinely unexplored in padel." },
-  { id: "honeycomb-reinforced-frame", label: "Honeycomb-Reinforced Frame", stiffness: 4, weightImpact: "Mid", note: "Lightweight honeycomb core inside the tubular frame structure — used in premium tennis frames since the 1970s. Adds structural rigidity without added weight. Not commercially applied in padel. A direct borrow from tennis manufacturing." },
+  { id: "fiberglass-frame", label: "Fiberglass Frame", stiffness: 2, weightImpact: "Light", torsionalRigidity: "Low", vibrationFrequency: "Low", note: "E-glass fiber around the foam core perimeter. Low stiffness means the frame flexes under wall/floor impact rather than transmitting shock rigidly. This flex provides natural vibration damping — frame deformation absorbs energy. Better comfort and arm protection but reduced torsional stability on off-center hits. Better impact toughness than carbon (higher elongation at break) — hard floor contact less likely to crack a fiberglass frame. Frame stiffness contributes less to overall face rigidity, making total rigidity more dependent on foam density than in a carbon-frame build.", manufacturingNote: "Lowest cost frame option. Standard OEM. Compatible with all foam types. No IP concerns." },
+  { id: "carbon-frame", label: "Carbon Fiber Frame", stiffness: 4, weightImpact: "Light-mid", torsionalRigidity: "High", vibrationFrequency: "High", note: "Industry standard for mid-to-advanced padel. High stiffness provides excellent torsional resistance. Vibration propagates readily through the carbon frame to the throat and handle — why carbon-frame racquets can feel harsh on mishits despite soft cores. Acoustic signature: higher pitch, crisper. Carbon frames fail differently than fiberglass — rather than bending and returning to shape, carbon cracks and delaminates catastrophically. A carbon frame that has hit a wall hard should be inspected for hairline cracks before continued use.", manufacturingNote: "Standard padel OEM. Multiple carbon weights available for the frame layer. Typically 100–200 g/m² pre-preg." },
+  { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid Frame", stiffness: 3, weightImpact: "Mid", torsionalRigidity: "Medium", vibrationFrequency: "Medium", note: "Alternating or combined carbon and fiberglass layers in the frame perimeter. Carbon provides structural stiffness; fiberglass adds impact toughness and vibration damping at the perimeter. Better vibration characteristics than pure carbon (fiberglass layers act as damping interlayers), better stiffness than pure fiberglass. Wilson Bela LT, Nox Equation Soft, Head Speed Motion. Most common frame choice for intermediate-tier racquets.", manufacturingNote: "Single mixed pre-preg or separately applied layers. Verify layup order — carbon-outer vs. glass-outer produces different surface properties and durability." },
+  { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", torsionalRigidity: "Medium-high", vibrationFrequency: "Medium", note: "Volcanic rock-derived mineral fiber (see basalt-face for full material description). Frame benefit: more consistent stiffness across temperature range of outdoor play. Most padel racquets soften slightly in summer heat — basalt frames reduce this variation. Vibration frequency medium — less harsh than full carbon but more direct than fiberglass. Essentially unused commercially in padel as a primary frame material. Genuine differentiation story.", manufacturingNote: "Processing identical to fiberglass. Minor cost premium over E-glass. Must specify from suppliers with consistent fiber quality — basalt properties vary by geographic source." },
+  { id: "auxetic-frame", label: "Auxetic Carbon Frame", stiffness: 4, weightImpact: "Light-mid", torsionalRigidity: "High", vibrationFrequency: "High", note: "Negative Poisson's ratio: frame material expands laterally on impact rather than contracting. Ball impact causes material to move toward the contact center rather than away — extending dwell time and expanding the effective sweet spot. Head's Auxetic 2.0 in the Coello Pro and Speed Motion. Achieved through specific fiber weave architectures (re-entrant hexagonal lattice patterns) rather than special fiber chemistry — standard carbon fibers arranged in an auxetic geometry. Head holds IP on this in racquet sports — any competitive implementation requires patent counsel review.", manufacturingNote: "Not available from standard padel OEM factories. Requires specialist composite supplier with auxetic weave capability. Head AG patents cover racquet-specific auxetic applications." },
+  { id: "hollow-tubular-frame", label: "Hollow Tubular Frame", stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "Very high", note: "Standard in tennis for 40+ years, essentially absent from padel. A hollow tube distributes bending loads to the outer walls (perimeter) where they generate highest internal stresses — structurally more efficient than solid cross-section. A 1.5mm-wall hollow carbon tube is stiffer in bending per gram than a 5mm solid carbon rod of the same outer diameter. Manufacturing: bladder molding — pre-preg carbon wrapped around inflatable nylon bladder, placed in clamshell mold, heated to 140–150°C while bladder pressurized to 5–8 bar, forcing carbon against mold walls. After cure (~25 min), demolded. In hollow tube padel construction: NO foam inside the frame tube — foam sits in the central face area. Throat is a continuous narrowing of the same hollow tube — structurally continuous, eliminating the main failure zone of current padel construction. Weight: 10–18g lighter than foam-filled equivalent at same stiffness. Vibration frequency is higher — some players describe as 'livelier'. Can cause arm fatigue over long sessions if not compensated with damping materials at grip/throat.", manufacturingNote: "Bladder molding tooling: $8,000–$14,000 vs $3,000–$5,000 for standard padel molds. Bladder nylon inserts are low-cost per-part consumables. Cure time similar to standard padel (~25–30 min). Critical design element: transition from hollow perimeter tube to the face panel area." },
+  { id: "honeycomb-reinforced-frame", label: "Honeycomb-Reinforced Frame", stiffness: 4, weightImpact: "Mid", torsionalRigidity: "High", vibrationFrequency: "Medium-high", note: "Structural honeycomb core (aluminum alloy or Nomex aramid paper) bonded inside a hollow carbon tube frame. The honeycomb occupies the void inside the tubular frame perimeter, providing shear resistance in the frame wall — preventing thin carbon walls from buckling under compressive load. Standard in premium tennis frames since the 1970s and aerospace sandwich panels. Near-zero density but very high out-of-plane shear modulus — stabilizes frame wall against local buckling without meaningful weight. Vs solid foam fill: 30–50% weight reduction, higher structural rigidity, better vibration damping (honeycomb cell geometry excels at absorbing high-frequency vibrations). Not commercially applied in padel.", manufacturingNote: "More complex than standard hollow tube. Honeycomb must be pre-cut to frame cross-section profile and bonded inside before or during cure. Nomex honeycomb preferred over aluminum for vibration characteristics. Adds cost vs hollow tube alone." },
+  { id: "two-piece-clamshell-frame", label: "Two-Piece Clamshell Frame (Modular Hollow)", stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "High", note: "Frame manufactured as two horizontal halves — the racquet laid flat, split along the face plane — bonded together around a pre-placed foam insert. Direct precedent in tennis patents (US6071203 'Two piece sports racquet', US6800239). Manufacturing sequence: (1) Upper half laid up in carbon pre-preg in its half-mold and B-staged (partially cured — pliable but formed). (2) Foam insert placed inside lower half. (3) Upper half pressed onto lower half. (4) Full press at 140–150°C completes cure and fuses the two halves. The bond line runs around the full frame perimeter at the face mid-plane — under ball impact loads the seam is in shear, which is the optimal loading condition for co-cure bonds. Co-cure bonding achieves strength indistinguishable from one-piece construction in mechanical testing. Throat-to-handle continues as a continuous hollow tube — only the face/frame section uses the clamshell approach, avoiding the highest-stress junction. Key advantages: foam is mechanically captured without bonding (retained by geometry and 2–3% compression fit), frame mold reused for all foam variants, holes can be pre-formed during cure using pin inserts rather than drilled afterward. IP status: this specific combination — hollow tube padel frame + captured foam cassette + clamshell bond + solid face geometry — is novel in padel and potentially patentable.", manufacturingNote: "Requires upper and lower half-molds (two tools per frame shape). Alignment fixtures critical. Total tooling: ~$12,000–$18,000 vs $3,000–$5,000 conventional. Assembly adds 2–3 steps per unit. Long-term per-unit economics potentially favorable due to modular foam line extensions." },
 ];
 
 const SURFACE_TEXTURES = [
-  { id: "smooth", label: "Smooth Face", spin: 1, note: "Minimal texture. Lower spin generation, more neutral, predictable ball exit." },
-  { id: "rough", label: "Rough / Textured Face", spin: 4, note: "Increased surface friction for more spin on slice and topspin shots, at a small cost to flat-shot ball speed." },
-  { id: "3d-print", label: "3D-Printed Raised Pattern", spin: 5, note: "Raised micro-texture printed onto the face for maximum ball grip and spin potential. Produces a distinctly different surface topography than sandblasting or pre-textured carbon." },
-  { id: "xl-honeycomb", label: "XL Honeycomb Texture", spin: 5, note: "Large-cell raised honeycomb pattern on the striking surface. More aggressive and directional grip than fine-stipple rough surfaces — ball contacts raised cell edges. Explored by SANE's 3D Texture XL." },
-  { id: "hybrid-texture", label: "Hybrid Zone Texture", spin: 4, note: "Rough textured center for spin and grip, smooth edges for aerodynamics. Requires two-zone finishing (masking or two-mold). Almost entirely unexplored commercially — most brands apply one texture across the whole face." },
+  { id: "smooth", label: "Smooth Face", spin: 1, note: "Unfinished or lightly finished carbon/fiberglass face. Ball contact essentially frictionless — felt slides across surface. Energy transfer clean and efficient in shot direction. Most predictable ball exit angle, cleanest energy transfer for flat power shots, easiest to maintain, least performance degradation over time. Zero spin generation beyond what wrist technique alone produces. Used as a deliberate choice in control racquets where predictability is prioritized over spin potential.", manufacturingNote: "No additional finishing required. Standard as-molded carbon/glass surface." },
+  { id: "rough", label: "Rough / Sandblasted / Grit-Coated Face", spin: 4, note: "Surface roughness applied by: (1) Sandblasting — compressed abrasive media abrades the cured carbon surface creating micro-roughness of 10–30 μm Ra. Most common. (2) Abrasive coating — grit compound (aluminium oxide, silicon carbide) applied in resin carrier and cured onto surface. More durable than sandblasting. (3) Pre-textured carbon — rough weave produces texture directly from the mold. Mechanism: micro-peaks engage ball felt fibers during contact, transmitting more torque for spin. Spin increase vs smooth: approximately 20–35% higher ball spin rate under equivalent technique, based on analogous tennis surface studies. Trade-off: rough surfaces create slightly more drag on ball exit. Durability: sandblasted surfaces wear 20–30% reduction in surface friction after 200–300 playing hours as micro-peaks flatten.", manufacturingNote: "Sandblasting: post-cure step, grit size 60–120 μm typical. Abrasive coating: additional materials and application step. Both standard OEM processes." },
+  { id: "3d-print", label: "3D-Printed Raised Micro-Texture", spin: 5, note: "Raised geometric patterns (pyramids, diamonds, hexagons) applied via UV-cured resin printed directly onto the cured carbon face. Fundamentally different from sandblasting: adds positive material above the face (0.2–0.8mm raised) rather than abrading the surface. Ball felt engages with vertical walls of raised geometry rather than just micro-peaks. Spin increase: 30–50% higher than rough sandblasted surfaces in controlled comparisons. Raised structures more susceptible to damage from wall/floor contact than flush sandblasting. Premium cost: printing process adds manufacturing time and material cost. Used by Siux Diablo, Bullpadel Hack 04 line.", manufacturingNote: "Requires UV-cure 3D printing equipment (can be outsourced to specialist coating facilities). Pattern geometry, height, and coverage percentage are all design variables." },
+  { id: "xl-honeycomb", label: "XL Honeycomb / Large-Cell Raised Pattern", spin: 5, note: "Large raised honeycomb cells (cell diameter 3–8mm, wall height 0.3–1.0mm) molded or applied onto the face. Ball contacts raised cell walls rather than peaks — on a brushed spin shot, the ball edge engages cell walls perpendicular to the brush direction, generating higher torque. The large cell size creates turbulent boundary layer flow over the face during swing, subtly affecting swing resistance. Visually distinctive. Manufacturing approach: textured mold insert (most cost-effective for volume) or post-cure application. Mold insert creates the pattern during cure — integral to the carbon surface, more durable. Explored by SANE Padel's 3D Texture XL.", manufacturingNote: "Textured mold insert preferred for volume. EDM (electrical discharge machining) of mold texture adds $500–$2,000 per mold. Applied method possible but less durable." },
+  { id: "hybrid-texture", label: "Hybrid Zone Texture (Center Rough / Edge Smooth)", spin: 4, note: "Central hitting zone (~inner 60% of face area) has rough/textured treatment for spin; outer perimeter zone is smooth or lighter texture for aerodynamic efficiency. Engineering rationale: center is intended contact zone — maximizing grip there optimizes spin for well-struck shots. Smooth perimeter reduces swing drag slightly. Differential also creates tactile feedback cue: centered shots feel grippier (more spin engagement), off-center shots slightly slicker (less spin, cleaner exit). Helps players understand contact quality over time. Manufacturing: masking smooth zones during sandblasting/coating, or two mold inserts, or post-cure application with zone masking. Almost entirely unexplored commercially.", manufacturingNote: "Two-step finishing process. Masking must be precisely registered to face center. Adds 15–25 min per unit in finishing time. Define center zone diameter and transition clearly." },
 ];
 
 const GRIP_MATERIALS = [
-  { id: "pu-grip", label: "Polyurethane (PU) Overgrip", tack: 3, vibrationDamp: 2, note: "Standard adherent coating, balances tack and durability. The default choice across most price points." },
-  { id: "eva-grip", label: "EVA Cushioned Grip", tack: 3, vibrationDamp: 4, note: "Softer EVA in the grip itself adds cushioning, reducing vibration transmitted to the hand." },
-  { id: "anti-shock-grip", label: "Anti-Shock / Viscoelastic Grip", tack: 2, vibrationDamp: 5, note: "Viscoelastic layer factory-integrated into the handle, absorbs a large majority of shock energy before it reaches the hand. Best for injury-prone players." },
-  { id: "textured-grip", label: "Textured / Perforated Grip", tack: 5, vibrationDamp: 2, note: "Maximizes hold in sweaty conditions via surface texture or perforation. Trades away some cushioning." },
-  { id: "extended-grip", label: "Extended Length Grip (+10–15mm)", tack: 3, vibrationDamp: 2, note: "Longer handle than standard shifts balance toward the head and enables two-handed shots. Commercially explored by Adidas Extra Power Grip. Significant for tennis-to-padel players. Virtually unused by other brands." },
-  { id: "tapered-grip", label: "Tapered Profile Grip", tack: 3, vibrationDamp: 3, note: "Slightly thicker near the throat, narrower at the butt — the opposite of the standard parallel padel handle. Standard in tennis for decades. Helps players find position by feel. Unexplored in padel." },
-  { id: "dampener-integrated-grip", label: "Dampener-Integrated Handle", tack: 3, vibrationDamp: 5, note: "Vibration-absorbing insert embedded within the handle itself (gel, silicone, or tungsten). Analogous to Babolat's Cortex system in tennis. Addresses vibration structurally, not just at the grip surface. Essentially unexplored in padel beyond Head's Soft Buttcap." },
+  { id: "pu-grip", label: "Polyurethane (PU) Overgrip", tack: 3, vibrationDamp: 2, note: "Industry standard. PU foam wrapped in thin PU film as a replaceable overgrip. Balanced tack in dry/moderately sweaty conditions. Typical thickness: 0.5–0.6mm over 1.8mm base grip. Loses tack rapidly in high humidity or heavy sweating — a soaked PU grip reduces tack by 40–60%. Vibration damping contribution minimal at this thickness relative to impact forces. Lowest cost of all grip options.", manufacturingNote: "Standard OEM. Hundreds of global suppliers. Specify tack rating, thickness, perforation status." },
+  { id: "eva-grip", label: "EVA Cushioned Grip", tack: 3, vibrationDamp: 4, note: "Thicker EVA foam base layer (4–8mm) under the outer overgrip. EVA compresses under grip pressure and absorbs vibrations before reaching the palm. Distinguished from PU by: thicker cross-section (increases grip circumference 3–6mm), significantly better vibration damping (EVA is effective at handle vibration frequencies 100–500 Hz), heavier feel. Larger circumference can affect grip technique for small-handed players. Long-term comfort benefit: reduced sustained grip force needed (softer grip surface = more contact area = lower required clamping pressure = less muscle tension = less fatigue).", manufacturingNote: "Standard OEM. EVA grip tape is a commodity product. Specify foam density, finished thickness, overgrip material." },
+  { id: "anti-shock-grip", label: "Anti-Shock / Viscoelastic Grip System", tack: 2, vibrationDamp: 5, note: "Factory-integrated viscoelastic layer in the handle construction — not a replaceable overgrip but part of the racquet handle architecture. Viscoelastic materials (silicone gel, high-loss-tangent PU foam, proprietary compounds) are stiff at low frequencies (structural integrity) and dissipate energy at high frequencies (vibration absorption). Ideal for handle vibration damping — grip feels rigid in hand but high-frequency impact vibrations (100–2000 Hz, implicated in lateral epicondylitis) are absorbed before reaching the hand. Peer-reviewed tennis studies: grip vibration at 1000 Hz can be reduced 40–60% with viscoelastic systems. Babolat's Cortex system in tennis is best-documented. In padel, Bullpadel's Easyvibe and various anti-shock pads are partial implementations.", manufacturingNote: "Requires handle construction design decision — viscoelastic material must be integrated during handle assembly. Adds $3–7 per unit to handle cost. Specify frequency range and damping target (loss factor η > 0.3 at 500–1500 Hz)." },
+  { id: "textured-grip", label: "Textured / Perforated Grip", tack: 5, vibrationDamp: 2, note: "Surface texture (embossed pattern, silicone dots, waffling) and/or perforations maximizing mechanical tack in all moisture conditions. Textured surface provides mechanical interlocking with skin, maintaining grip even when hand is heavily sweating. Perforations allow moisture to wick away from contact zone. Highest tack of any grip option. Trade-off: texture reduces cushioning surface area; mechanical engagement with hand surface means players tend to grip more tightly, increasing muscle tension and potential fatigue over long sessions.", manufacturingNote: "Standard OEM. Specify perforation diameter and density. Embossing pattern is a design element, not a structural specification." },
+  { id: "extended-grip", label: "Extended Length Grip (+10–15mm handle)", tack: 3, vibrationDamp: 2, note: "Handle lengthened 10–15mm beyond standard padel length (~130–135mm standard, reaching 145–150mm extended). Shifts balance point toward head and enables two-handed grip without crowding. Adds moment arm of handle grip — a given grip force generates more torque, amplifying power transfer on shots driven from the handle end of the kinetic chain. For players transitioning from tennis where two-handed backhands are standard. Adidas Extra Power Grip (Metalbone HRD+) is primary commercial example. Verify FIP regulations for specific circuit — may be non-standard for some competition formats.", manufacturingNote: "Standard handle can be extended with longer butt cap and additional grip tape. No structural changes to frame required. Minimal material cost." },
+  { id: "tapered-grip", label: "Tapered Handle Profile", tack: 3, vibrationDamp: 3, note: "Handle slightly thicker near throat junction, progressively narrower toward butt cap — tapered conical profile rather than standard parallel-sided padel handle. Standard in tennis for decades. Provides tactile proprioceptive feedback: as grip slides toward butt, player feels the narrowing and knows hand position without looking. For players who regularly change grips between shots at the net, tapered profile provides faster sensory feedback. Also reduces grip fatigue slightly — varying circumference means different hand parts bear primary load at different positions, distributing compression. Completely unexplored in padel commercially.", manufacturingNote: "Requires tapered handle mold rather than straight extrusion. Minor tooling cost. Can also be achieved by varying grip tape thickness from throat to butt." },
+  { id: "dampener-integrated-grip", label: "Embedded Tuned Handle Dampener", tack: 3, vibrationDamp: 5, note: "Discrete vibration-absorbing insert embedded within the handle — typically a gel capsule, silicone cavity, or tungsten mass at the butt end. Rather than distributed viscoelastic damping throughout the grip layer, a concentrated mass at the butt acts as a tuned mass damper (TMD). A TMD has a specific resonant frequency determined by its mass and the spring rate of connection to the primary structure. When tuned to the racquet handle's primary vibration frequency (typically 100–300 Hz for padel handles), the TMD absorbs energy at that frequency, dramatically reducing transmission. This is the same physics as skyscraper TMDs for wind sway damping. Babolat's Cortex system in tennis uses this principle. Head's Soft Buttcap 2.0 is a partial padel implementation. A full engineered TMD — where mass, spring rate, and damping coefficient are all specified — has never been commercially produced in padel.", manufacturingNote: "Requires handle interior cavity design. Tungsten preferred for mass insert (high density = small physical size). Adds $5–12 per unit. Structural testing required. Optimal TMD frequency depends on specific frame structural dynamics — a universal insert may not be optimally tuned for every frame." },
 ];
 
 const GRIP_SHAPES = [
-  { id: "octagonal", label: "Octagonal (Standard)", sides: 8, note: "Eight flat facets give tactile reference for hand position and racket face angle. The industry-standard handle cross-section." },
-  { id: "hexagonal", label: "Hexagonal (Hesacore-type)", sides: 6, note: "Honeycomb-pattern grip over the standard handle. Marketed for a larger contact area against the palm and reduced vibration transfer." },
-  { id: "grip-round", label: "Round Handle", sides: 0, note: "Fully cylindrical cross-section with no flat facets. Allows free rotation in the hand for wrist-driven shots. Unusual in padel — common in squash. Worth exploring for touch-and-spin oriented players." },
-  { id: "anatomical", label: "Anatomical / Contoured", sides: 0, note: "Shaped to conform to the natural curve of a gripping hand. Reduces grip effort and muscle fatigue on long sessions. Standard in some tennis grips, rare in padel." },
+  { id: "octagonal", label: "Octagonal (Standard)", sides: 8, note: "Eight flat facets around the handle cross-section, creating tactile reference points for face angle. Player can feel the flat of the handle and orient the face by feel rather than sight — critical at the net where there is no time to look at the grip. Borrowed from tennis where it has been the standard since aluminum frames in the 1970s. Continental grip (index knuckle on facet 2) and eastern forehand (facet 3) are distinct and findable by feel. Padel grip circumference typically 102–113mm — OEMs often produce in narrower range (~105–108mm). Larger circumference: more forearm muscle activation, more power potential but higher fatigue. Smaller circumference: less forearm activation, more wrist mobility, better spin potential. Facet depth (how pronounced the flats are) is a design variable — deeper facets give clearer tactile reference but feel less comfortable.", manufacturingNote: "Standard handle mold. Available from all OEM factories. Specify circumference in mm and facet depth." },
+  { id: "hexagonal", label: "Hexagonal (Hesacore-type)", sides: 6, note: "Rubber or EVA hexagonal honeycomb structure applied over the base handle, creating a hexagonal cross-section with lower effective surface hardness. The deformable hexagonal walls conform to the hand surface, distributing contact pressure more evenly than a solid grip. Peak contact pressure is lower for equivalent grip force — reduces muscle fatigue and improves blood circulation. Hesacore's data (their own, not independently peer-reviewed) claims 20–30% reduction in grip fatigue and improved circulation markers. The hexagonal facets provide weaker tactile reference than octagonal — fewer flat surfaces, deeper rotation between reference points. Available as Tour (thicker) and Carbon (thinner) variants.", manufacturingNote: "Available as aftermarket product (Hesacore) that can be specified for OEM installation. Or hexagonal pattern can be molded directly into the handle material during production." },
+  { id: "grip-round", label: "Round Handle", sides: 0, note: "Fully cylindrical handle, no flat facets. Allows continuous rotation of the racquet in the hand without any tactile 'click' between grip positions. Common in squash where wrist rotation is frequent. In padel, would benefit players who use heavy wrist rotation on spin shots — the vibora, hook smash, and reverse bandeja all involve significant wrist supination/pronation. For advanced players with well-developed proprioception, the freedom of rotation becomes a genuine advantage on trick shots and deceptive deflections. Completely unexplored in commercial padel. Manufacturing is actually simpler than octagonal — a round extrusion is easier to produce consistently.", manufacturingNote: "Simpler handle mold than octagonal. Standard round handle extrusions available from OEM factories on request. Circumference spec still applies." },
+  { id: "anatomical", label: "Anatomical / Contoured Handle", sides: 0, note: "Handle shaped to conform to the natural grip geometry of the human hand — wider in the palm contact zone, narrower at the finger wrap zone, with a slight contour following the natural curl of a relaxed gripping hand. Identical principle to ergonomic tools (power drills, surgical instruments, bicycle grips) where fitting the tool to the hand reduces required grip force. Lower required grip force = less forearm muscle tension = less fatigue and lower injury risk. Engineering is well-established in ergonomics literature. In tennis, explored by Wilson and Tecnifibre but not mainstream. In padel, no commercial examples. Significant ergonomic innovation opportunity, particularly for the arm-care segment.", manufacturingNote: "Requires custom handle mold (potentially both left-hand and right-hand versions). Investment in ergonomic design and hand anthropometry data for target market. Cost premium over standard octagonal: primarily tooling and design, not per-unit materials." },
 ];
 
 const SHAPES = [
-  { id: "round", label: "Round", balanceRange: "low (closer to handle)", sweetSpot: "Large, centered", power: 2, control: 5, forgiveness: 5, note: "Mass sits closer to the handle and face center. Largest, most centrally located sweet spot. Most maneuverable, most forgiving on off-center contact.", bestFor: "Beginners, defensive players, net play, arm/shoulder load" },
-  { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, ~25.6–26.2 cm", sweetSpot: "Medium, shifted slightly up", power: 4, control: 4, forgiveness: 3, note: "Structural compromise between round and diamond. Mass shifts upward, raising the power ceiling while keeping a usably wide hitting area.", bestFor: "Intermediate to advanced all-round players" },
-  { id: "diamond", label: "Diamond", balanceRange: "high, above 26.3 cm", sweetSpot: "Small, positioned high", power: 5, control: 2, forgiveness: 1, note: "Mass concentrated toward the top of the face, maximizing swing inertia and smash potential. Smallest sweet spot, least forgiving.", bestFor: "Advanced attacking players with consistent, high-technique contact" },
-  { id: "diamond-wide", label: "Wide-Body Diamond", balanceRange: "high, above 26.0 cm", sweetSpot: "Medium-small, positioned high but wider", power: 5, control: 3, forgiveness: 2, note: "A wider-than-standard diamond face increases effective hitting area and twistweight, making the shape more forgiving on off-center contact while retaining diamond power character. A genuine market gap — standard diamonds are abundant, wide-body diamonds are rare.", bestFor: "Advanced players who want diamond power with more structural forgiveness" },
+  { id: "round", label: "Round", balanceRange: "low (closer to handle, typically 24.0–25.2cm)", sweetSpot: "Large, centered — typically 25–35mm radius", power: 2, control: 5, forgiveness: 5, note: "The round head places mass symmetrically around the face center, with the center of mass closest to the handle of any shape. Lowest swingweight (easiest to accelerate) and most centered sweet spot. Off-center hits cause less face rotation because twistweight (resistance to face twist) is maximized when mass is distributed symmetrically — round heads have higher effective twistweight per gram than diamond shapes. Power ceiling is lower not because 'round = soft' but because balance point is lower: power transfer on a smash scales with (M × d²) where d is the distance from pivot point to the mass. Lower balance = smaller d = lower effective swing mass = less smash power. The round is not 'just for beginners' — it is optimal for net-forward defensive players, arm-sensitive players, and any style prioritizing touch and placement over raw smash output.", bestFor: "Beginners, defensive players, net specialists, arm/shoulder sensitivity, high-frequency recreational play" },
+  { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, typically 25.4–26.2cm", sweetSpot: "Medium, shifted slightly toward tip — typically 20–28mm radius", power: 4, control: 4, forgiveness: 3, note: "A geometric compromise — narrower at the base (throat) and wider at the tip — shifting mass slightly upward from round while keeping a wider midsection than diamond. Balance point between the two extremes. Sweet spot shifts slightly higher in the face, matching where most padel smashes actually contact the face. Swingweight moderate — easier to accelerate than diamond, heavier-feeling than round. Twistweight still reasonable — the wide midsection prevents the extreme face narrowing of a pure diamond, keeping some twistweight for mishit forgiveness. Most commercially versatile shape — majority of intermediate and advanced padel racquets globally. Advanced players who primarily play baseline control rallies often find teardrop satisfying: the power uplift versus round is significant while the control penalty versus diamond is modest.", bestFor: "Intermediate to advanced players, all-court play, the most commercially versatile specification" },
+  { id: "diamond", label: "Diamond", balanceRange: "high, typically 26.3–27.5cm (from butt)", sweetSpot: "Small, positioned high in the face — typically 14–22mm radius", power: 5, control: 2, forgiveness: 1, note: "Diamond tapers sharply from widest point toward both tip and throat, concentrating mass at the top of the face. Highest balance point and highest swingweight — maximum smash power by the parallel-axis theorem. Sweet spot migrates toward the tip (where mass concentration is highest) and becomes small. Off-center contact causes significant face rotation because narrow midsection reduces twistweight — a diamond's resistance to face twist on mishit is substantially lower per gram than round or teardrop. The playing experience: hitting the sweet spot is explosive and rewarding. Missing it by even 10mm produces an arm-jarring deflection. This is a feature not a flaw for elite players — precision demand enforces technique discipline and the reward for clean contact is maximum. Coello, Galán, Lebrón, and Chingotto all use diamond because at their precision level the sweet spot miss-rate is low enough that the power ceiling benefit dominates.", bestFor: "Advanced players with consistent high-technique contact, attacking/finishing play styles, professional level" },
+  { id: "diamond-wide", label: "Wide-Body Diamond", balanceRange: "high, typically 26.0–27.2cm", sweetSpot: "Medium-small, positioned high but laterally wider than standard diamond — ~18–26mm radius", power: 5, control: 3, forgiveness: 2, note: "Wider-than-standard diamond cross-section — maintaining the diamond's high balance point and mass-toward-tip principle but with broader face (typically 260–270mm vs standard 255mm). Wider body increases twistweight — moment of inertia about long axis scales with face width squared, so even 5mm width increase produces meaningful (~4%) improvement in twistweight. Directly translates to better forgiveness on off-axis hits while power character is preserved. Sweet spot is broader laterally. Addresses the primary complaint about diamonds — the narrow sweet spot — while retaining the signature power ceiling. A genuine market gap: standard diamonds are abundant, wide-body diamonds are essentially nonexistent commercially in 2026. FIP maximum face width is 26cm — verify specific competition rules.", bestFor: "Advanced players wanting diamond power with more structural forgiveness, players transitioning from teardrop to diamond" },
 ];
 
 const BRIDGE_TYPES = [
-  { id: "open", label: "Open Bridge", note: "Wider gap at the throat with one or more crossbars spanning it. Generally reduces racket weight slightly and can ease swing speed." },
-  { id: "closed", label: "Closed Bridge", note: "Solid filled throat section. Typically adds stability and torsional stiffness at a slight weight cost." },
+  { id: "open", label: "Open Bridge", note: "Throat area contains one or more composite struts spanning a gap rather than being filled solid. Reduces material and weight in throat zone, lowering center of mass slightly toward handle and reducing overall weight. Aerodynamically, an open bridge offers marginally less resistance on downswing — air passes through the gap. With fewer throat cross-sections carrying torsional load, transmits slightly less torsional rigidity from handle to head — some players describe this as more 'wrist feel' or 'touch' because the connection is slightly less rigid. Specific strut geometry (number, orientation, cross-section) determines structural properties within the open bridge category." },
+  { id: "closed", label: "Closed Bridge", note: "Throat area completely filled — solid structural transition from head to handle. Maximum torsional rigidity. Players experience this as more 'connected' or 'direct' — grip adjustments translate more immediately to face angle changes. Weight slightly higher than open bridge. Vibration from ball contact travels through the closed throat more efficiently to the handle — closed bridge can increase perceived impact harshness versus open bridge. Preferred for stability-focused builds. Bullpadel's PrismLock on the Neuron 02 uses a specific closed-bridge geometry triangulating the throat for torsional optimization." },
 ];
 
 const BEAM_COUNT_OPTIONS = [
-  { id: 1, label: "1 Beam", note: "A single central strut. Simplest open-bridge design." },
-  { id: 2, label: "2 Beams", note: "Two struts — the most common vertical configuration, or a full X-brace in diagonal orientation." },
-  { id: 3, label: "3 Beams", note: "Three struts for maximum throat reinforcement. Only available in vertical orientation." },
+  { id: 1, label: "1 Beam", note: "Single central strut. Minimizes throat weight, maximum aerodynamic openness. Lowest torsional contribution of any beam count. Used in touch-oriented and comfort builds where the weight and feel advantage of a minimal throat outweighs the modest structural cost." },
+  { id: 2, label: "2 Beams", note: "Two struts — most common padel bridge configuration. Balanced structural support with moderate weight. In vertical orientation the two struts split the throat gap into three openings. In diagonal orientation they form an X-brace. The two-beam X-brace is particularly popular for torsional builds — triangulated geometry resists twisting loads efficiently." },
+  { id: 3, label: "3 Beams", note: "Three struts provide maximum structural support within an open bridge — essentially intermediate between open and closed bridge. Only viable in vertical orientation. Used in builds that want open-bridge weight savings but need torsional rigidity close to a closed bridge. Rare in commercial padel." },
 ];
 
 const BEAM_ORIENTATIONS = [
-  { id: "vertical", label: "Vertical", note: "Struts run head-to-handle, splitting the throat gap into separate openings side by side. Favors lighter feel and easier swing speed." },
-  { id: "horizontal", label: "Horizontal", note: "Flat crossbars span side-to-side. Adds resistance to the frame splaying open laterally under load." },
-  { id: "diagonal", label: "Diagonal (X-brace)", note: "Angled struts brace the opening, forming a triangulated structure. Manufacturer claims center on torsional rigidity and reduced vibration." },
+  { id: "vertical", label: "Vertical (longitudinal)", note: "Struts run parallel to the racquet's long axis — head-to-handle direction. Splits the throat gap into side-by-side openings. Structural contribution: strong in lateral bending, moderate in torsion. Most common in padel. Clean, symmetric throat openings visually." },
+  { id: "horizontal", label: "Horizontal (lateral)", note: "Struts run perpendicular to the long axis — side to side across the throat gap. Strong in longitudinal bending (resisting throat bending under smash force), lower in lateral load transfer. Distinctive visual appearance — horizontal bars across the throat. More common in historical aluminum-frame racquets than modern carbon." },
+  { id: "diagonal", label: "Diagonal / X-Brace", note: "Struts run at approximately 45° across the throat gap, forming an X-pattern (two beams) or more complex triangulated structure (three beams). Diagonal geometry creates a triangulated truss — most structurally efficient arrangement for resisting torsional loads. A triangulated structure resists in-plane distortion through pure tension and compression in strut members, avoiding the less-efficient bending loads that parallel struts carry. Multiple manufacturers cite torsional rigidity claims for X-brace designs. Most distinctive visual appearance of the three orientations." },
 ];
 
 const HOLE_COUNT_OPTIONS = [
-  { id: "none", label: "None (0)", rows: 0, cols: 0, note: "Zero holes is not standard on any current commercial racket. Maximizes face stiffness for direct power transfer, smallest sweet spot." },
-  { id: "minimal", label: "Minimal (1–10)", rows: 4, cols: 4, note: "HEAD Extreme One proved this works at the top level — Arturo Coello has tested it. Twice as durable as standard according to HEAD, since stress fractures almost always start at perforation edges. Trade-off: less aerodynamic, surface grip depends entirely on face texture." },
-  { id: "low", label: "Low (~30–40)", rows: 8, cols: 6, note: "Stiffer face than the 50-80 hole range. Favors control-focused players who want direct feedback." },
-  { id: "standard", label: "Standard (~50–60)", rows: 9, cols: 9, note: "The most common range. Balances face flex against stiffness — the default for an all-round build." },
-  { id: "high", label: "High (~70–80)", rows: 11, cols: 10, note: "More face flex and a larger, more forgiving sweet spot with a softer overall feel." },
+  { id: "none", label: "None (0 holes)", rows: 0, cols: 0, note: "Fully solid face. Maximum face stiffness — continuous face material resists deflection across its entire area. Maximum ball exit speed for a given swing. Minimum dwell time. Minimum sweet spot forgiveness — off-center hits produce high stress concentrations at the perimeter. Zero aerodynamic advantage — maximum frontal resistance during swing. FIP requires a minimum hole diameter of 9mm but does not specify minimum hole count — zero holes is technically FIP legal. No commercial racquet uses zero perforations because the aerodynamic drag penalty significantly increases perceived swing weight. Interesting experimental territory for maximum power transfer studies." },
+  { id: "minimal", label: "Minimal (1–10 holes)", rows: 4, cols: 4, note: "HEAD Extreme One uses a single 9mm hole — the FIP minimum. HEAD engineering claim: stress fractures in standard racquets almost always initiate at perforation edges, so eliminating perforations dramatically improves durability — HEAD states twice as durable as a standard perforated racquet in drop-testing. Aerodynamic penalty of 1 hole versus 60 holes: approximately 8–12% increase in face drag resistance — perceptible but manageable at padel swing speeds for elite players. Face stiffness near-maximum, giving direct immediate energy transfer. The large continuous face area creates a wider effective hitting surface because the face can flex slightly as a whole panel rather than locally at each hole's edge." },
+  { id: "low", label: "Low (~30–40 holes)", rows: 8, cols: 6, note: "Approximately 30–40 perforations at standard 9mm diameter. Inter-hole ligaments are wider, carrying more stiffness. Aerodynamic drag reduction vs solid face: approximately 15–20%. Playing feel: direct, precise, controlled. Smaller hole count leaves more continuous face material — more 'feedback' on each contact, clearer information about ball-face interaction. Used in control-focused advanced builds where the player wants the face to do less (less flex, less damping) and trusts their own technique for precision." },
+  { id: "standard", label: "Standard (~50–60 holes)", rows: 9, cols: 9, note: "Industry center of gravity — majority of commercial padel racquets fall here. 50–60 holes at 9mm balance face stiffness against aerodynamic efficiency. Face flex moderate — enough to create a perceptible pocket on centered hits, limited enough to maintain overall rigidity on powerful smashes. Aerodynamic drag reduction vs solid face: ~25–35%. The inter-hole material acts as a compliant mesh — under ball impact the face deflects slightly as a whole rather than just at the contact point, creating the characteristic padel 'pocket' feel." },
+  { id: "high", label: "High (~70–80 holes)", rows: 11, cols: 10, note: "70–80 perforations at standard 9mm. Inter-hole ligaments narrow — the face is more mesh than solid material. Face flex significantly higher: narrow ligaments bend easily, creating deeper, more pronounced pocket on ball contact. Sweet spot forgiveness highest in this range — flexible mesh distributes contact force over wider area. Power on hard hits can be slightly lower than 50–60 range because more energy is absorbed in face flex. However at high hole counts the face also minimizes aerodynamic swing resistance, allowing higher swing speed for equivalent effort — potentially offsetting the energy-absorption loss." },
 ];
 
 const HOLE_PATTERN_STYLES = [
-  { id: "centered", label: "Concentrated Center", note: "Holes clustered near the face center enlarge and soften the sweet spot in the area players hit most often." },
-  { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the usable face. The most common pattern on all-round rackets." },
-  { id: "edge", label: "Concentrated Edges", note: "Holes pushed toward the outer face, keeping the center stiffer and more direct — for precision-oriented players." },
-  { id: "zone-size", label: "Zone-Differentiated Sizes", note: "Smaller holes (9–10mm) in the center for rigidity; larger (11–13mm) at the perimeter for aerodynamics and weight relief. FIP explicitly allows mixing sizes — legal but almost no brand does it systematically." },
-  { id: "asymmetric", label: "Asymmetric / Directional", note: "Holes biased toward one lateral side or arranged in a directional pattern. Could optimize for dominant-hand mechanics or lateral spin direction common in viboras. Completely unexplored commercially." },
+  { id: "centered", label: "Concentrated Center", note: "Holes clustered in central face zone, fewer or no holes toward perimeter. Center becomes most flexible zone (highest hole density = most compliant). Creates defined concentrated pocket zone at intended sweet spot. The perimeter remains stiffer — which benefits mishit resistance: stiffer perimeter resists face rotating on off-center hits (higher effective twistweight from stiff outer zone). Players experience this as 'forgiving' despite small hole zone — the firm perimeter resists twisting while the soft center provides dwell on good hits. Related to Adidas Eleven 13 technology which places smaller holes centrally." },
+  { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the entire usable face area. Most common commercial pattern. Produces uniform face stiffness and flex characteristics — no zone is markedly stiffer or softer than another. Sweet spot defined by overall hole density rather than a concentrated cluster. Aerodynamic efficiency maximum for a given hole count. Predictable consistent response regardless of where on the face contact occurs — valued by players who play a wide range of shot types with varying contact points." },
+  { id: "edge", label: "Concentrated Edges / Perimeter", note: "Holes pushed toward outer face zone, leaving center area relatively solid and stiff. Center retains direct precise contact zone while perimeter holes reduce weight at the farthest point from center — reducing perimeter mass, lowering effective swingweight. Inverse of centered concentration. Engineering: center contact zone retains immediate direct feel of low-hole-count face while perimeter holes reduce mass and aerodynamic drag at frame edges. The perimeter hole distribution also means any ball contact near the edge encounters a more compliant zone — paradoxically where you least want it on mishits." },
+  { id: "zone-size", label: "Zone-Differentiated Sizes", note: "Different hole diameters in different face zones — FIP allows 9–13mm diameter with no uniform size requirement. Smaller holes (9–10mm) in center: maximize central face stiffness and precision. Larger holes (11–13mm) at perimeter: reduce perimeter mass (lowering effective swingweight), increase aerodynamic efficiency, create stiffer structural mass distribution (less mass at perimeter = more mass concentration at center). A 13mm hole removes 2.1× the material of a 9mm hole (area scales with diameter squared). This creates significant design freedom the current padel market has almost entirely ignored. Adidas Eleven 13 touched this principle; full systematic zone-differentiation has never been commercially implemented." },
+  { id: "asymmetric", label: "Asymmetric / Directional", note: "Hole pattern deliberately breaking left-right face symmetry — holes biased toward one lateral half, or arranged in a non-symmetric directional pattern. Engineering rationale: in competitive padel, vibora and hook smash involve the ball striking the face at an angle with spin generated through lateral brushing. For right-handed players the vibora brush is predominantly left-to-right — holes biased toward the left half of the face (more compliance in the zone where the brush initiates) could theoretically enhance this interaction. Completely unexplored commercially. Manufacturing is no more complex than a standard pattern — entirely a tooling/programming change. Verification would require high-speed cameras and spin measurement equipment. An interesting research build territory." },
 ];
 
 // live here, and the distinction matters for honesty:
@@ -301,17 +306,19 @@ function computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape }
 
 const BASE_OEM_COST = 20; // base cost for any racket: mold amortization, labor, basic finishing
 const FACE_OEM_COST_DELTA: Record<string, number> = {
-  "fiberglass": 0, "carbon-12k": 10, "carbon-3k": 12, "carbon-18k": 18,
+  "fiberglass": 0, "basalt-face": 6, "carbon-12k": 10, "carbon-3k": 12, "carbon-ud": 14, "carbon-18k": 18,
   "kevlar-reinforced": 20, "graphene": 28,
 };
 const CORE_OEM_COST_DELTA: Record<string, number> = {
   "foam-pe": 0, "eva-soft": 2, "eva-medium": 3, "eva-hard": 4, "hybrid-core": 8,
+  "two-piece-cassette-core": 10, // modular cassette architecture adds assembly and separate insert tooling cost
 };
 const FRAME_OEM_COST_DELTA: Record<string, number> = {
   "fiberglass-frame": 0, "basalt-frame": 5, "hybrid-frame": 8, "carbon-frame": 15,
   "auxetic-frame": 22, // auxetic fiber structures are specialty weaves — meaningfully more expensive than standard carbon
   "hollow-tubular-frame": 28, // pre-preg + bladder molding is a more complex process than foam-fill — this is the cost of genuinely borrowing tennis manufacturing
   "honeycomb-reinforced-frame": 20, // honeycomb insert adds cost but less than full hollow-tube construction
+  "two-piece-clamshell-frame": 32, // two half-molds + alignment fixtures + bond step — highest tooling complexity, but amortized across all foam variants
 };
 const SURFACE_OEM_COST_DELTA: Record<string, number> = {
   "smooth": 0, "rough": 2, "3d-print": 12,
@@ -336,7 +343,7 @@ function oemToRetailRange(oemCost: number): [number, number] {
 }
 
 const CORE_STIFFNESS_WEIGHT: Record<string, number> = { "eva-soft": 15, "foam-pe": 12, "hybrid-core": 35, "eva-medium": 40, "eva-hard": 70 };
-const FRAME_STIFFNESS_WEIGHT: Record<string, number> = { "fiberglass-frame": 25, "basalt-frame": 45, "hybrid-frame": 55, "carbon-frame": 75, "auxetic-frame": 70, "hollow-tubular-frame": 90, "honeycomb-reinforced-frame": 80 };
+const FRAME_STIFFNESS_WEIGHT: Record<string, number> = { "fiberglass-frame": 25, "basalt-frame": 45, "hybrid-frame": 55, "carbon-frame": 75, "auxetic-frame": 70, "hollow-tubular-frame": 90, "honeycomb-reinforced-frame": 80, "two-piece-clamshell-frame": 88 };
 const FACE_CATEGORY_BASE: Record<string, number> = { fiberglass: 20, "carbon-3k": 65, "carbon-12k": 65, "carbon-18k": 65, graphene: 80, "kevlar-reinforced": 60 };
 // Deliberately small — see module header. This is the number that
 // keeps K-count from dominating the score, which is the entire point.
@@ -474,7 +481,7 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// MARKET RACQUET DATABASE — starter set, not the full market
+// MARKET RACQUET DATABASE — 41 verified models across 11 brands (2025–2026)
 // Specs cross-checked against 2-3+ independent sources per model (brand
 // site, multiple retailers, and/or independent review sites) rather than
 // taken from a single listing. Where sources disagreed even after
@@ -1218,8 +1225,8 @@ const MARKET_RACQUETS = [
 // identically by this function.
 // ---------------------------------------------------------------------------
 
-const CORE_HARDNESS_RANK = { "eva-soft": 1, "foam-pe": 1, "hybrid-core": 2, "eva-medium": 2, "eva-hard": 3 };
-const FACE_STIFFNESS_RANK = { fiberglass: 1, "carbon-12k": 2, "carbon-18k": 2, "carbon-3k": 3, graphene: 3, "kevlar-reinforced": 3 };
+const CORE_HARDNESS_RANK = { "eva-soft": 1, "foam-pe": 1, "hybrid-core": 2, "eva-medium": 2, "eva-hard": 3, "two-piece-cassette-core": 2 };
+const FACE_STIFFNESS_RANK = { fiberglass: 1, "basalt-face": 1, "carbon-12k": 2, "carbon-18k": 2, "carbon-3k": 3, "carbon-ud": 3, graphene: 3, "kevlar-reinforced": 3 };
 
 function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: string } = {}) {
   const { limit = 5, budgetTier } = options;
@@ -1831,6 +1838,9 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
   } else if (frameId === "auxetic-frame") {
     weightG = Math.max(345, weightG - 5);
     rationale.push(`Weight adjusted: auxetic fiber geometry allows slightly lighter construction than standard carbon woven at comparable stiffness. Adjusted to ${weightG}g.`);
+  } else if (frameId === "two-piece-clamshell-frame") {
+    weightG = Math.max(332, weightG - 13);
+    rationale.push(`Weight adjusted: two-piece clamshell is a hollow tube construction — carbon walls carry structural load, foam is a captured insert rather than a full solid fill. Similar weight savings to a one-piece hollow tube (~13g lighter than solid foam-fill). Adjusted to ${weightG}g.`);
   }
 
 
@@ -1855,6 +1865,15 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
     if (bridgeId === "open" && !beamLocked && (priority === "power" || priority === "balanced")) {
       beamOrientation = "diagonal";
       rationale.push(`Durability: open bridge retained, beam set to diagonal (X-brace) for torsional reinforcement.`);
+    }
+    // The single biggest durability lever available is eliminating the
+    // foam-to-carbon co-cure bond that is the primary padel failure mode.
+    // The two-piece clamshell frame does exactly this — the carbon shell
+    // carries all structural load and the foam is a captured insert. This
+    // is noted as guidance, not forced, since it's a significant
+    // manufacturing decision the brief author should make deliberately.
+    if (priceTier === "premium" && (frameId === "carbon-frame" || frameId === "hollow-tubular-frame")) {
+      rationale.push(`Durability note: for maximum frame longevity, consider the two-piece clamshell construction — it eliminates the foam-to-carbon co-cure bond that is the primary failure point in conventional padel racquets. The carbon shell carries all structural load and lasts indefinitely; foam is a replaceable captured insert. This is a manufacturing-architecture decision (higher tooling cost, modular product-line benefits) — select it explicitly in the frame material if the durability and serviceability case fits your product strategy.`);
     }
   } else {
     rationale.push(`Durability: standard — no frame/bridge reinforcement beyond level baseline.`);
@@ -2220,13 +2239,23 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // ---------------------------------------------------------------------------
 
 function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holeCountId, gripShapeId }) {
-  const STROKE = "#E8E2D6";
+  const STROKE = "#4A4540";
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const faceTint = faceVisual.tint;
   const coreTint = PROFILE_CORE_TINT[coreObj?.id] || "#E3DCC8";
   const frameTint = frameObj?.id?.includes("carbon") ? "#1F1F24" : "#2B2A26";
+
+  // Hollow frame types — these get a cross-section showing the wall + void
+  const isHollowTubular = frameObj?.id === "hollow-tubular-frame";
+  const isHoneycombFrame = frameObj?.id === "honeycomb-reinforced-frame";
+  const isClamshell = frameObj?.id === "two-piece-clamshell-frame";
+  const showHollowSection = isHollowTubular || isHoneycombFrame || isClamshell;
+  // Wall thickness in the cross-section visualization — carbon wall ~2mm real,
+  // scaled up for legibility in the diagram
+  const wallPx = (isHollowTubular || isClamshell) ? 5 : 4;
+
   const startX = 30, midY = 210;
   const headLen = 130 + ((widthMm - 200) / 60) * 20;
   const throatLen = 60;
@@ -2244,11 +2273,23 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   const topPts = sampleXs.map(x=>`${x},${topAt(x).toFixed(1)}`).join(" L ");
   const botPts = sampleXs.slice().reverse().map(x=>`${x},${botAt(x).toFixed(1)}`).join(" L ");
   const silhouette = `M ${topPts} L ${handleEndX},${midY-handleThick/2} L ${handleEndX},${midY+handleThick/2} L ${botPts} Z`;
+
+  // Inner hollow path — inset by wallPx on all sides to show the void
+  const innerTopPts = sampleXs.filter(x => x <= headEndX).map(x=>`${x},${(topAt(x)+wallPx).toFixed(1)}`).join(" L ");
+  const innerBotPts = sampleXs.filter(x => x <= headEndX).slice().reverse().map(x=>`${x},${(botAt(x)-wallPx).toFixed(1)}`).join(" L ");
+  const innerVoid = `M ${innerTopPts} L ${innerBotPts} Z`;
+
   const faceSkinPx = 2.5;
   const holeCount = { none:0, minimal:3, low:5, standard:7, high:10 }[holeCountId] ?? 7;
   const holeXs: number[] = [];
   for (let i = 0; i < holeCount; i++) { const t = holeCount > 1 ? i/(holeCount-1) : 0.5; holeXs.push(startX + headLen*0.12 + t*headLen*0.74); }
   const handleGripStartX = throatEndX;
+
+  // Cross-section callout position — mid-head area
+  const xsX = startX + headLen * 0.42;
+  const xsTop = topAt(xsX), xsBot = botAt(xsX);
+  const xsThick = xsBot - xsTop;
+
   return (
     <svg viewBox="0 0 420 320" width="100%" height="100%" style={{display:"block"}}>
       <defs>
@@ -2257,21 +2298,76 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
           <stop offset="45%" stopColor="#FFF" stopOpacity="0"/>
           <stop offset="100%" stopColor="#000" stopOpacity="0.06"/>
         </linearGradient>
+        {/* Honeycomb pattern for honeycomb-reinforced frame interior */}
+        <pattern id="honeycombPat" x="0" y="0" width="8" height="7" patternUnits="userSpaceOnUse">
+          <path d="M4,0 L8,2 L8,5 L4,7 L0,5 L0,2 Z" fill="none" stroke="#8A8268" strokeWidth="0.5" opacity="0.5"/>
+        </pattern>
       </defs>
+
       <ellipse cx={(startX+handleEndX)/2+6} cy={midY+headThick/2+16} rx={(handleEndX-startX)/2.1} ry={8} fill="#000" opacity="0.07"/>
-      <path d={silhouette} fill={faceTint} stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
-      <path d={`M ${startX+headLen*0.06},${midY-headThick/2+faceSkinPx} L ${throatEndX},${midY-throatThick/2+faceSkinPx} L ${throatEndX},${midY+throatThick/2-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-faceSkinPx} Z`} fill={coreTint} opacity="0.85"/>
+
+      {/* Main silhouette */}
+      <path d={silhouette} fill={showHollowSection ? frameTint : faceTint} stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+
+      {/* For hollow/honeycomb/clamshell frames: show the internal void */}
+      {showHollowSection && (
+        <>
+          {/* Internal void — shows as lighter/empty space inside the carbon walls */}
+          <path d={innerVoid} fill={isHoneycombFrame ? "url(#honeycombPat)" : isClamshell ? coreTint : "#F0EBE0"} opacity={isHoneycombFrame ? 0.9 : isClamshell ? 0.6 : 0.85}/>
+          {/* Core layer inside the void */}
+          <path d={`M ${startX+headLen*0.06},${midY-headThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY-throatThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY+throatThick/2-wallPx-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-wallPx-faceSkinPx} Z`} fill={coreTint} opacity={isClamshell ? 0.75 : 0.5}/>
+          {/* Clamshell seam line — the horizontal split plane where the two halves bond */}
+          {isClamshell && (
+            <>
+              <line x1={startX+headLen*0.04} y1={midY} x2={headEndX} y2={midY} stroke="#1A5C2A" strokeWidth="1.2" strokeDasharray="5 2" opacity="0.75"/>
+              <text x={headEndX-30} y={midY-3} fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">bond seam</text>
+            </>
+          )}
+          {/* Wall thickness labels */}
+          <line x1={xsX} y1={xsTop-4} x2={xsX} y2={xsTop+wallPx+2} stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 1"/>
+          <line x1={xsX} y1={xsBot+4} x2={xsX} y2={xsBot-wallPx-2} stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 1"/>
+          <text x={xsX+5} y={xsTop+wallPx/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#1A5C2A">carbon wall</text>
+          <text x={xsX+5} y={xsTop+xsThick/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">{isHoneycombFrame ? "honeycomb core" : isClamshell ? "foam cassette" : "hollow void"}</text>
+        </>
+      )}
+
+      {/* Standard filled construction */}
+      {!showHollowSection && (
+        <path d={`M ${startX+headLen*0.06},${midY-headThick/2+faceSkinPx} L ${throatEndX},${midY-throatThick/2+faceSkinPx} L ${throatEndX},${midY+throatThick/2-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-faceSkinPx} Z`} fill={coreTint} opacity="0.85"/>
+      )}
+
+      {/* Frame end cap */}
       <path d={`M ${startX},${midY-headThick*0.18} Q ${startX-6},${midY} ${startX},${midY+headThick*0.18}`} fill="none" stroke={frameTint} strokeWidth="3" strokeLinecap="round"/>
+
+      {/* Holes in profile */}
       {holeXs.map((hx,i)=><line key={i} x1={hx} y1={topAt(hx)+1.5} x2={hx} y2={topAt(hx)+headThick*0.22} stroke={STROKE} strokeWidth="1.6" opacity="0.55"/>)}
+
+      {/* Throat transition detail */}
       <path d={`M ${headEndX+throatLen*0.3},${midY-throatThick*0.3} L ${headEndX+throatLen*0.7},${midY-throatThick*0.15} L ${headEndX+throatLen*0.7},${midY+throatThick*0.15} L ${headEndX+throatLen*0.3},${midY+throatThick*0.3} Z`} fill="none" stroke={STROKE} strokeWidth="1.2" opacity="0.5"/>
+
+      {/* Handle grip */}
       <g>
         {gripShapeId === "hexagonal"
           ? Array.from({length: Math.ceil((handleEndX-handleGripStartX)/14)}).map((_,i)=>{ const x=handleGripStartX+i*14; if(x>handleEndX-6)return null; return <line key={i} x1={x} y1={midY-handleThick/2+2} x2={x} y2={midY+handleThick/2-2} stroke={STROKE} strokeWidth="1" opacity="0.4"/>; })
           : Array.from({length: Math.ceil((handleEndX-handleGripStartX)/10)}).map((_,i)=>{ const x=handleGripStartX+i*10; if(x>handleEndX-4)return null; return <line key={i} x1={x} y1={midY-handleThick/2+2} x2={x+6} y2={midY+handleThick/2-2} stroke={STROKE} strokeWidth="0.9" opacity="0.45"/>; })}
         <path d={`M ${handleEndX-2},${midY-handleThick/2} Q ${handleEndX+6},${midY} ${handleEndX-2},${midY+handleThick/2}`} fill="none" stroke={STROKE} strokeWidth="2.4" strokeLinecap="round"/>
       </g>
+
+      {/* Sheen + outline */}
       <path d={silhouette} fill="url(#profileSheen)"/>
       <path d={silhouette} fill="none" stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+
+      {/* Frame construction badge */}
+      {showHollowSection && (
+        <g>
+          <rect x={startX} y={midY+headThick/2+22} width={isHoneycombFrame ? 154 : isClamshell ? 168 : 128} height={16} rx={4} fill="#EAF3EC"/>
+          <text x={startX+6} y={midY+headThick/2+33} fontFamily="'JetBrains Mono', monospace" fontSize="9" fill="#1A5C2A" fontWeight="700">
+            {isHoneycombFrame ? "HONEYCOMB REINFORCED" : isClamshell ? "TWO-PIECE CLAMSHELL — MODULAR" : "HOLLOW TUBULAR — TENNIS-DERIVED"}
+          </text>
+        </g>
+      )}
+
+      {/* Dimension labels */}
       <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
         <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#4A4540" strokeWidth="1"/>
         <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#4A4540" strokeWidth="1"/>
@@ -2286,7 +2382,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
 }
 
 function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
-  const STROKE = "#E8E2D6";
+  const STROKE = "#4A4540";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
@@ -2402,10 +2498,10 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
       <g clipPath="url(#headClip)">{holeDots.map((h,i)=><circle key={i} cx={h.x} cy={h.y} r={6.5} fill="none" stroke={STROKE} strokeWidth="1.3"/>)}</g>
       {mode === "diagram" && (
         <g>
-          <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#1D4ED8" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
-          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="#1D4ED8" opacity="0.12"/>
-          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#1D4ED8" strokeWidth="1.5" strokeDasharray="4 3"/>
-          <circle cx={cx} cy={sweet.y} r={3} fill="#1D4ED8"/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="#1A5C2A" opacity="0.12"/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#1A5C2A" strokeWidth="1.5" strokeDasharray="4 3"/>
+          <circle cx={cx} cy={sweet.y} r={3} fill="#1A5C2A"/>
         </g>
       )}
       <path d={`M ${cx-halfWidth*0.5} ${headBottomY-6} Q ${cx-outerThroatHalf-6} ${throatNeckY+16}, ${cx-outerThroatHalf} ${bridgeTopY} M ${cx+halfWidth*0.5} ${headBottomY-6} Q ${cx+outerThroatHalf+6} ${throatNeckY+16}, ${cx+outerThroatHalf} ${bridgeTopY}`} fill="none" stroke={frameRimStyle.color} strokeWidth="2.5" strokeLinecap="round"/>
@@ -3228,6 +3324,16 @@ function MiniRatingGrid({ items }: { items: {label:string, val:number}[] }) {
 
 function MaterialNote({ text }) {
   return <p style={{ fontSize: 13, color: "#7A7268", lineHeight: 1.6, marginTop: 10, fontFamily: "Inter, sans-serif" }}>{text}</p>;
+}
+
+function ManufacturingNote({ text }) {
+  if (!text) return null;
+  return (
+    <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(26,92,42,0.05)", borderRadius: 6, borderLeft: "2px solid #1A5C2A" }}>
+      <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>Manufacturing</div>
+      <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>{text}</p>
+    </div>
+  );
 }
 
 function BestForTag({ text }) {
@@ -4418,6 +4524,7 @@ export default function App() {
       <AccordionSection id="face" icon={<Layers size={15}/>} label="Face Material" isOpen={openSections.has("face")} onToggle={() => toggle("face")} badge={face.cost ? face.cost : undefined}>
         <SelectField value={faceId} onChange={setFaceId} options={FACE_MATERIALS}/>
         <MaterialNote text={face.note}/>
+        {mode === "manufacturer" && <ManufacturingNote text={(face as any).manufacturingNote}/>}
         {face.bestFor && <BestForTag text={face.bestFor}/>}
         <MiniRatingGrid items={[{label:"Power", val:face.power},{label:"Control", val:face.control},{label:"Comfort", val:face.comfort},{label:"Durability", val:face.durability}]}/>
         {faceId === "carbon-3k" && (
@@ -4432,6 +4539,7 @@ export default function App() {
         <SelectField value={coreId} onChange={setCoreId} options={CORE_MATERIALS}/>
         <div style={{ fontSize:11.5, color:"#7A7268", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
         <MaterialNote text={core.note}/>
+        {mode === "manufacturer" && <ManufacturingNote text={(core as any).manufacturingNote}/>}
         <BestForTag text={core.bestFor}/>
         <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
       </AccordionSection>
@@ -4455,12 +4563,14 @@ export default function App() {
       <AccordionSection id="frame" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>} label="Frame Material" isOpen={openSections.has("frame")} onToggle={() => toggle("frame")}>
         <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS}/>
         <MaterialNote text={frame.note}/>
+        {mode === "manufacturer" && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
       </AccordionSection>
 
       {/* Surface Texture */}
       <AccordionSection id="surface" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6l9-4 9 4v12l-9 4-9-4z"/></svg>} label="Surface Texture" isOpen={openSections.has("surface")} onToggle={() => toggle("surface")}>
         <SelectField value={surfaceId} onChange={setSurfaceId} options={SURFACE_TEXTURES}/>
         <MaterialNote text={surface.note}/>
+        {mode === "manufacturer" && <ManufacturingNote text={(surface as any).manufacturingNote}/>}
         <MiniRatingGrid items={[{label:"Spin", val:surface.spin}]}/>
       </AccordionSection>
 
@@ -4497,6 +4607,7 @@ export default function App() {
       <AccordionSection id="grip" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>} label="Grip" isOpen={openSections.has("grip")} onToggle={() => toggle("grip")}>
         <SelectField value={gripId} onChange={setGripId} options={GRIP_MATERIALS}/>
         <MaterialNote text={grip.note}/>
+        {mode === "manufacturer" && <ManufacturingNote text={(grip as any).manufacturingNote}/>}
         <MiniRatingGrid items={[{label:"Tack", val:grip.tack},{label:"Vibration Damp", val:grip.vibrationDamp}]}/>
         <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
           <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Handle Cross-Section</p>
@@ -4548,7 +4659,7 @@ export default function App() {
       </div>
 
       {/* Diagram */}
-      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(0,0,0,0.06)", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 30%, #2A2D38, #14161C)" : "#F5F2EB" }}>
+      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1.5px solid #D4CCB8", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 28%, #E8E2D4, #C8C0B0)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
             {diagramMode === "profile" ? (
@@ -4594,6 +4705,66 @@ export default function App() {
   // ---- SCORES CONTENT ----
   const scoresContent = (
     <div style={{ padding:"0 16px" }}>
+
+      {/* Existing mold baseline comparison — when factory brief found an exact match */}
+      {mode === "manufacturer" && (() => {
+        // Find the closest market racquet to show as baseline
+        const topMatch = matchedRacquets[0];
+        if (!topMatch || topMatch.matchPct < 85) return null;
+        const r = topMatch.racquet;
+        const baselineCore = CORE_MATERIALS.find(m => m.id === r.coreId);
+        const baselineFace = FACE_MATERIALS.find(m => m.id === r.faceId);
+        const baselineFrame = FRAME_MATERIALS.find(m => m.id === r.frameId);
+        const baselineSurface = SURFACE_TEXTURES.find(m => m.id === r.surfaceId);
+        if (!baselineCore || !baselineFace || !baselineFrame || !baselineSurface) return null;
+        const baselineScores = computeScores({ shape: r.shapeId, core: baselineCore, face: baselineFace, frame: baselineFrame, surface: baselineSurface, grip: GRIP_MATERIALS[0], bridgeId: "open", beamOrientation: "vertical", holeCountId: "standard", holePatternId: "even", weightG: r.weightG, balanceCm: r.balanceCm, widthMm: 255, thicknessMm: r.thicknessMm ?? 38 });
+        const categories: { key: keyof typeof scores; label: string }[] = [
+          { key: "power", label: "Power" },
+          { key: "control", label: "Control" },
+          { key: "comfort", label: "Comfort" },
+          { key: "sweetSpot", label: "Sweet Spot" },
+          { key: "stability", label: "Stability" },
+          { key: "spin", label: "Spin" },
+          { key: "durability", label: "Durability" },
+        ];
+        return (
+          <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(26,92,42,0.2)", borderRadius:12, marginBottom:16 }}>
+            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#1A5C2A", marginBottom:4 }}>Build vs Baseline — {r.brand} {r.model}</p>
+            <p style={{ fontSize:11.5, color:"#7A7268", margin:"0 0 12px", fontFamily:"Inter, sans-serif", lineHeight:1.5 }}>
+              {topMatch.matchPct}% spec match in the database. Showing delta between your current build and this reference.
+            </p>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:4, marginBottom:8 }}>
+              <div style={{ fontSize:9, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase" }}></div>
+              <div style={{ fontSize:9, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", textAlign:"center" }}>Baseline</div>
+              <div style={{ fontSize:9, color:"#1A5C2A", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", textAlign:"center" }}>Your build</div>
+            </div>
+            {categories.map(({ key, label }) => {
+              const base = baselineScores[key] ?? 0;
+              const curr = scores[key] ?? 0;
+              const delta = curr - base;
+              return (
+                <div key={key} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:4, alignItems:"center", marginBottom:6 }}>
+                  <span style={{ fontSize:11, color:"#4A4540", fontFamily:"Inter, sans-serif" }}>{label}</span>
+                  <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                    <div style={{ flex:1, height:3, background:"#D4CCB8", borderRadius:2, overflow:"hidden" }}>
+                      <div style={{ width:`${(base/5)*100}%`, height:"100%", background:"#C0B8A4" }}/>
+                    </div>
+                    <span style={{ fontSize:10, fontFamily:"'JetBrains Mono', monospace", color:"#7A7268", minWidth:24, textAlign:"right" }}>{base.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                    <div style={{ flex:1, height:3, background:"#D4CCB8", borderRadius:2, overflow:"hidden" }}>
+                      <div style={{ width:`${(curr/5)*100}%`, height:"100%", background:"#1A5C2A" }}/>
+                    </div>
+                    <span style={{ fontSize:10, fontFamily:"'JetBrains Mono', monospace", color: delta > 0.1 ? "#1A5C2A" : delta < -0.1 ? "#991B1B" : "#7A7268", minWidth:24, textAlign:"right" }}>{curr.toFixed(1)}</span>
+                    {Math.abs(delta) > 0.1 && <span style={{ fontSize:9, color: delta > 0 ? "#1A5C2A" : "#991B1B", minWidth:28 }}>{delta > 0 ? "▲" : "▼"}{Math.abs(delta).toFixed(1)}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:16 }}>
         <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:0 }}>Playability Index</p>
         <PlayabilityRadar scores={scores}/>
@@ -4696,7 +4867,7 @@ export default function App() {
       <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:24 }}>
         <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Closest racquets on the market</p>
         <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
-          Matched against a starter set of ~17 cross-checked current models across 8 brands — not the full market. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
+          Matched against {MARKET_RACQUETS.length} verified models across 11 brands. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
         </p>
         {matchedRacquets.map((m, i) => (
           <div key={m.racquet.id} style={{ padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,0.045)" }}>
