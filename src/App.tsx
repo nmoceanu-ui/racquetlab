@@ -781,7 +781,431 @@ const MARKET_RACQUETS = [
     sourceConfidence: "approximate",
     note: "The one genuinely graphene-faced model in this set — Head builds Graphene 360 into the frame/structure for torsion and rigidity rather than as a separate face layer, which matters if you're comparing this tool's 'graphene' face-material option directly: real-world graphene use in padel is closer to a frame-reinforcement technique than a distinct visible face material.",
   },
+  // ---- Bullpadel Hack 04 line -----------------------------------------------
+  {
+    id: "bullpadel-hack-04-2026",
+    brand: "Bullpadel",
+    model: "Hack 04 (2026)",
+    shapeId: "diamond",
+    coreId: "hybrid-core",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "3d-print",
+    weightG: 370,
+    balanceCm: 26.4,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Paquito Navarro's signature weapon. TriCarbon 18K face (three-directional carbon weave unique to Bullpadel), multi-density MultiEva core, and the CustomWeight system allowing up to +22g and ±1cm balance adjustment. Diamond with concentric-circle hole pattern redesigned for 2026 to enlarge the sweet spot. Positioned at the extreme power-speed end of the Bullpadel lineup.",
+  },
+  {
+    id: "bullpadel-hack-04-hybrid-2026",
+    brand: "Bullpadel",
+    model: "Hack 04 Hybrid (2026)",
+    shapeId: "teardrop",
+    coreId: "hybrid-core",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "3d-print",
+    weightG: 368,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Teardrop version of the Hack 04 line — combines Hack power character with more accessible balance. Aluminized 18K carbon face, triple-bridge design, same CustomWeight system as the diamond version. Reviewers describe it as 'control-leaning all-court with enough punch to finish' — the rational Hack choice for players who transition between net and baseline.",
+  },
+  // ---- Bullpadel Neuron 02 line ---------------------------------------------
+  {
+    id: "bullpadel-neuron-02-2026",
+    brand: "Bullpadel",
+    model: "Neuron 02 (2026)",
+    shapeId: "teardrop",
+    coreId: "hybrid-core",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 370,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Fede Chingotto's control-first teardrop. Even balance (~25.5cm) for smooth preparation and placement-first timing. PrismLock triangulated frame resists torsion. Neuron Core inverted pentagonal bridge channels energy for firm, precise contact. Multi-density MultiEva core. Ease Vibe dampeners absorb up to 49% vibration. Surgical control over raw power.",
+  },
+  {
+    id: "bullpadel-neuron-02-edge-2026",
+    brand: "Bullpadel",
+    model: "Neuron 02 Edge (2026)",
+    shapeId: "diamond",
+    coreId: "hybrid-core",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 370,
+    balanceCm: 26.2,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Diamond sibling to the Neuron 02 — same PrismLock/MultiEva/X-Tend Carbon 3K spec but a higher balance for more overhead aggression. Control-first philosophy applied to a diamond mold: larger sweet spot than typical diamond, composed under pressure, not a pure smash weapon. For advanced players who want to dictate rallies with precision from an attacking position.",
+  },
+  // ---- Adidas Metalbone HRD+ -----------------------------------------------
+  {
+    id: "adidas-metalbone-hrd-2026",
+    brand: "Adidas",
+    model: "Metalbone HRD+ (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 356,
+    balanceCm: 27.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Ale Galán's pro weapon — the hardest-hitting Metalbone in the 2026 lineup. Carbon Aluminized 16K face, High Memory EVA core (high-density, fast rebound on hard swings), Octagonal Structure, Extra Power Grip (+15mm handle for inertia and power). Weight & Balance System adjustable ±11.2g. Balance at 278mm — deep head-heavy territory. Very narrow operating window, extreme upside for technically clean elite players.",
+  },
+  // ---- Head Coello Pro 2026 ------------------------------------------------
+  {
+    id: "head-coello-pro-2026",
+    brand: "Head",
+    model: "Coello Pro (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-3k",
+    frameId: "auxetic-frame",
+    surfaceId: "rough",
+    weightG: 370,
+    balanceCm: 27.2,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Arturo Coello's signature weapon — the most aggressive offensive racket in Head's 2026 lineup. Auxetic 2.0 frame (widens on impact rather than compressing, channeling energy into the ball rather than absorbing it). Carbon Hybrid face (carbon + fiberglass weave), Power Foam core for explosive rebound. Balance at 272mm. RA ~72 — high stiffness. Not for players who rely on forgiveness; rewards clean technique and aggressive forward positioning absolutely.",
+  },
+  {
+    id: "head-coello-motion-2026",
+    brand: "Head",
+    model: "Coello Motion (2026)",
+    shapeId: "diamond",
+    coreId: "eva-medium",
+    faceId: "carbon-3k",
+    frameId: "auxetic-frame",
+    surfaceId: "rough",
+    weightG: 355,
+    balanceCm: 26.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "The accessible version of the Coello range — same Auxetic 2.0 frame technology, diamond shape, but at 355g with a more moderate balance for better maneuverability. Designed for players who want Coello's offensive character without the full physical demands of the Pro. Same family, fundamentally different swing requirement.",
+  },
+  // ---- StarVie additions ---------------------------------------------------
+  {
+    id: "starvie-astrum-plus-2026",
+    brand: "StarVie",
+    model: "Astrum+ (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 25.8,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "StarVie's versatile flagship for 2026. Teardrop with medium balance — the all-court specialist positioned above the Raptor. 12K Carbon Hyper face with Spin Boost Tech, M-EVA Balance medium-density core. Air Booster aerodynamics for swing speed, Shock Shield vibration absorption, Z-Shock grip. Control 8.4, Maneuverability 8.6 per PadelVerdict. For advanced hybrid/all-court players who value versatility over raw power ceiling.",
+  },
+  {
+    id: "starvie-triton-plus-2026",
+    brand: "StarVie",
+    model: "Triton+ (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 372,
+    balanceCm: 26.6,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "StarVie's power flagship above the Astrum+. Diamond shape, high balance, stiff construction — the attacker's choice in the StarVie lineup. Aluminized carbon face, hard core. For players who want more overhead firepower than the Astrum+ can deliver.",
+  },
+  // ---- Nox additions -------------------------------------------------------
+  {
+    id: "nox-equation-2026",
+    brand: "Nox",
+    model: "Equation Soft (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "carbon-12k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 362,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Comfort-driven control racket for intermediate players — a teardrop with soft EVA core positioned between the all-beginner ML10 and the advanced AT10 range. Good spin, high comfort, forgiving sweet spot. The 'soft' version of the Equation line means the face flexes more on contact for better arm protection. Ideal for players building consistency who want more face response than the ML10 but aren't ready for the AT10's demands.",
+  },
+  {
+    id: "nox-x-zero-2026",
+    brand: "Nox",
+    model: "X-Zero (2026)",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 358,
+    balanceCm: 24.8,
+    thicknessMm: 38,
+    level: "beginner",
+    priceTier: "budget",
+    sourceConfidence: "high",
+    note: "Nox's true entry-level racket — round, soft, light, and maximally forgiving. Fiberglass face, soft EVA core, low balance for maneuverability. HR3 rubber variant. Large sweet spot, easy ball exit. The step above the X-Hero for beginners who want the same accessibility with slightly more durability. Certified the most accessible Nox model in the 2026 lineup per multiple sources.",
+  },
+  // ---- Wilson additions ----------------------------------------------------
+  {
+    id: "wilson-blade-v3-2026",
+    brand: "Wilson",
+    model: "Blade V3 (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "The flagship Wilson padel racket — teardrop with medium balance, 12K carbon face, medium EVA core. Designed around control and spin rather than pure power. The Bela Pro's evolution — slightly more balanced and accessible than the Bela Pro/V3, less head-heavy than most comparable advanced teardrops. Best for all-court players who want attacking capability with controlled net play.",
+  },
+  {
+    id: "wilson-blade-v3-ls-2026",
+    brand: "Wilson",
+    model: "Blade V3 LS (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "carbon-12k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 350,
+    balanceCm: 25.4,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Lightweight version of the Blade V3 — softer core, hybrid frame, notably lighter at ~350g. Designed for intermediate players who want Wilson's Blade character without the full arm demands of the V3. Reviewers consistently note the easier swing and lower fatigue over long sessions. A practical step-up from the Bela LT.",
+  },
+  // ---- Siux additions -------------------------------------------------------
+  {
+    id: "siux-diablo-2026",
+    brand: "Siux",
+    model: "Diablo (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "3d-print",
+    weightG: 372,
+    balanceCm: 26.8,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Siux's premium attacking diamond — 18K carbon face, hard EVA, 3D-printed surface texture for maximum spin. High balance. The power-first option in the Siux lineup, positioned above the Electra Pro for players who want maximum overhead output and can handle the demanding balance.",
+  },
+  // ---- Babolat additions ---------------------------------------------------
+  {
+    id: "babolat-juan-lebron-2026",
+    brand: "Babolat",
+    model: "Juan Lebrón (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 26.6,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Juan Lebrón's signature Babolat model — diamond shape, carbon frame, hard EVA core. Slightly different character from the Viper line: carbon-12K face gives a more flexible, feedback-rich response than the Viper's 3K at the same weight and balance. Positioned for aggressive all-court players who want more ball feel than a pure power diamond provides.",
+  },
+  // ---- Head Speed line -----------------------------------------------------
+  {
+    id: "head-speed-motion-2026",
+    brand: "Head",
+    model: "Speed Motion (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 362,
+    balanceCm: 25.8,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Head's intermediate all-rounder — teardrop with medium balance, 12K carbon face, medium EVA core. Auxetic 2.0 technology (frame widens on impact) applied to a more accessible package than the Coello Pro. Reviewers consistently position it above the Extreme Pro for attacking potential while remaining accessible. The reference intermediate teardrop option in Head's 2026 range.",
+  },
+  // ---- Royal Padel -------------------------------------------------------
+  {
+    id: "royal-padel-m27-poly-2026",
+    brand: "Royal Padel",
+    model: "M27 Poly (2026)",
+    shapeId: "round",
+    coreId: "foam-pe",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 25.2,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Royal Padel's flagship control round — polyethylene (PE) core rather than standard EVA gives it a distinctly softer, more cushioned impact feel. 3K carbon face, carbon frame. Medium-low balance for fast reactions and arm-friendly long sessions. Known for exceptional vibration absorption — the go-to recommendation for players with elbow sensitivity who still want an advanced-level racket. Control and defensive consistency over power.",
+  },
+  {
+    id: "royal-padel-fury-2026",
+    brand: "Royal Padel",
+    model: "Fury (2026)",
+    shapeId: "diamond",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 370,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Royal Padel's attacking diamond — 12K rough carbon, mid-hard EVA core with Shock Absorption System. Even balance (260mm) rather than extreme head-heavy, which makes it more manageable than comparable diamonds while retaining power ceiling. PadelVerdict scores: Power 8.2, Spin 8.0, Stability 8.0. For advanced net-forward players who want overhead power with more forgiveness than a full head-heavy diamond.",
+  },
+  // ---- Siux extra model --------------------------------------------------
+  {
+    id: "siux-pegasus-2026",
+    brand: "Siux",
+    model: "Pegasus Control (2026)",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "carbon-12k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 360,
+    balanceCm: 25.0,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "Siux's control-oriented round — sits below the Electra Pro in the lineup, targeting intermediate players who want carbon face performance at a more accessible balance and weight. Soft EVA core, hybrid frame. Good spin potential from the 12K face with round shape's forgiving sweet spot.",
+  },
+  // ---- Black Crown -------------------------------------------------------
+  {
+    id: "black-crown-piton-2026",
+    brand: "Black Crown",
+    model: "Piton (2026)",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 370,
+    balanceCm: 26.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "Black Crown's flagship attacking diamond — high balance, hard EVA, 12K carbon. The brand's strongest power-oriented offering. Known for solid build quality and good value at the premium-mid price point compared to pro-brand equivalents. For advanced players seeking diamond power without the premium brand markup.",
+  },
+  {
+    id: "black-crown-hack-2026",
+    brand: "Black Crown",
+    model: "Hack Control (2026)",
+    shapeId: "round",
+    coreId: "eva-medium",
+    faceId: "carbon-3k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 362,
+    balanceCm: 25.3,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "Black Crown's control round for intermediate-advanced players. Medium EVA, 3K carbon face, hybrid frame. One of the more popular Black Crown options at club level — forgiving sweet spot, accessible balance, good feel for players developing consistency from the back court.",
+  },
+  // ---- Varlion -----------------------------------------------------------
+  {
+    id: "varlion-summum-carbon-2026",
+    brand: "Varlion",
+    model: "Summum Carbon (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Varlion's flagship teardrop — Spanish brand known for temperature-adapted layups and high-grade construction. 18K carbon face for responsive feel, medium EVA, carbon frame. Positioned as a precision all-court racket for advanced players who want pro-level feel and durability without mainstream brand pricing.",
+  },
+  {
+    id: "varlion-bourne-cube-2026",
+    brand: "Varlion",
+    model: "Bourne Cube ElbowCare (2026)",
+    shapeId: "diamond",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "hybrid-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.3,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Varlion's premium attacking diamond with ElbowCare technology — vibration damping integrated into the frame to reduce arm impact despite the diamond's high balance. A practical answer to the common problem of wanting diamond power with arm protection. Hybrid frame absorbs vibration that a full carbon equivalent would transmit. Recommended by multiple sources for advanced players with shoulder or elbow sensitivity.",
+  },
+  // ---- Nox AT10 Pro Cup line ---------------------------------------------
+  {
+    id: "nox-at10-pro-cup-soft-2026",
+    brand: "Nox",
+    model: "AT10 Pro Cup Soft (2026)",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 25.8,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Advanced-level soft-feeling teardrop in the AT10 range — same mold as the AT10 Genius line but with a softer EVA core for players who want the Tapia-range frame character with more comfort and less arm strain. Precision, spin and feel over raw power. For advanced players who spend long sessions and prioritize touch and consistency over maximum smash output.",
+  },
 ];
+
 
 // ---------------------------------------------------------------------------
 // PRODUCT MATCHING — scores each market racquet against a target spec
@@ -797,16 +1221,25 @@ const MARKET_RACQUETS = [
 const CORE_HARDNESS_RANK = { "eva-soft": 1, "foam-pe": 1, "hybrid-core": 2, "eva-medium": 2, "eva-hard": 3 };
 const FACE_STIFFNESS_RANK = { fiberglass: 1, "carbon-12k": 2, "carbon-18k": 2, "carbon-3k": 3, graphene: 3, "kevlar-reinforced": 3 };
 
-function matchRacquets(targetSpec, options: { limit?: number } = {}) {
-  const { limit = 5 } = options;
+function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: string } = {}) {
+  const { limit = 5, budgetTier } = options;
 
-  const scored = MARKET_RACQUETS.map((r) => {
+  // Pre-filter by budget tier if specified
+  const candidates = budgetTier && budgetTier !== "any"
+    ? MARKET_RACQUETS.filter(r => {
+        if (budgetTier === "budget") return r.priceTier === "budget";
+        if (budgetTier === "mid") return r.priceTier === "budget" || r.priceTier === "mid";
+        if (budgetTier === "premium") return true; // premium players see everything
+        return true;
+      })
+    : MARKET_RACQUETS;
+
+  const scored = candidates.map((r) => {
     let score = 0;
     let maxScore = 0;
     const reasons = [];
 
-    // Shape: exact match weighted heaviest, since it's the single biggest
-    // driver of feel and sweet spot location.
+    // Shape: exact match weighted heaviest.
     maxScore += 30;
     if (r.shapeId === targetSpec.shapeId) {
       score += 30;
@@ -815,13 +1248,14 @@ function matchRacquets(targetSpec, options: { limit?: number } = {}) {
       (r.shapeId === "teardrop" && targetSpec.shapeId !== undefined) ||
       (targetSpec.shapeId === "teardrop" && r.shapeId !== undefined)
     ) {
-      score += 15; // teardrop is the natural middle ground vs round/diamond
+      score += 15;
       reasons.push(`${r.shapeId} shape is a reasonable middle ground versus the recommended ${targetSpec.shapeId}`);
+    } else if (r.shapeId === "diamond-wide" && targetSpec.shapeId === "diamond") {
+      score += 20; // wide-body diamond is a close match for diamond
+      reasons.push(`wide-body diamond closely matches the recommended diamond shape`);
     }
 
-    // Core hardness tier: compare via rank distance rather than requiring
-    // an exact material match, since "eva-medium" on one brand and
-    // "hybrid-core" on another can feel similar in practice.
+    // Core hardness tier: rank-distance scoring.
     maxScore += 20;
     const targetCoreRank = CORE_HARDNESS_RANK[targetSpec.coreId] ?? 2;
     const racquetCoreRank = CORE_HARDNESS_RANK[r.coreId] ?? 2;
@@ -833,7 +1267,7 @@ function matchRacquets(targetSpec, options: { limit?: number } = {}) {
       score += 10;
     }
 
-    // Face stiffness tier: same rank-distance approach.
+    // Face stiffness tier: rank-distance scoring.
     maxScore += 15;
     const targetFaceRank = FACE_STIFFNESS_RANK[targetSpec.faceId] ?? 2;
     const racquetFaceRank = FACE_STIFFNESS_RANK[r.faceId] ?? 2;
@@ -845,16 +1279,21 @@ function matchRacquets(targetSpec, options: { limit?: number } = {}) {
       score += 7;
     }
 
-    // Surface texture: exact match only, since this maps directly to a
-    // felt difference (spin potential) rather than a tier.
+    // Surface texture: exact match = 10, adjacent textured match = 6.
+    // rough and 3d-print are both textured — giving 0 for rough vs
+    // 3d-print was wrong. smooth vs rough is a real felt difference.
     maxScore += 10;
     if (r.surfaceId === targetSpec.surfaceId) {
       score += 10;
       reasons.push("surface texture matches");
+    } else if (
+      (r.surfaceId === "rough" && (targetSpec.surfaceId === "3d-print" || targetSpec.surfaceId === "xl-honeycomb")) ||
+      (targetSpec.surfaceId === "rough" && (r.surfaceId === "3d-print" || r.surfaceId === "xl-honeycomb"))
+    ) {
+      score += 6; // both textured, just different texture format
     }
 
-    // Weight: normalized distance within the 350-380g range used
-    // elsewhere in this tool.
+    // Weight: normalized distance within 350-380g range.
     maxScore += 15;
     if (targetSpec.weightG !== undefined) {
       const weightDist = Math.abs(r.weightG - targetSpec.weightG);
@@ -863,7 +1302,7 @@ function matchRacquets(targetSpec, options: { limit?: number } = {}) {
       if (weightDist <= 5) reasons.push(`weight (${r.weightG}g) closely matches your target`);
     }
 
-    // Balance: normalized distance within the 24-27cm range.
+    // Balance: normalized distance within 24-27cm range.
     maxScore += 10;
     if (targetSpec.balanceCm !== undefined) {
       const balanceDist = Math.abs(r.balanceCm - targetSpec.balanceCm);
@@ -881,7 +1320,7 @@ function matchRacquets(targetSpec, options: { limit?: number } = {}) {
 
 function recommendSpec(answers) {
   const {
-    level, style, priority, armSensitive,
+    level,
     // Section 1 — background
     racquetBackground, frequency,
     // Section 2 — body & physical history
@@ -891,13 +1330,14 @@ function recommendSpec(answers) {
     // Section 4 — feel fork
     feelPreference,
     // Section 5 — constraints
-    sessionLength,
+    sessionLength, budgetTier,
     // Advanced-only (Section A-D)
     courtPosition, pointStyle, biggestWeapon,
     hasModifications, modPlacement, feelSensitivity, techFeel,
+    armCare,
   } = answers;
 
-  // --- Baseline from level (existing logic, preserved) ---
+  // --- Baseline from level ---
   let shapeId = "teardrop", coreId = "eva-medium", faceId = "carbon-12k",
     frameId = "hybrid-frame", surfaceId = "rough", gripId = "pu-grip",
     gripShapeId = "octagonal";
@@ -910,107 +1350,77 @@ function recommendSpec(answers) {
     coreId = "eva-hard"; faceId = "carbon-3k"; frameId = "carbon-frame"; weightG = 372;
   }
 
-  // --- Style (existing) ---
-  if (style === "power") {
+  // --- Derive style from goal + netInstinct (replaces the dead 'style' field) ---
+  // These two questions together cover the same ground that 'style' was meant to.
+  const derivedStyle =
+    (goal === "power" || (goal === "versatility" && netInstinct === "winner")) ? "power" :
+    (goal === "consistency" || (goal === "defense" && netInstinct === "block")) ? "control" :
+    "allround";
+
+  if (derivedStyle === "power") {
     shapeId = level === "beginner" ? "teardrop" : "diamond";
     coreId = level === "beginner" ? "eva-medium" : "eva-hard";
     faceId = level === "beginner" ? "carbon-12k" : "carbon-3k";
     balanceCm = Math.max(balanceCm, 26.6);
-  } else if (style === "control") {
-    shapeId = "round"; faceId = level === "advanced" ? "carbon-18k" : "fiberglass"; coreId = "eva-soft";
+  } else if (derivedStyle === "control") {
+    shapeId = "round";
+    faceId = level === "advanced" ? "carbon-18k" : "fiberglass";
+    coreId = "eva-soft";
     balanceCm = Math.min(balanceCm, 25.2);
-  } else if (style === "allround") {
-    shapeId = "teardrop"; faceId = "carbon-12k"; coreId = "eva-medium";
   }
+  // allround: keep level defaults (teardrop/12k/medium) — already set above
 
-  // --- Priority (existing) ---
-  if (priority === "comfort" || armSensitive === "yes") {
-    coreId = "eva-soft";
-    if (level !== "beginner") faceId = "carbon-18k";
-    gripId = "anti-shock-grip";
-    if (shapeId === "diamond") shapeId = "teardrop";
-    weightG = Math.min(weightG, 362);
-  }
-  if (priority === "durability") {
-    frameId = "carbon-frame";
-    faceId = faceId === "fiberglass" ? "carbon-12k" : faceId;
-  }
-  if (priority === "spin") surfaceId = "3d-print";
-
-  // --- Section 1: racquet-sport background ---
-  // Tennis crossover players tend to over-power shots and fight an
-  // instinct to keep attacking all point; a forgiving shape helps offset
-  // a habit they're still unlearning. Squash crossover already has
-  // strong net reflexes/close-quarter control, so a less forgiving sweet
-  // spot is less of a liability. No racquet-sport background correlates
-  // with better attack/defense "flow" and no bad habits, so technique-
-  // limiting choices matter less for them.
-  if (racquetBackground === "tennis" && shapeId === "diamond") {
-    shapeId = "teardrop"; // offsets the over-power instinct while they adjust
-  }
-  if (racquetBackground === "squash" && shapeId === "round" && style !== "control") {
-    shapeId = "teardrop"; // their net instincts can handle a smaller sweet spot sooner
-  }
-
-  // --- Frequency ---
-  // Overuse/arm-strain risk compounds with play frequency — lean every
-  // comfort tradeoff safer as frequency increases.
-  if (frequency === "multiple-weekly") {
-    weightG = Math.min(weightG, 368);
-    if (gripId === "pu-grip") gripId = "eva-grip";
-  }
-
-  // --- Section 2: body & physical history ---
-  // Grip circumference: narrow hands need a narrower grip to avoid
-  // overreach on wrist snap; large hands need more circumference to avoid
-  // excess squeeze force. Sourced directly from grip-fit/arm-strain
-  // literature, not inferred from any demographic proxy.
-  if (handSize === "small") gripCircMm = 36;
-  else if (handSize === "large") gripCircMm = 40;
-  else gripCircMm = 38;
-
-  // Injury history is the strongest single signal in the literature for
-  // weight/balance/core/grip-material tradeoffs — it overrides style
-  // preference when ongoing/diagnosed.
-  if (injuryHistory === "ongoing") {
-    coreId = "eva-soft";
+  // --- Arm care — proactive preference, not just injury-reactive ---
+  // armCare captures players who proactively prioritize arm comfort even
+  // without an active injury (e.g. Varlion ElbowCare or Royal Padel players).
+  // This is distinct from injuryHistory which handles reactive/diagnosed cases.
+  const needsArmCare = injuryHistory === "ongoing" || injuryHistory === "mild" || armCare === "priority";
+  if (injuryHistory === "ongoing" || armCare === "priority") {
+    coreId = level === "beginner" ? "eva-soft" : "eva-soft";
     frameId = frameId === "carbon-frame" ? "hybrid-frame" : frameId;
     gripId = "anti-shock-grip";
-    weightG = Math.min(weightG, 358);
-    balanceCm = Math.min(balanceCm, 25.2);
+    weightG = Math.min(weightG, armCare === "priority" ? 365 : 358);
+    balanceCm = Math.min(balanceCm, armCare === "priority" ? 25.6 : 25.2);
     if (shapeId === "diamond") shapeId = "teardrop";
   } else if (injuryHistory === "mild") {
     gripId = gripId === "pu-grip" ? "eva-grip" : gripId;
     weightG = Math.min(weightG, 365);
   }
 
-  // Available power: a direct, self-reported substitute for the
-  // strength/power variable that a demographic question would only
-  // approximate. Players who "have to work for pace" benefit from a
-  // higher-balance build that helps generate it; naturally powerful
-  // players can trade some of that for control instead.
+  // --- Section 1: racquet-sport background ---
+  if (racquetBackground === "tennis" && shapeId === "diamond") {
+    shapeId = "teardrop";
+  }
+  if (racquetBackground === "squash" && shapeId === "round" && derivedStyle !== "control") {
+    shapeId = "teardrop";
+  }
+
+  // --- Frequency ---
+  if (frequency === "multiple-weekly") {
+    weightG = Math.min(weightG, 368);
+    if (gripId === "pu-grip") gripId = "eva-grip";
+  }
+
+  // --- Section 2: body & physical history ---
+  if (handSize === "small") gripCircMm = 36;
+  else if (handSize === "large") gripCircMm = 40;
+  else gripCircMm = 38;
+
   if (availablePower === "limited") {
     balanceCm = Math.max(balanceCm, 26.0);
-    if (shapeId === "round" && style !== "control") shapeId = "teardrop";
+    if (shapeId === "round" && derivedStyle !== "control") shapeId = "teardrop";
   } else if (availablePower === "powerful") {
     balanceCm = Math.min(balanceCm, 25.8);
   }
 
   // --- Section 3: play style & goals ---
-  // Forced-scenario net instinct is a more reliable read on control-vs-
-  // power orientation than abstract self-rating.
   if (netInstinct === "block") {
     shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
   } else if (netInstinct === "winner") {
     balanceCm = Math.max(balanceCm, 26.3);
   }
 
-  if (goal === "consistency") {
-    shapeId = "round";
-  } else if (goal === "power") {
-    if (availablePower !== "limited") shapeId = level === "beginner" ? "teardrop" : "diamond";
-    balanceCm = Math.max(balanceCm, 26.4);
-  } else if (goal === "defense") {
+  if (goal === "defense") {
     shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
     balanceCm = Math.min(balanceCm, 25.4);
   } else if (goal === "versatility") {
@@ -1023,15 +1433,11 @@ function recommendSpec(answers) {
     surfaceId = "rough";
   }
 
-  // --- Section 4: the feel fork ---
-  // Directly operationalizes the comfort/control surface-texture
-  // tradeoff: a smoother, "held" feel pairs with comfort-oriented core
-  // dampening; a grippier, faster-release feel pairs with a textured
-  // surface even at some cost to forgiveness.
+  // --- Section 4: feel fork ---
   if (feelPreference === "smooth") {
     surfaceId = surfaceId === "3d-print" ? "rough" : "smooth";
   } else if (feelPreference === "grippy") {
-    surfaceId = "rough";
+    surfaceId = surfaceId === "smooth" ? "rough" : surfaceId;
   }
 
   // --- Section 5: constraints ---
@@ -1040,11 +1446,11 @@ function recommendSpec(answers) {
     weightG = Math.min(weightG, 366);
   }
 
+  // --- Budget tier — filter matches by priceTier in matchRacquets ---
+  // budgetTier is used by matchRacquets, not here — stored in answers object.
+
   // --- Advanced-only sections ---
   if (level === "advanced") {
-    // Court position: right/drive prioritizes consistency and depth
-    // control; left/reves handles more overheads and glass-rebound
-    // finishing, which benefits from more leverage.
     if (courtPosition === "drive") {
       shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
     } else if (courtPosition === "reves") {
@@ -1057,8 +1463,6 @@ function recommendSpec(answers) {
       shapeId = shapeId === "diamond" ? "teardrop" : shapeId;
     }
 
-    // Biggest weapon is a sharper signal than general style — tune the
-    // specific shot rather than a vague power/control axis.
     if (biggestWeapon === "smash") {
       shapeId = "diamond"; balanceCm = Math.max(balanceCm, 26.6);
     } else if (biggestWeapon === "bandeja") {
@@ -1072,12 +1476,6 @@ function recommendSpec(answers) {
       shapeId = "round"; balanceCm = Math.min(balanceCm, 25.4);
     }
 
-    // Players who already tune weight/balance manually, or who notice
-    // small changes instantly, get nudged toward the precision end of
-    // the existing sliders rather than a broad default — the engine
-    // still returns a single point estimate, but biases it toward
-    // whichever extreme their stated sensitivity implies, since they're
-    // the ones equipped to fine-tune further from there themselves.
     if (hasModifications === "added-weight") {
       if (modPlacement === "head") balanceCm = Math.max(balanceCm, 26.5);
       else if (modPlacement === "handle") {
@@ -1086,11 +1484,6 @@ function recommendSpec(answers) {
       }
     }
 
-    // Brand-tech feel preference maps to the same three mechanisms from
-    // the Q7 follow-up: core dampening pairs with a softer core + smoother
-    // face; frame/bridge reinforcement pairs with a stiffer frame; grip
-    // damping pairs with an anti-shock grip material, leaving core/frame
-    // free to stay performance-oriented.
     if (techFeel === "core") {
       coreId = "eva-soft";
       if (surfaceId === "3d-print") surfaceId = "rough";
@@ -1827,7 +2220,7 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // ---------------------------------------------------------------------------
 
 function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holeCountId, gripShapeId }) {
-  const STROKE = "#1A1A1A";
+  const STROKE = "#E8E2D6";
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
@@ -1880,9 +2273,9 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
       <path d={silhouette} fill="url(#profileSheen)"/>
       <path d={silhouette} fill="none" stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
       <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
-        <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#B8B4A8" strokeWidth="1"/>
-        <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#B8B4A8" strokeWidth="1"/>
-        <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#B8B4A8" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#4A4540" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#4A4540" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#4A4540" strokeWidth="1"/>
         <text x={startX+headLen*0.5+12} y={midY+4}>{thicknessMm}mm</text>
         <text x={startX+headLen/2} y={midY+headThick/2+36} textAnchor="middle" fontSize="10">head</text>
         <text x={headEndX+throatLen/2} y={midY+throatThick/2+36} textAnchor="middle" fontSize="10">throat</text>
@@ -1893,7 +2286,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
 }
 
 function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
-  const STROKE = "#1A1A1A";
+  const STROKE = "#E8E2D6";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
@@ -2009,10 +2402,10 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
       <g clipPath="url(#headClip)">{holeDots.map((h,i)=><circle key={i} cx={h.x} cy={h.y} r={6.5} fill="none" stroke={STROKE} strokeWidth="1.3"/>)}</g>
       {mode === "diagram" && (
         <g>
-          <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#2E5BA8" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
-          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="#2E5BA8" opacity="0.12"/>
-          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#2E5BA8" strokeWidth="1.5" strokeDasharray="4 3"/>
-          <circle cx={cx} cy={sweet.y} r={3} fill="#2E5BA8"/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#1D4ED8" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="#1D4ED8" opacity="0.12"/>
+          <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#1D4ED8" strokeWidth="1.5" strokeDasharray="4 3"/>
+          <circle cx={cx} cy={sweet.y} r={3} fill="#1D4ED8"/>
         </g>
       )}
       <path d={`M ${cx-halfWidth*0.5} ${headBottomY-6} Q ${cx-outerThroatHalf-6} ${throatNeckY+16}, ${cx-outerThroatHalf} ${bridgeTopY} M ${cx+halfWidth*0.5} ${headBottomY-6} Q ${cx+outerThroatHalf+6} ${throatNeckY+16}, ${cx+outerThroatHalf} ${bridgeTopY}`} fill="none" stroke={frameRimStyle.color} strokeWidth="2.5" strokeLinecap="round"/>
@@ -2061,7 +2454,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
             {/* solid molded grip sleeve underneath — a real hex-pattern
                 grip (e.g. Hesacore) is one continuous piece with a
                 pressed-in texture, not a wire cage with visible gaps */}
-            <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="#E4DFCF" />
+            <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="#18181B" />
             <clipPath id="hexHandleClip">
               <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} />
             </clipPath>
@@ -2092,7 +2485,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
                   return pts.join(" ");
                 };
                 return cells.map((c, i) => (
-                  <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="#E4DFCF" stroke={STROKE} strokeWidth="0.6" opacity="0.6" />
+                  <polygon key={i} points={flatTopHex(c.x, c.y, hexR * 0.96)} fill="#18181B" stroke={STROKE} strokeWidth="0.6" opacity="0.6" />
                 ));
               })()}
             </g>
@@ -2110,11 +2503,11 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
       </g>
       {mode === "diagram" && (
         <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
-          <line x1={cx-halfWidth} y1={topY-16} x2={cx+halfWidth} y2={topY-16} stroke="#B8B4A8" strokeWidth="1"/>
-          <line x1={cx-halfWidth} y1={topY-22} x2={cx-halfWidth} y2={topY-10} stroke="#B8B4A8" strokeWidth="1"/>
-          <line x1={cx+halfWidth} y1={topY-22} x2={cx+halfWidth} y2={topY-10} stroke="#B8B4A8" strokeWidth="1"/>
+          <line x1={cx-halfWidth} y1={topY-16} x2={cx+halfWidth} y2={topY-16} stroke="#4A4540" strokeWidth="1"/>
+          <line x1={cx-halfWidth} y1={topY-22} x2={cx-halfWidth} y2={topY-10} stroke="#4A4540" strokeWidth="1"/>
+          <line x1={cx+halfWidth} y1={topY-22} x2={cx+halfWidth} y2={topY-10} stroke="#4A4540" strokeWidth="1"/>
           <text x={cx} y={topY-24} textAnchor="middle">face width {widthMm}mm</text>
-          <line x1={cx+halfWidth+18} y1={topY} x2={cx+halfWidth+18} y2={handleBottomY} stroke="#B8B4A8" strokeWidth="1"/>
+          <line x1={cx+halfWidth+18} y1={topY} x2={cx+halfWidth+18} y2={handleBottomY} stroke="#4A4540" strokeWidth="1"/>
           <text x={cx+halfWidth+26} y={(topY+handleBottomY)/2} transform={`rotate(90 ${cx+halfWidth+26} ${(topY+handleBottomY)/2})`} textAnchor="middle">total length {lengthMm}mm</text>
           <text x={cx} y={bridgeTopY+bridgeHeight/2+4} textAnchor="middle" fontSize="10" fill="#5A574C">{bridgeId==="closed"?"closed bridge":`${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}`}</text>
         </g>
@@ -2400,10 +2793,10 @@ function RacquetIllustration3D({
         </linearGradient>
 
         <radialGradient id="sweetSpotGlow3d" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#AEFB00" stopOpacity="0.65" />
-          <stop offset="55%" stopColor="#AEFB00" stopOpacity="0.35" />
-          <stop offset="85%" stopColor="#AEFB00" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#AEFB00" stopOpacity="0" />
+          <stop offset="0%" stopColor="#1A5C2A" stopOpacity="0.65" />
+          <stop offset="55%" stopColor="#1A5C2A" stopOpacity="0.35" />
+          <stop offset="85%" stopColor="#1A5C2A" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#1A5C2A" stopOpacity="0" />
         </radialGradient>
 
         <filter id="shadowBlur3d" x="-50%" y="-50%" width="200%" height="200%">
@@ -2632,7 +3025,7 @@ function RacquetIllustration3D({
             config to the next; this ring gives a concrete edge so
             changes in shape/stability/holes are visually legible, not
             just a vague brightness shift */}
-        <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#AEFB00" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.85" />
+        <circle cx={cx} cy={sweet.y} r={sweet.r} fill="none" stroke="#1A5C2A" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.85" />
       </g>
 
       <path d={headOutlinePath(shape, cx, topY + 3, halfWidth - 3, headHeight - 6)} fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" />
@@ -2681,7 +3074,7 @@ function RacquetIllustration3D({
         )}
         <rect x={cx - handleWidth / 2} y={handleTopY} width={handleWidth} height={handleHeight} fill="none" stroke="#00000022" strokeWidth="1" rx={6} />
         <rect x={cx - handleWidth / 2 - 4} y={handleBottomY - 4} width={handleWidth + 8} height={14} rx={6} fill="url(#rimGrad3d)" />
-        <path d={`M ${cx - 6} ${handleBottomY + 10} Q ${cx - 14} ${handleBottomY + 28}, ${cx} ${handleBottomY + 32} Q ${cx + 14} ${handleBottomY + 28}, ${cx + 6} ${handleBottomY + 10}`} fill="none" stroke="#0A0A0C" strokeWidth="2" opacity="0.6" />
+        <path d={`M ${cx - 6} ${handleBottomY + 10} Q ${cx - 14} ${handleBottomY + 28}, ${cx} ${handleBottomY + 32} Q ${cx + 14} ${handleBottomY + 28}, ${cx + 6} ${handleBottomY + 10}`} fill="none" stroke="#E8E2D6" strokeWidth="2" opacity="0.6" />
       </g>
     </svg>
   );
@@ -2698,8 +3091,8 @@ function SelectField({ value, onChange, options }) {
       onChange={e => onChange(e.target.value)}
       style={{
         width: "100%", padding: "10px 12px", borderRadius: 8,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background: "#1A2030", color: "#EAE6DC",
+        border: "1px solid rgba(0,0,0,0.08)",
+        background: "#DDD7C8", color: "#18181B",
         fontFamily: "Inter, system-ui, sans-serif",
         fontSize: 14, cursor: "pointer", appearance: "auto",
         WebkitAppearance: "auto",
@@ -2714,15 +3107,15 @@ function SliderField({ label, value, onChange, min, max, step = 1, suffix, expla
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        <span style={{ fontSize: 13, color: "#9AA3B0", fontFamily: "Inter, sans-serif" }}>{label}</span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#AEFB00", fontWeight: 600 }}>{value}{suffix}</span>
+        <span style={{ fontSize: 13, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>{label}</span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#1A5C2A", fontWeight: 600 }}>{value}{suffix}</span>
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: "100%", accentColor: "#AEFB00", height: 4, cursor: "pointer" }}
+        style={{ width: "100%", accentColor: "#1A5C2A", height: 4, cursor: "pointer" }}
       />
-      {explanation && <p style={{ fontSize: 12, color: "#6A7485", lineHeight: 1.5, marginTop: 6, fontFamily: "Inter, sans-serif" }}>{explanation}</p>}
+      {explanation && <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, marginTop: 6, fontFamily: "Inter, sans-serif" }}>{explanation}</p>}
     </div>
   );
 }
@@ -2740,9 +3133,9 @@ function ToggleGroup({ options, value, onChange, disabled }: { options: {id:any,
             onClick={() => onChange(o.id)}
             style={{
               flex: "1 1 auto", padding: "10px 10px", borderRadius: 8,
-              border: `1px solid ${isActive ? "#AEFB00" : "rgba(255,255,255,0.1)"}`,
-              background: isActive ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
-              color: isDisabled ? "#3A4455" : isActive ? "#AEFB00" : "#9AA3B0",
+              border: `1px solid ${isActive ? "#1A5C2A" : "rgba(0,0,0,0.07)"}`,
+              background: isActive ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)",
+              color: isDisabled ? "#B0A898" : isActive ? "#1A5C2A" : "#4A4540",
               fontSize: 12.5, fontWeight: 600, cursor: isDisabled ? "not-allowed" : "pointer",
               fontFamily: "Inter, sans-serif", transition: "all 0.15s ease",
               WebkitTapHighlightColor: "transparent",
@@ -2756,13 +3149,13 @@ function ToggleGroup({ options, value, onChange, disabled }: { options: {id:any,
   );
 }
 
-function RatingDots({ val, max = 5, color = "#AEFB00" }) {
+function RatingDots({ val, max = 5, color = "#1A5C2A" }) {
   return (
     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
       {Array.from({length: max}).map((_,i) => (
         <div key={i} style={{
           width: 8, height: 8, borderRadius: "50%",
-          background: i < Math.round(val) ? color : "rgba(255,255,255,0.1)",
+          background: i < Math.round(val) ? color : "rgba(0,0,0,0.07)",
           transition: "background 0.2s ease",
         }}/>
       ))}
@@ -2775,11 +3168,11 @@ function ScoreBar({ label, val, max = 5 }) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <span style={{ fontSize: 13, color: "#9AA3B0", fontFamily: "Inter, sans-serif" }}>{label}</span>
-        <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#AEFB00", fontWeight: 600 }}>{val.toFixed(1)}</span>
+        <span style={{ fontSize: 13, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>{label}</span>
+        <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#1A5C2A", fontWeight: 600 }}>{val.toFixed(1)}</span>
       </div>
-      <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #AEFB00, #00D4F0)", transition: "width 0.4s ease" }}/>
+      <div style={{ height: 5, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #1A5C2A, #2D7A3A)", transition: "width 0.4s ease" }}/>
       </div>
     </div>
   );
@@ -2796,22 +3189,22 @@ function SectionHeader({ icon, label, isOpen, onToggle, badge = null }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ color: isOpen ? "#AEFB00" : "#6A7485", transition: "color 0.2s" }}>{icon}</span>
+        <span style={{ color: isOpen ? "#1A5C2A" : "#7A7268", transition: "color 0.2s" }}>{icon}</span>
         <span style={{
           fontSize: 13, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
           letterSpacing: "0.08em", textTransform: "uppercase",
-          color: isOpen ? "#EAE6DC" : "#9AA3B0", transition: "color 0.2s",
+          color: isOpen ? "#18181B" : "#4A4540", transition: "color 0.2s",
         }}>{label}</span>
-        {badge && <span style={{ background: "rgba(174,251,0,0.15)", color: "#AEFB00", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", padding: "2px 7px", borderRadius: 4 }}>{badge}</span>}
+        {badge && <span style={{ background: "rgba(26,92,42,0.15)", color: "#1A5C2A", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", padding: "2px 7px", borderRadius: 4 }}>{badge}</span>}
       </div>
-      <ChevronDown size={16} color={isOpen ? "#AEFB00" : "#3A4455"} style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}/>
+      <ChevronDown size={16} color={isOpen ? "#1A5C2A" : "#B0A898"} style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}/>
     </button>
   );
 }
 
 function AccordionSection({ id, icon, label, isOpen, onToggle, badge = null, children }) {
   return (
-    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
       <SectionHeader icon={icon} label={label} isOpen={isOpen} onToggle={onToggle} badge={badge}/>
       {isOpen && (
         <div style={{ paddingBottom: 20 }}>{children}</div>
@@ -2825,7 +3218,7 @@ function MiniRatingGrid({ items }: { items: {label:string, val:number}[] }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px", marginTop: 12 }}>
       {items.map(({label, val}) => (
         <div key={label}>
-          <div style={{ fontSize: 11, color: "#6A7485", marginBottom: 4, fontFamily: "Inter, sans-serif" }}>{label}</div>
+          <div style={{ fontSize: 11, color: "#7A7268", marginBottom: 4, fontFamily: "Inter, sans-serif" }}>{label}</div>
           <RatingDots val={val}/>
         </div>
       ))}
@@ -2834,24 +3227,24 @@ function MiniRatingGrid({ items }: { items: {label:string, val:number}[] }) {
 }
 
 function MaterialNote({ text }) {
-  return <p style={{ fontSize: 13, color: "#7B8494", lineHeight: 1.6, marginTop: 10, fontFamily: "Inter, sans-serif" }}>{text}</p>;
+  return <p style={{ fontSize: 13, color: "#7A7268", lineHeight: 1.6, marginTop: 10, fontFamily: "Inter, sans-serif" }}>{text}</p>;
 }
 
 function BestForTag({ text }) {
   if (!text) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "6px 10px", background: "rgba(0,212,240,0.08)", borderRadius: 6, border: "1px solid rgba(0,212,240,0.15)" }}>
-      <CheckCircle2 size={12} color="#00D4F0"/>
-      <span style={{ fontSize: 12, color: "#00D4F0", fontFamily: "Inter, sans-serif" }}>{text}</span>
+      <CheckCircle2 size={12} color="#166534"/>
+      <span style={{ fontSize: 12, color: "#166534", fontFamily: "Inter, sans-serif" }}>{text}</span>
     </div>
   );
 }
 
 function FTOWarning() {
   return (
-    <div style={{ display:"flex", gap:8, padding:"10px 12px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8, marginTop:12 }}>
-      <AlertTriangle size={14} color="#FFB400" style={{flexShrink:0, marginTop:1}}/>
-      <p style={{ fontSize:12, color:"#C88A00", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
+    <div style={{ display:"flex", gap:8, padding:"10px 12px", background:"#FEF3C7", border:"1px solid #D97706", borderRadius:8, marginTop:12 }}>
+      <AlertTriangle size={14} color="#D97706" style={{flexShrink:0, marginTop:1}}/>
+      <p style={{ fontSize:12, color:"#92400E", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
         This spec touches features flagged in IP landscape research (perforation pattern, graphene/kevlar composite, or hybrid core). Confirm freedom-to-operate with patent counsel before production.
       </p>
     </div>
@@ -2929,6 +3322,16 @@ const FINDER_SECTION_2 = [
     ],
   },
   {
+    id: "armCare",
+    label: "Arm comfort priority",
+    question: "Even without an injury, how important is arm-friendly construction to you?",
+    options: [
+      { id: "not-priority", label: "Not a priority — I want the best performing spec for my game" },
+      { id: "nice-to-have", label: "Nice to have, but performance comes first" },
+      { id: "priority", label: "Important — I proactively want a comfortable build to protect my arm" },
+    ],
+  },
+  {
     id: "availablePower",
     label: "Available power",
     question: "When you swing freely, your shots tend to be...",
@@ -2995,6 +3398,16 @@ const FINDER_SECTION_5 = [
       { id: "short", label: "Under an hour" },
       { id: "medium", label: "1-2 hours" },
       { id: "long", label: "2+ hours or multiple matches" },
+    ],
+  },
+  {
+    id: "budgetTier",
+    label: "Budget",
+    question: "What's your approximate budget for a racket?",
+    options: [
+      { id: "budget", label: "Under $120 — value matters most" },
+      { id: "mid", label: "$120-$250 — good mid-range" },
+      { id: "premium", label: "$250+ — I want the best spec for my game" },
     ],
   },
 ];
@@ -3112,7 +3525,7 @@ function FindRacquetPanel({ onApply, mode }) {
   // Core questions required before the button activates — kept to the
   // questions every player sees, so beginners aren't blocked on
   // advanced-only fields that never render for them.
-  const requiredIds = ["racquetBackground", "level", "frequency", "handSize", "injuryHistory", "availablePower", "netInstinct", "goal", "spinInterest", "feelPreference", "sessionLength"];
+  const requiredIds = ["racquetBackground", "level", "frequency", "handSize", "injuryHistory", "armCare", "availablePower", "netInstinct", "goal", "spinInterest", "feelPreference", "sessionLength", "budgetTier"];
   const canApply = requiredIds.every(id => answers[id]);
 
   const handleApply = () => {
@@ -3123,16 +3536,16 @@ function FindRacquetPanel({ onApply, mode }) {
 
   const QRow = ({ q }: { q: { id: string; label: string; question: string; options: { id: string; label: string }[] } }) => (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>{q.label}</div>
-      <p style={{ fontSize: 13, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>{q.question}</p>
+      <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>{q.label}</div>
+      <p style={{ fontSize: 13, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>{q.question}</p>
       <ToggleGroup options={q.options} value={answers[q.id] ?? null} onChange={v => setAnswer(q.id, v)} />
     </div>
   );
 
   const SectionDivider = ({ label }: { label: string }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
-      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#AEFB00", whiteSpace: "nowrap" }}>{label}</span>
-      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
     </div>
   );
 
@@ -3145,12 +3558,12 @@ function FindRacquetPanel({ onApply, mode }) {
   return (
     <div>
       {mode === "player" && (
-        <div style={{ padding:"14px 16px", background:"linear-gradient(135deg, rgba(174,251,0,0.1), rgba(0,212,240,0.06))", borderRadius:10, border:"1px solid rgba(174,251,0,0.2)", marginBottom:20 }}>
+        <div style={{ padding:"14px 16px", background:"linear-gradient(135deg, #EAF3EC, rgba(0,212,240,0.06))", borderRadius:10, border:"1px solid rgba(26,92,42,0.25)", marginBottom:20 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-            <Sparkles size={14} color="#AEFB00"/>
-            <span style={{ fontSize:13, fontWeight:700, color:"#AEFB00", fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase" }}>Smart Finder</span>
+            <Sparkles size={14} color="#1A5C2A"/>
+            <span style={{ fontSize:13, fontWeight:700, color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase" }}>Smart Finder</span>
           </div>
-          <p style={{ fontSize:12.5, color:"#9AA3B0", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
+          <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
             A deeper set of questions across a few short sections — covering background, body, goals, and feel — so the recommendation actually fits you, not just a category. Advanced players get a few extra questions for finer tuning.
           </p>
         </div>
@@ -3168,7 +3581,7 @@ function FindRacquetPanel({ onApply, mode }) {
       <SectionDivider label="The feel fork" />
       <QRow q={FINDER_FEEL_FORK} />
       {answers.feelPreference === "unsure" && (
-        <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
+        <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
           {feelUnsureFollowup}
         </p>
       )}
@@ -3190,7 +3603,7 @@ function FindRacquetPanel({ onApply, mode }) {
           <SectionDivider label="Brand technology (advanced)" />
           <QRow q={FINDER_SECTION_D} />
           {answers.techFeel && TECH_FEEL_FOLLOWUPS[answers.techFeel] && (
-            <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
+            <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
               {TECH_FEEL_FOLLOWUPS[answers.techFeel]}
             </p>
           )}
@@ -3202,8 +3615,8 @@ function FindRacquetPanel({ onApply, mode }) {
         disabled={!canApply}
         style={{
           width:"100%", padding:"14px 16px", borderRadius:10, border:"none",
-          background: canApply ? "linear-gradient(135deg, #AEFB00, #7DD400)" : "rgba(255,255,255,0.06)",
-          color: canApply ? "#080B10" : "#3A4455",
+          background: canApply ? "linear-gradient(135deg, #1A5C2A, #2D7A3A)" : "rgba(0,0,0,0.045)",
+          color: canApply ? "#FFFFFF" : "#B0A898",
           fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:15,
           letterSpacing:"0.08em", textTransform:"uppercase", cursor: canApply ? "pointer" : "not-allowed",
           marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8,
@@ -3214,13 +3627,13 @@ function FindRacquetPanel({ onApply, mode }) {
       </button>
 
       {!canApply && (
-        <p style={{ textAlign:"center", fontSize:11.5, color:"#4A5568", marginTop:8, fontFamily:"Inter, sans-serif" }}>
+        <p style={{ textAlign:"center", fontSize:11.5, color:"#7A7268", marginTop:8, fontFamily:"Inter, sans-serif" }}>
           Answer the questions above (advanced sections are optional) to unlock your recommendation.
         </p>
       )}
 
       {applied && (
-        <p style={{ textAlign:"center", fontSize:12.5, color:"#6A7485", marginTop:10, fontFamily:"Inter, sans-serif" }}>
+        <p style={{ textAlign:"center", fontSize:12.5, color:"#7A7268", marginTop:10, fontFamily:"Inter, sans-serif" }}>
           Spec applied — scroll to Build to fine-tune any option.
         </p>
       )}
@@ -3365,30 +3778,30 @@ function FactoryBriefPanel({ onApply }) {
   const SectionDivider = ({ label, step }: { label: string; step: number }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
       <span style={{
-        width: 20, height: 20, borderRadius: "50%", background: "rgba(174,251,0,0.15)", border: "1px solid rgba(174,251,0,0.3)",
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#AEFB00",
+        width: 20, height: 20, borderRadius: "50%", background: "rgba(26,92,42,0.15)", border: "1px solid rgba(26,92,42,0.4)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#1A5C2A",
         fontFamily: "'JetBrains Mono', monospace", flexShrink: 0,
       }}>{step}</span>
-      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#AEFB00", whiteSpace: "nowrap" }}>{label}</span>
-      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
     </div>
   );
 
   return (
     <div>
-      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, rgba(174,251,0,0.1), rgba(0,212,240,0.06))", borderRadius: 10, border: "1px solid rgba(174,251,0,0.2)", marginBottom: 4 }}>
+      <div style={{ padding: "14px 16px", background: "linear-gradient(135deg, #EAF3EC, rgba(0,212,240,0.06))", borderRadius: 10, border: "1px solid rgba(26,92,42,0.25)", marginBottom: 4 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <Wrench size={14} color="#AEFB00" />
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#AEFB00", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>Factory Brief</span>
+          <Wrench size={14} color="#1A5C2A" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>Factory Brief</span>
         </div>
-        <p style={{ fontSize: 12.5, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: 0 }}>
+        <p style={{ fontSize: 12.5, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: 0 }}>
           A product brief, not a player quiz — start from positioning, name the competitive set you're benchmarking against, pick one forced priority, then lock in real-world constraints. Durability is handled as a constraint underneath whatever priority you pick, not a competing goal.
         </p>
       </div>
 
       <SectionDivider label="Production Reality" step={1} />
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Tooling</div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Tooling</div>
         <ToggleGroup options={TOOLING_OPTIONS} value={tooling} onChange={(v) => {
           setTooling(v);
           if (v !== "existing-mold") { setExistingShapeId(null); setExistingMoldRacquetId(null); setWhatToFix(""); }
@@ -3397,7 +3810,7 @@ function FactoryBriefPanel({ onApply }) {
         }} />
         {tooling === "existing-mold" && (
           <div style={{ marginTop: 12 }}>
-            <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+            <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
               Pick the racquet whose shell you're working within. Shape, width, and thickness lock automatically from this selection — the brief then focuses on what you're changing inside that shell.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -3412,16 +3825,16 @@ function FactoryBriefPanel({ onApply }) {
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "10px 12px", borderRadius: 8, cursor: "pointer", textAlign: "left",
                     WebkitTapHighlightColor: "transparent",
-                    border: `1px solid ${isSelected ? "rgba(174,251,0,0.35)" : "rgba(255,255,255,0.07)"}`,
-                    background: isSelected ? "rgba(174,251,0,0.07)" : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${isSelected ? "rgba(26,92,42,0.45)" : "rgba(0,0,0,0.05)"}`,
+                    background: isSelected ? "rgba(174,251,0,0.07)" : "rgba(0,0,0,0.015)",
                   }}>
                     <div>
-                      <div style={{ fontSize: 13, color: isSelected ? "#AEFB00" : "#EAE6DC", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{r.brand} {r.model}</div>
-                      <div style={{ fontSize: 11, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                      <div style={{ fontSize: 13, color: isSelected ? "#1A5C2A" : "#18181B", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{r.brand} {r.model}</div>
+                      <div style={{ fontSize: 11, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
                         {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm
                       </div>
                     </div>
-                    {isSelected && <CheckCircle2 size={15} color="#AEFB00" />}
+                    {isSelected && <CheckCircle2 size={15} color="#1A5C2A" />}
                   </button>
                 );
               })}
@@ -3429,41 +3842,41 @@ function FactoryBriefPanel({ onApply }) {
             {existingMoldRacquetId && (() => {
               const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
               return (
-                <div style={{ marginTop: 14, padding: "12px", background: "rgba(174,251,0,0.06)", border: "1px solid rgba(174,251,0,0.2)", borderRadius: 8 }}>
-                  <div style={{ fontSize: 11, color: "#AEFB00", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
-                  <div style={{ fontSize: 12, color: "#9AA3B0", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }}>
-                    Shape: <strong style={{color:"#EAE6DC"}}>{mold.shapeId}</strong> · Weight: <strong style={{color:"#EAE6DC"}}>{mold.weightG}g</strong> · Balance: <strong style={{color:"#EAE6DC"}}>{mold.balanceCm}cm</strong> · Thickness: <strong style={{color:"#EAE6DC"}}>{mold.thicknessMm}mm</strong><br/>
+                <div style={{ marginTop: 14, padding: "12px", background: "#F2F8F3", border: "1px solid rgba(26,92,42,0.25)", borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
+                  <div style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }}>
+                    Shape: <strong style={{color:"#18181B"}}>{mold.shapeId}</strong> · Weight: <strong style={{color:"#18181B"}}>{mold.weightG}g</strong> · Balance: <strong style={{color:"#18181B"}}>{mold.balanceCm}cm</strong> · Thickness: <strong style={{color:"#18181B"}}>{mold.thicknessMm}mm</strong><br/>
                     Current spec: {mold.coreId} core · {mold.faceId} face · {mold.frameId} frame
                   </div>
                 </div>
               );
             })()}
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>What are you trying to fix or improve from this shell? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional)</span></div>
+              <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 4 }}>What are you trying to fix or improve from this shell? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional)</span></div>
               <textarea value={whatToFix} onChange={(e) => { setWhatToFix(e.target.value); setApplied(false); }}
                 placeholder="e.g. too much vibration for the club player segment, needs a softer feel without losing the diamond's power ceiling"
-                style={{ width: "100%", minHeight: 60, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC", fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical" }} />
+                style={{ width: "100%", minHeight: 60, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical" }} />
             </div>
           </div>
         )}
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Target volume</div>
-        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>Custom: spec locked to a specific recipient — pro player, team, academy, signature edition. Retail: open inventory that needs to make margin at the price point.</p>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 4 }}>Target volume</div>
+        <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>Custom: spec locked to a specific recipient — pro player, team, academy, signature edition. Retail: open inventory that needs to make margin at the price point.</p>
         <ToggleGroup options={VOLUME_OPTIONS} value={targetVolume} onChange={(v) => { setTargetVolume(v); setApplied(false); }} />
       </div>
 
       <SectionDivider label="Positioning" step={2} />
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target level</div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Target level</div>
         <ToggleGroup options={LEVEL_OPTIONS} value={level} onChange={(v) => { setLevel(v); setApplied(false); }} />
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Price tier</div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Price tier</div>
         <ToggleGroup options={PRICE_TIER_OPTIONS} value={priceTier} onChange={(v) => { setPriceTier(v); setApplied(false); }} />
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Target retail price <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — a real number when known, refines but doesn't replace the price tier above)</span></div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Target retail price <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional — a real number when known, refines but doesn't replace the price tier above)</span></div>
         <input
           type="number"
           value={targetRetailPrice}
@@ -3471,20 +3884,20 @@ function FactoryBriefPanel({ onApply }) {
           placeholder="e.g. 120"
           style={{
             width: "100%", padding: "10px 12px", borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC",
+            border: "1px solid rgba(0,0,0,0.08)", background: "#DDD7C8", color: "#18181B",
             fontFamily: "Inter, sans-serif", fontSize: 13,
           }}
         />
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>What gap or need is this racquet filling? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional, carried into the rationale for context)</span></div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>What gap or need is this racquet filling? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional, carried into the rationale for context)</span></div>
         <textarea
           value={needGap}
           onChange={(e) => setNeedGap(e.target.value)}
           placeholder="e.g. a genuinely durable entry racquet that doesn't feel cheap"
           style={{
             width: "100%", minHeight: 60, padding: "10px 12px", borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.12)", background: "#1A2030", color: "#EAE6DC",
+            border: "1px solid rgba(0,0,0,0.08)", background: "#DDD7C8", color: "#18181B",
             fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical",
           }}
         />
@@ -3492,8 +3905,8 @@ function FactoryBriefPanel({ onApply }) {
 
       {tooling !== "existing-mold" && (
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a specific shape? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — if selected, the engine achieves your priority goals WITHIN this shape through materials and balance, not by overriding it)</span></div>
-        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 4 }}>Lock a specific shape? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional — if selected, the engine achieves your priority goals WITHIN this shape through materials and balance, not by overriding it)</span></div>
+        <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
           Leave blank to let the engine choose. Select a shape to lock it — e.g. "control priority + diamond shape" produces a control-oriented diamond (tamed through balance, core softness, and face flex), not a round racquet.
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -3504,9 +3917,9 @@ function FactoryBriefPanel({ onApply }) {
               style={{
                 padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600,
                 fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                border: `1px solid ${explicitShape === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
-                background: explicitShape === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
-                color: explicitShape === opt.id ? "#AEFB00" : "#9AA3B0",
+                border: `1px solid ${explicitShape === opt.id ? "rgba(26,92,42,0.6)" : "rgba(0,0,0,0.07)"}`,
+                background: explicitShape === opt.id ? "#EAF3EC" : "rgba(0,0,0,0.035)",
+                color: explicitShape === opt.id ? "#1A5C2A" : "#4A4540",
               }}
             >{opt.label}</button>
           ))}
@@ -3514,36 +3927,36 @@ function FactoryBriefPanel({ onApply }) {
       </div>
       )}
       {tooling === "existing-mold" && existingMoldRacquetId && (
-        <div style={{ marginBottom: 18, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 }}>
-          <div style={{ fontSize: 11.5, color: "#6A7485", fontFamily: "Inter, sans-serif" }}>Shape locked from mold selection above — the "lock a shape" option only applies to new-mold briefs.</div>
+        <div style={{ marginBottom: 18, padding: "10px 12px", background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.045)", borderRadius: 8 }}>
+          <div style={{ fontSize: 11.5, color: "#7A7268", fontFamily: "Inter, sans-serif" }}>Shape locked from mold selection above — the "lock a shape" option only applies to new-mold briefs.</div>
         </div>
       )}
 
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a bridge type? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — if not selected, extended durability may auto-set this)</span></div>
-        <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 4 }}>Lock a bridge type? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional — if not selected, extended durability may auto-set this)</span></div>
+        <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>
           Leave blank to let the engine decide. Select explicitly to prevent durability logic from overriding your design intent.
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[{ id: null, label: "Engine decides" }, ...BRIDGE_TYPES.map((b) => ({ id: b.id, label: b.label }))].map((opt) => (
             <button key={opt.id ?? "auto"} onClick={() => { setExplicitBridge(opt.id); if (opt.id === "closed") setExplicitBeamOrientation(null); setApplied(false); }}
               style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                border: `1px solid ${explicitBridge === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
-                background: explicitBridge === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
-                color: explicitBridge === opt.id ? "#AEFB00" : "#9AA3B0",
+                border: `1px solid ${explicitBridge === opt.id ? "rgba(26,92,42,0.6)" : "rgba(0,0,0,0.07)"}`,
+                background: explicitBridge === opt.id ? "#EAF3EC" : "rgba(0,0,0,0.035)",
+                color: explicitBridge === opt.id ? "#1A5C2A" : "#4A4540",
               }}>{opt.label}</button>
           ))}
         </div>
         {(explicitBridge === "open" || explicitBridge === null) && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Beam orientation {explicitBridge === null ? "(if engine picks open)" : ""}:</div>
+            <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Beam orientation {explicitBridge === null ? "(if engine picks open)" : ""}:</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {[{ id: null, label: "Engine decides" }, ...BEAM_ORIENTATIONS.map((b) => ({ id: b.id, label: b.label }))].map((opt) => (
                 <button key={opt.id ?? "auto"} onClick={() => { setExplicitBeamOrientation(opt.id); setApplied(false); }}
                   style={{ padding: "6px 11px", borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                    border: `1px solid ${explicitBeamOrientation === opt.id ? "rgba(174,251,0,0.4)" : "rgba(255,255,255,0.08)"}`,
-                    background: explicitBeamOrientation === opt.id ? "rgba(174,251,0,0.1)" : "rgba(255,255,255,0.03)",
-                    color: explicitBeamOrientation === opt.id ? "#AEFB00" : "#7B8494",
+                    border: `1px solid ${explicitBeamOrientation === opt.id ? "rgba(26,92,42,0.5)" : "rgba(0,0,0,0.06)"}`,
+                    background: explicitBeamOrientation === opt.id ? "#EAF3EC" : "rgba(0,0,0,0.025)",
+                    color: explicitBeamOrientation === opt.id ? "#1A5C2A" : "#7A7268",
                   }}>{opt.label}</button>
               ))}
             </div>
@@ -3552,29 +3965,29 @@ function FactoryBriefPanel({ onApply }) {
       </div>
 
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 4 }}>Lock a surface texture? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — engine will pick based on priority if left blank)</span></div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 4 }}>Lock a surface texture? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional — engine will pick based on priority if left blank)</span></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[{ id: null, label: "Engine decides" }, ...SURFACE_TEXTURES.map((s) => ({ id: s.id, label: s.label }))].map((opt) => (
             <button key={opt.id ?? "auto"} onClick={() => { setExplicitSurface(opt.id); setApplied(false); }}
               style={{ padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                border: `1px solid ${explicitSurface === opt.id ? "rgba(174,251,0,0.5)" : "rgba(255,255,255,0.1)"}`,
-                background: explicitSurface === opt.id ? "rgba(174,251,0,0.12)" : "rgba(255,255,255,0.04)",
-                color: explicitSurface === opt.id ? "#AEFB00" : "#9AA3B0",
+                border: `1px solid ${explicitSurface === opt.id ? "rgba(26,92,42,0.6)" : "rgba(0,0,0,0.07)"}`,
+                background: explicitSurface === opt.id ? "#EAF3EC" : "rgba(0,0,0,0.035)",
+                color: explicitSurface === opt.id ? "#1A5C2A" : "#4A4540",
               }}>{opt.label}</button>
           ))}
         </div>
       </div>
 
       <SectionDivider label="Competitive Reference" step={3} />
-      <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
-        Pick up to 3 racquets from the market database, then tag which of their qualities you actually want to draw from — not a clone, specific features.
+      <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+        Pick up to 3 racquets from the market database, then tag which qualities you want to take from them — not a clone, specific features.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {MARKET_RACQUETS.map((r) => {
           const ref = references.find((x) => x.racquetId === r.id);
           const isSelected = !!ref;
           return (
-            <div key={r.id} style={{ border: `1px solid ${isSelected ? "rgba(174,251,0,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 8, background: isSelected ? "rgba(174,251,0,0.06)" : "rgba(255,255,255,0.02)", padding: "10px 12px" }}>
+            <div key={r.id} style={{ border: `1px solid ${isSelected ? "rgba(26,92,42,0.4)" : "rgba(0,0,0,0.05)"}`, borderRadius: 8, background: isSelected ? "#F2F8F3" : "rgba(0,0,0,0.015)", padding: "10px 12px" }}>
               <button
                 onClick={() => toggleReference(r.id)}
                 disabled={!isSelected && references.length >= 3}
@@ -3584,12 +3997,12 @@ function FactoryBriefPanel({ onApply }) {
                   padding: 0, WebkitTapHighlightColor: "transparent",
                 }}
               >
-                <span style={{ fontSize: 13, color: isSelected ? "#AEFB00" : "#9AA3B0", fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left" }}>{r.brand} {r.model}</span>
-                {isSelected ? <CheckCircle2 size={15} color="#AEFB00" /> : <span style={{ width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)" }} />}
+                <span style={{ fontSize: 13, color: isSelected ? "#1A5C2A" : "#4A4540", fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left" }}>{r.brand} {r.model}</span>
+                {isSelected ? <CheckCircle2 size={15} color="#1A5C2A" /> : <span style={{ width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)" }} />}
               </button>
               {isSelected && (
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Draw from:</div>
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.045)" }}>
+                  <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Take:</div>
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {QUALITY_OPTIONS.map((q) => {
                       const active = ref!.draws.includes(q.id);
@@ -3599,15 +4012,15 @@ function FactoryBriefPanel({ onApply }) {
                           onClick={() => toggleDraw(r.id, q.id)}
                           style={{
                             padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                            border: `1px solid ${active ? "#AEFB00" : "rgba(255,255,255,0.1)"}`,
-                            background: active ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
-                            color: active ? "#AEFB00" : "#9AA3B0", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                            border: `1px solid ${active ? "#1A5C2A" : "rgba(0,0,0,0.07)"}`,
+                            background: active ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)",
+                            color: active ? "#1A5C2A" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent",
                           }}
                         >{q.label}</button>
                       );
                     })}
                   </div>
-                  <div style={{ fontSize: 10, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 10, marginBottom: 6 }}>Deliberately avoid:</div>
+                  <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 10, marginBottom: 6 }}>Leave:</div>
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {QUALITY_OPTIONS.map((q) => {
                       const active = ref!.avoid.includes(q.id);
@@ -3617,9 +4030,9 @@ function FactoryBriefPanel({ onApply }) {
                           onClick={() => toggleAvoid(r.id, q.id)}
                           style={{
                             padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                            border: `1px solid ${active ? "#FF8080" : "rgba(255,255,255,0.1)"}`,
-                            background: active ? "rgba(255,80,80,0.12)" : "rgba(255,255,255,0.04)",
-                            color: active ? "#FF8080" : "#9AA3B0", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                            border: `1px solid ${active ? "#991B1B" : "rgba(0,0,0,0.07)"}`,
+                            background: active ? "rgba(255,80,80,0.12)" : "rgba(0,0,0,0.035)",
+                            color: active ? "#991B1B" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent",
                           }}
                         >{q.label}</button>
                       );
@@ -3633,23 +4046,23 @@ function FactoryBriefPanel({ onApply }) {
       </div>
 
       <SectionDivider label="Priority" step={4} />
-      <p style={{ fontSize: 12.5, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
+      <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
         One forced choice — you can't optimize for everything, and a real product line picks a clear point of view.
       </p>
       <ToggleGroup options={PRIORITY_OPTIONS} value={priority} onChange={(v) => { setPriority(v); setApplied(false); }} />
 
       <SectionDivider label="Constraints" step={5} />
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Durability expectation for this tier</div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Durability expectation for this tier</div>
         <ToggleGroup options={DURABILITY_OPTIONS} value={durabilityExpectation} onChange={(v) => { setDurabilityExpectation(v); setApplied(false); }} />
         {durabilityExpectation === "extended" && (
-          <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: 8 }}>
+          <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: 8 }}>
             Engineered at the frame/bridge level (hybrid frame construction, torsion-resistant bridge geometry) — the core and face stay exactly as soft or forgiving as the target level needs, so durability doesn't quietly undo the playability work above.
           </p>
         )}
       </div>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6A7485", marginBottom: 6 }}>Material already committed? <span style={{ color: "#4A5568", textTransform: "none", fontWeight: 400 }}>(optional — overrides everything above if it conflicts)</span></div>
+        <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Material already committed? <span style={{ color: "#7A7268", textTransform: "none", fontWeight: 400 }}>(optional — overrides everything above if it conflicts)</span></div>
         <SelectField
           value={materialCommitment}
           onChange={setMaterialCommitment}
@@ -3659,8 +4072,8 @@ function FactoryBriefPanel({ onApply }) {
 
       <button onClick={handleApply} disabled={!canApply} style={{
         width: "100%", padding: "14px 16px", borderRadius: 10, border: "none",
-        background: canApply ? "linear-gradient(135deg, #AEFB00, #7DD400)" : "rgba(255,255,255,0.06)",
-        color: canApply ? "#080B10" : "#3A4455",
+        background: canApply ? "linear-gradient(135deg, #1A5C2A, #2D7A3A)" : "rgba(0,0,0,0.045)",
+        color: canApply ? "#FFFFFF" : "#B0A898",
         fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 15,
         letterSpacing: "0.08em", textTransform: "uppercase", cursor: canApply ? "pointer" : "not-allowed",
         marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, WebkitTapHighlightColor: "transparent",
@@ -3677,9 +4090,9 @@ function FactoryBriefPanel({ onApply }) {
         if (!priority) missing.push("Priority (step 4)");
         if (!durabilityExpectation) missing.push("Durability expectation (step 5)");
         return (
-          <div style={{ marginTop: 10, padding: "10px 12px", background: "rgba(255,100,50,0.08)", border: "1px solid rgba(255,100,50,0.2)", borderRadius: 8 }}>
-            <p style={{ fontSize: 11.5, color: "#C87060", fontFamily: "Inter, sans-serif", margin: "0 0 6px", fontWeight: 600 }}>Still needed before generating:</p>
-            {missing.map((m, i) => <p key={i} style={{ fontSize: 11.5, color: "#9A5848", fontFamily: "Inter, sans-serif", margin: "2px 0" }}>· {m}</p>)}
+          <div style={{ marginTop: 10, padding: "10px 12px", background: "#FEE2E2", border: "1px solid #F87171", borderRadius: 8 }}>
+            <p style={{ fontSize: 11.5, color: "#92400E", fontFamily: "Inter, sans-serif", margin: "0 0 6px", fontWeight: 600 }}>Still needed before generating:</p>
+            {missing.map((m, i) => <p key={i} style={{ fontSize: 11.5, color: "#7F1D1D", fontFamily: "Inter, sans-serif", margin: "2px 0" }}>· {m}</p>)}
           </div>
         );
       })()}
@@ -3689,36 +4102,36 @@ function FactoryBriefPanel({ onApply }) {
           {/* Error state */}
           {lastResult.alternatives.length === 0 && lastResult.rationale.length > 0 && (
             <div style={{ padding: "12px 14px", background: "rgba(255,80,50,0.08)", border: "1px solid rgba(255,80,50,0.25)", borderRadius: 10, marginBottom: 12 }}>
-              <p style={{ fontSize: 12.5, color: "#FF8060", fontFamily: "Inter, sans-serif", margin: 0, fontWeight: 600 }}>Engine error</p>
+              <p style={{ fontSize: 12.5, color: "#991B1B", fontFamily: "Inter, sans-serif", margin: 0, fontWeight: 600 }}>Engine error</p>
               {lastResult.rationale.map((line, i) => (
-                <p key={i} style={{ fontSize: 12, color: "#C06050", fontFamily: "Inter, sans-serif", margin: "4px 0 0" }}>{line}</p>
+                <p key={i} style={{ fontSize: 12, color: "#991B1B", fontFamily: "Inter, sans-serif", margin: "4px 0 0" }}>{line}</p>
               ))}
             </div>
           )}
 
           {/* Track switcher */}
           {lastResult.alternatives.length > 0 && <>
-          <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#AEFB00", marginBottom: 8 }}>3 Design Approaches — Same Brief</p>
-          <p style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>Each is a different engineering philosophy for the same goal. Select one to apply it to the Build tab.</p>
+          <p style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>3 Design Approaches — Same Brief</p>
+          <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>Each is a different engineering philosophy for the same goal. Select one to apply it to the Build tab.</p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {lastResult.alternatives.map((alt) => {
               const isSelected = selectedTrack === alt.trackId;
               return (
-                <div key={alt.trackId} style={{ border: `1px solid ${isSelected ? "rgba(174,251,0,0.4)" : "rgba(255,255,255,0.08)"}`, borderRadius: 10, background: isSelected ? "rgba(174,251,0,0.06)" : "rgba(255,255,255,0.02)", overflow: "hidden" }}>
+                <div key={alt.trackId} style={{ border: `1px solid ${isSelected ? "rgba(26,92,42,0.5)" : "rgba(0,0,0,0.06)"}`, borderRadius: 10, background: isSelected ? "#F2F8F3" : "rgba(0,0,0,0.015)", overflow: "hidden" }}>
                   <button onClick={() => {
                     setSelectedTrack(alt.trackId);
                     onApply(alt.spec);
                   }} style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", WebkitTapHighlightColor: "transparent" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#AEFB00" : "#EAE6DC", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>{alt.trackLabel}</span>
-                      <span style={{ fontSize: 11, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace" }}>~${alt.oem} OEM · ${alt.retailRange[0]}–${alt.retailRange[1]}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#1A5C2A" : "#18181B", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase" }}>{alt.trackLabel}</span>
+                      <span style={{ fontSize: 11, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace" }}>~${alt.oem} OEM · ${alt.retailRange[0]}–${alt.retailRange[1]}</span>
                     </div>
-                    <p style={{ fontSize: 12, color: "#9AA3B0", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "6px 0 0" }}>{alt.philosophy}</p>
+                    <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "6px 0 0" }}>{alt.philosophy}</p>
                   </button>
                   {isSelected && (
                     <div style={{ padding: "0 14px 14px" }}>
-                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10, marginTop: 2 }}>
+                      <div style={{ borderTop: "1px solid rgba(0,0,0,0.045)", paddingTop: 10, marginTop: 2 }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
                           {[
                             ["Shape", alt.spec.shapeId],
@@ -3728,16 +4141,16 @@ function FactoryBriefPanel({ onApply }) {
                             ["Surface", alt.spec.surfaceId],
                             ["Bridge", alt.spec.bridgeId],
                           ].map(([k, v]) => (
-                            <div key={k} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: "5px 8px" }}>
-                              <div style={{ fontSize: 9, color: "#6A7485", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
-                              <div style={{ fontSize: 12, color: "#EAE6DC", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{v}</div>
+                            <div key={k} style={{ background: "rgba(0,0,0,0.035)", borderRadius: 6, padding: "5px 8px" }}>
+                              <div style={{ fontSize: 9, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
+                              <div style={{ fontSize: 12, color: "#18181B", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{v}</div>
                             </div>
                           ))}
                         </div>
                         {alt.rationale.slice(0, 2).map((line, i) => (
-                          <p key={i} style={{ fontSize: 12, color: "#7B8494", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 6px", paddingLeft: 10, borderLeft: "2px solid rgba(174,251,0,0.25)" }}>{line}</p>
+                          <p key={i} style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 6px", paddingLeft: 10, borderLeft: "2px solid rgba(26,92,42,0.35)" }}>{line}</p>
                         ))}
-                        <p style={{ fontSize: 11.5, color: "#AEFB00", fontFamily: "Inter, sans-serif", marginTop: 8, opacity: 0.8 }}>↑ Applied to Build tab — scroll up to fine-tune.</p>
+                        <p style={{ fontSize: 11.5, color: "#1A5C2A", fontFamily: "Inter, sans-serif", marginTop: 8, opacity: 0.8 }}>↑ Applied to Build tab — scroll up to fine-tune.</p>
                       </div>
                     </div>
                   )}
@@ -3770,10 +4183,10 @@ function PlayabilityRadar({ scores }) {
     <div style={{ width:"100%", height: 240 }}>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={data} margin={{top:10, right:30, bottom:10, left:30}}>
-          <PolarGrid gridType="polygon" stroke="rgba(255,255,255,0.08)"/>
-          <PolarAngleAxis dataKey="subject" tick={{ fill:"#6A7485", fontSize:10, fontFamily:"'JetBrains Mono', monospace" }}/>
+          <PolarGrid gridType="polygon" stroke="rgba(0,0,0,0.06)"/>
+          <PolarAngleAxis dataKey="subject" tick={{ fill:"#7A7268", fontSize:10, fontFamily:"'JetBrains Mono', monospace" }}/>
           <PolarRadiusAxis domain={[0,5]} tick={false} axisLine={false}/>
-          <Radar name="Build" dataKey="value" stroke="#AEFB00" fill="#AEFB00" fillOpacity={0.15} strokeWidth={2}/>
+          <Radar name="Build" dataKey="value" stroke="#1A5C2A" fill="#1A5C2A" fillOpacity={0.15} strokeWidth={2}/>
         </RadarChart>
       </ResponsiveContainer>
     </div>
@@ -3791,6 +4204,7 @@ export default function App() {
 
   // Build state
   const [shapeId, setShapeId] = useState("teardrop");
+  const [playerBudgetTier, setPlayerBudgetTier] = useState<string | null>(null);
   const [coreId, setCoreId] = useState("eva-medium");
   const [faceId, setFaceId] = useState("carbon-12k");
   const [frameId, setFrameId] = useState("hybrid-frame");
@@ -3903,8 +4317,8 @@ export default function App() {
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
-    () => matchRacquets({ shapeId, coreId, faceId, surfaceId, weightG, balanceCm }, { limit: 4 }),
-    [shapeId, coreId, faceId, surfaceId, weightG, balanceCm]
+    () => matchRacquets({ shapeId, coreId, faceId, surfaceId, weightG, balanceCm }, { limit: 4, budgetTier: playerBudgetTier ?? undefined }),
+    [shapeId, coreId, faceId, surfaceId, weightG, balanceCm, playerBudgetTier]
   );
   const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holeCountId !== "none" || coreId === "hybrid-core";
@@ -3927,6 +4341,7 @@ export default function App() {
     setWeightG(Math.round(rec.weightG));
     setBalanceCm(Math.round(rec.balanceCm * 10) / 10);
     setGripCircMm(Math.round(rec.gripCircMm));
+    if (answers.budgetTier) setPlayerBudgetTier(answers.budgetTier);
     setActiveTab("view");
     analytics.finderCompleted(answers?.level ?? "unknown");
   };
@@ -3955,7 +4370,7 @@ export default function App() {
     bridgeId, beamCount, beamOrientation,
   };
 
-  const LIME = "#AEFB00";
+  const LIME = "#1A5C2A";
 
   // Score top metric for header badge
   const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability);
@@ -3996,7 +4411,7 @@ export default function App() {
         <MaterialNote text={shape.note}/>
         <BestForTag text={shape.bestFor}/>
         <MiniRatingGrid items={[{label:"Power", val:shape.power},{label:"Control", val:shape.control},{label:"Forgiveness", val:shape.forgiveness}]}/>
-        <p style={{ fontSize:11.5, color:"#4A5568", marginTop:10, fontFamily:"Inter, sans-serif" }}>Balance: {shape.balanceRange} · Sweet spot: {shape.sweetSpot}</p>
+        <p style={{ fontSize:11.5, color:"#7A7268", marginTop:10, fontFamily:"Inter, sans-serif" }}>Balance: {shape.balanceRange} · Sweet spot: {shape.sweetSpot}</p>
       </AccordionSection>
 
       {/* Face Material */}
@@ -4006,8 +4421,8 @@ export default function App() {
         {face.bestFor && <BestForTag text={face.bestFor}/>}
         <MiniRatingGrid items={[{label:"Power", val:face.power},{label:"Control", val:face.control},{label:"Comfort", val:face.comfort},{label:"Durability", val:face.durability}]}/>
         {faceId === "carbon-3k" && (
-          <div style={{ marginTop:10, padding:"8px 10px", background:"rgba(255,180,0,0.08)", border:"1px solid rgba(255,180,0,0.2)", borderRadius:8 }}>
-            <p style={{ fontSize:12, color:"#C88A00", margin:0, fontFamily:"Inter, sans-serif" }}>Source disagreement flagged — verify stiffness behavior against your supplier's data sheet.</p>
+          <div style={{ marginTop:10, padding:"8px 10px", background:"#FEF3C7", border:"1px solid #D97706", borderRadius:8 }}>
+            <p style={{ fontSize:12, color:"#92400E", margin:0, fontFamily:"Inter, sans-serif" }}>Source disagreement flagged — verify stiffness behavior against your supplier's data sheet.</p>
           </div>
         )}
       </AccordionSection>
@@ -4015,7 +4430,7 @@ export default function App() {
       {/* Core Material */}
       <AccordionSection id="core" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>} label="Core Material" isOpen={openSections.has("core")} onToggle={() => toggle("core")}>
         <SelectField value={coreId} onChange={setCoreId} options={CORE_MATERIALS}/>
-        <div style={{ fontSize:11.5, color:"#4A5568", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
+        <div style={{ fontSize:11.5, color:"#7A7268", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
         <MaterialNote text={core.note}/>
         <BestForTag text={core.bestFor}/>
         <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
@@ -4030,7 +4445,7 @@ export default function App() {
         <SliderField label="Balance Point" value={balanceCm} onChange={setBalanceCm} min={24} max={27} step={0.1} suffix=" cm" explanation={explainBalance(balanceCm, shapeId)}/>
         <SliderField label="Grip Circumference" value={gripCircMm} onChange={setGripCircMm} min={35} max={42} suffix=" mm" explanation={explainGripCirc(gripCircMm)}/>
         {mode === "manufacturer" && (
-          <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginTop:4 }}>
+          <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginTop:4 }}>
             Length max 455mm, head width max 260mm, thickness max 38mm per FIP January 2026 rules. 2.5% manufacturing tolerance on thickness only.
           </p>
         )}
@@ -4055,24 +4470,24 @@ export default function App() {
         <MaterialNote text={bridge.note}/>
         {bridgeId === "open" && (
           <>
-            <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Stability Beams</p>
+            <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Stability Beams</p>
               <ToggleGroup
                 options={BEAM_COUNT_OPTIONS.map(b=>({id:b.id, label:b.label}))}
                 value={beamCount}
                 onChange={setBeamCount}
                 disabled={id => id === 3 && beamOrientation !== "vertical"}
               />
-              <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_COUNT_OPTIONS.find(b=>b.id===beamCount)?.note}</p>
+              <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_COUNT_OPTIONS.find(b=>b.id===beamCount)?.note}</p>
             </div>
-            <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Beam Orientation</p>
+            <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+              <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Beam Orientation</p>
               <ToggleGroup
                 options={BEAM_ORIENTATIONS.map(o=>({id:o.id, label:o.label}))}
                 value={beamOrientation}
                 onChange={v => { setBeamOrientation(v); if (v !== "vertical" && beamCount === 3) setBeamCount(2); }}
               />
-              <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_ORIENTATIONS.find(o=>o.id===beamOrientation)?.note}</p>
+              <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{BEAM_ORIENTATIONS.find(o=>o.id===beamOrientation)?.note}</p>
             </div>
           </>
         )}
@@ -4083,10 +4498,10 @@ export default function App() {
         <SelectField value={gripId} onChange={setGripId} options={GRIP_MATERIALS}/>
         <MaterialNote text={grip.note}/>
         <MiniRatingGrid items={[{label:"Tack", val:grip.tack},{label:"Vibration Damp", val:grip.vibrationDamp}]}/>
-        <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Handle Cross-Section</p>
+        <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Handle Cross-Section</p>
           <ToggleGroup options={GRIP_SHAPES.map(g=>({id:g.id, label:g.label}))} value={gripShapeId} onChange={setGripShapeId}/>
-          <p style={{ fontSize:12, color:"#6A7485", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{GRIP_SHAPES.find(g=>g.id===gripShapeId)?.note}</p>
+          <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{GRIP_SHAPES.find(g=>g.id===gripShapeId)?.note}</p>
         </div>
       </AccordionSection>
 
@@ -4095,14 +4510,14 @@ export default function App() {
         <SelectField value={holeCountId} onChange={setHoleCountId} options={HOLE_COUNT_OPTIONS}/>
         <MaterialNote text={HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.note || ""}/>
         {holeCountId !== "none" && (
-          <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:8 }}>Hole Pattern</p>
+          <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Hole Pattern</p>
             <SelectField value={holePatternId} onChange={setHolePatternId} options={HOLE_PATTERN_STYLES}/>
             <MaterialNote text={HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.note || ""}/>
           </div>
         )}
         {mode === "manufacturer" && (
-          <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+          <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
             FIP rules: holes in the central striking area must measure 9–13mm diameter. 4cm peripheral band allows different shapes up to 20mm. No minimum or maximum count specified.
           </p>
         )}
@@ -4122,9 +4537,9 @@ export default function App() {
         {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}].map(m => (
           <button key={m.id} onClick={() => { setDiagramMode(m.id as any); analytics.diagramModeChanged(m.id); }} style={{
             flex:1, padding:"9px 6px", borderRadius:8,
-            border: `1px solid ${diagramMode===m.id ? "rgba(174,251,0,0.3)" : "rgba(255,255,255,0.06)"}`,
-            background: diagramMode===m.id ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
-            color: diagramMode===m.id ? "#AEFB00" : "#6A7485",
+            border: `1px solid ${diagramMode===m.id ? "rgba(26,92,42,0.4)" : "rgba(0,0,0,0.045)"}`,
+            background: diagramMode===m.id ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)",
+            color: diagramMode===m.id ? "#1A5C2A" : "#7A7268",
             fontSize: 12, fontWeight:700, cursor:"pointer",
             fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase",
             WebkitTapHighlightColor:"transparent",
@@ -4133,7 +4548,7 @@ export default function App() {
       </div>
 
       {/* Diagram */}
-      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 30%, #2A2D38, #14161C)" : "#F5F2EB" }}>
+      <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1px solid rgba(0,0,0,0.06)", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 30%, #2A2D38, #14161C)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
             {diagramMode === "profile" ? (
@@ -4165,9 +4580,9 @@ export default function App() {
       {/* Quick score strip */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, margin:"16px", }}>
         {[["Power",scores.power],["Control",scores.control],["Comfort",scores.comfort],["Spin",scores.spin]].map(([label,val]) => (
-          <div key={label as string} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
+          <div key={label as string} style={{ background:"rgba(0,0,0,0.035)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
             <div style={{ fontSize:18, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:LIME }}>{(val as number).toFixed(1)}</div>
-            <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", marginTop:2, textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</div>
+            <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", marginTop:2, textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</div>
           </div>
         ))}
       </div>
@@ -4179,13 +4594,13 @@ export default function App() {
   // ---- SCORES CONTENT ----
   const scoresContent = (
     <div style={{ padding:"0 16px" }}>
-      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:16 }}>
-        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:0 }}>Playability Index</p>
+      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:0 }}>Playability Index</p>
         <PlayabilityRadar scores={scores}/>
       </div>
 
-      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:16 }}>
-        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:14 }}>Scores</p>
+      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:16 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:14 }}>Scores</p>
         <ScoreBar label="Power" val={scores.power}/>
         <ScoreBar label="Control" val={scores.control}/>
         <ScoreBar label="Comfort / Vibration Damping" val={scores.comfort}/>
@@ -4193,57 +4608,57 @@ export default function App() {
         <ScoreBar label="Stability (Off-Center Resistance)" val={scores.stability}/>
         <ScoreBar label="Spin Potential" val={scores.spin}/>
         <ScoreBar label="Durability" val={scores.durability}/>
-        <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+        <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
           Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
         </p>
       </div>
 
       {mode === "manufacturer" && (
-        <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(174,251,0,0.15)", borderRadius:12, marginBottom:16 }}>
-          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#AEFB00", marginBottom:4 }}>Physics Engine — Geometry-Based Mechanics</p>
-          <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
+        <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(26,92,42,0.15)", borderRadius:12, marginBottom:16 }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#1A5C2A", marginBottom:4 }}>Physics Engine — Geometry-Based Mechanics</p>
+          <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
             Computed directly from this build's mass distribution using standard rigid-body mechanics (moment of inertia, parallel-axis theorem) — not estimates. Real units, directly comparable build-to-build.
           </p>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
-              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Swingweight</div>
-              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.swingweightKgCm2.toFixed(1)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·cm²</span></div>
-              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt — depends on WHERE mass sits, not just how much there is. A heavier but head-light build can score lower here than a lighter, head-heavy one. Same units and pivot convention used for tennis swingweight; there's no meaningful way to express this in grams, since it isn't a mass measurement.</div>
+            <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Swingweight</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.swingweightKgCm2.toFixed(1)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>kg·cm²</span></div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt — depends on WHERE mass sits, not just how much there is. A heavier but head-light build can score lower here than a lighter, head-heavy one. Same units and pivot convention used for tennis swingweight; there's no meaningful way to express this in grams, since it isn't a mass measurement.</div>
             </div>
-            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
-              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Twistweight</div>
-              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.twistweightKgCm2.toFixed(2)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·cm²</span></div>
-              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Polar moment about the long axis. Higher = more resistant to twisting on off-center hits.</div>
+            <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Twistweight</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.twistweightKgCm2.toFixed(2)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>kg·cm²</span></div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Polar moment about the long axis. Higher = more resistant to twisting on off-center hits.</div>
             </div>
-            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
-              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Polar Inertia (SI)</div>
-              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.polarInertiaKgM2.toFixed(5)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>kg·m²</span></div>
-              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Same twistweight value in standard SI units, for cross-referencing published research.</div>
+            <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Polar Inertia (SI)</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.polarInertiaKgM2.toFixed(5)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>kg·m²</span></div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Same twistweight value in standard SI units, for cross-referencing published research.</div>
             </div>
-            <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"10px 12px" }}>
-              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Balance Point</div>
-              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#EAE6DC" }}>{geometryPhysics.balanceCm.toFixed(1)} <span style={{fontSize:12, color:"#6A7485", fontWeight:600}}>cm</span></div>
-              <div style={{ fontSize:10.5, color:"#5A6275", marginTop:3, fontFamily:"Inter, sans-serif" }}>Distance from the butt end to the center of mass — your existing Dimensions slider value, restated here as a mechanics input.</div>
+            <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Balance Point</div>
+              <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.balanceCm.toFixed(1)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>cm</span></div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Distance from the butt end to the center of mass — your existing Dimensions slider value, restated here as a mechanics input.</div>
             </div>
           </div>
-          <p style={{ fontSize:10.5, color:"#4A5568", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
+          <p style={{ fontSize:10.5, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
             Reference: published tennis-racket research places swingweight at roughly 270–310 kg·cm² and twistweight at roughly 12–15 kg·cm² for tournament frames. Padel values run meaningfully lower, consistent with a shorter (≤45.5cm vs. ~68–70cm) and narrower solid-faced design.
           </p>
         </div>
       )}
 
       {mode === "manufacturer" && (
-        <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,180,0,0.15)", borderRadius:12, marginBottom:16 }}>
-          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#FFB400", marginBottom:4 }}>Relative Material Index (RPS)</p>
-          <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
+        <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(255,180,0,0.15)", borderRadius:12, marginBottom:16 }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#D97706", marginBottom:4 }}>Relative Material Index (RPS)</p>
+          <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
             Not a lab measurement — no padel equivalent to tennis's RA deflection-test scale exists yet. This is a transparent, internally-consistent 0–100 relative index, weighted from real, sourced composite-engineering relationships (core hardness and frame material dominate; carbon tow size is deliberately a small secondary factor, not the headline number).
           </p>
           <ScoreBar label="RPS — Stiffness Index" val={materialPhysics.rpsIndex / 20} max={5} />
           <ScoreBar label="Damping Index" val={materialPhysics.dampingIndex / 20} max={5} />
           <ScoreBar label="Impact Stiffness" val={materialPhysics.impactStiffnessIndex / 20} max={5} />
           <ScoreBar label="Rebound Index" val={materialPhysics.reboundIndex / 20} max={5} />
-          <div style={{ marginTop:10, padding:"10px 12px", background: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "rgba(255,180,0,0.08)" : "rgba(255,255,255,0.03)", border: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "1px solid rgba(255,180,0,0.2)" : "1px solid rgba(255,255,255,0.06)", borderRadius:8 }}>
-            <p style={{ fontSize:11.5, color: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "#C88A00" : "#7B8494", margin:0, fontFamily:"Inter, sans-serif" }}>
+          <div style={{ marginTop:10, padding:"10px 12px", background: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "#FEF3C7" : "rgba(0,0,0,0.025)", border: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "1px solid #D97706" : "1px solid rgba(0,0,0,0.045)", borderRadius:8 }}>
+            <p style={{ fontSize:11.5, color: Math.abs(materialPhysics.kCountContributionPts) > 0.01 ? "#92400E" : "#7A7268", margin:0, fontFamily:"Inter, sans-serif" }}>
               <strong>Carbon tow-size contribution to RPS: {materialPhysics.kCountContributionPts >= 0 ? "+" : ""}{materialPhysics.kCountContributionPts.toFixed(2)} points</strong> (of 100). This is the market-correction number: tow size (3K/12K/18K) is mainly a weave-density and manufacturing spec, not a stiffness specification — composite-engineering sources confirm fiber grade, not tow size, governs material stiffness when fiber type is held constant. Core hardness and frame material together carry roughly 60% of this index; face material category (fiberglass vs. carbon vs. graphene vs. kevlar) carries the rest — tow size is a small nudge within that, by design.
             </p>
           </div>
@@ -4251,8 +4666,8 @@ export default function App() {
       )}
 
       {/* Build Summary */}
-      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:24 }}>
-        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:12 }}>Current Build</p>
+      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:24 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:12 }}>Current Build</p>
         <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:12, lineHeight:1.9 }}>
           {[
             ["Shape", shape.label],
@@ -4269,43 +4684,52 @@ export default function App() {
             ["Grip Circ.", `${gripCircMm}mm`],
             ["Holes", holeCountId === "none" ? "None" : `${HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.label} — ${HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.label}`],
           ].map(([k,v]) => (
-            <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(255,255,255,0.05)", padding:"2px 0", gap:8 }}>
-              <span style={{ color:"#4A5568", flexShrink:0 }}>{k}</span>
-              <span style={{ color:"#9AA3B0", textAlign:"right" }}>{v}</span>
+            <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(0,0,0,0.04)", padding:"2px 0", gap:8 }}>
+              <span style={{ color:"#7A7268", flexShrink:0 }}>{k}</span>
+              <span style={{ color:"#4A4540", textAlign:"right" }}>{v}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Closest real-market racquets */}
-      <div style={{ padding:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, marginBottom:24 }}>
-        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#6A7485", marginBottom:4 }}>Closest racquets on the market</p>
-        <p style={{ fontSize:11.5, color:"#7B8494", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
+      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:24 }}>
+        <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Closest racquets on the market</p>
+        <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
           Matched against a starter set of ~17 cross-checked current models across 8 brands — not the full market. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
         </p>
         {matchedRacquets.map((m, i) => (
-          <div key={m.racquet.id} style={{ padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+          <div key={m.racquet.id} style={{ padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,0.045)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <span style={{ fontSize: 13.5, color: "#EAE6DC", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{m.racquet.brand} {m.racquet.model}</span>
-              <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "#AEFB00", fontWeight: 700 }}>{m.matchPct}%</span>
+              <span style={{ fontSize: 13.5, color: "#18181B", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{m.racquet.brand} {m.racquet.model}</span>
+              <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "#1A5C2A", fontWeight: 700 }}>{m.matchPct}%</span>
             </div>
-            <p style={{ fontSize: 11.5, color: "#7B8494", lineHeight: 1.5, margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>
+            <p style={{ fontSize: 11.5, color: "#7A7268", lineHeight: 1.5, margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>
               {m.reasons.length > 0 ? m.reasons.join(" · ") : "Partial match on some dimensions"}
             </p>
-            {m.racquet.sourceConfidence === "approximate" && (
-              <p style={{ fontSize: 10.5, color: "#C88A00", margin: 0, fontFamily: "Inter, sans-serif" }}>
-                ⚠ Some specs for this model varied across sources — figures shown are best-estimate, not manufacturer-confirmed.
+            {m.racquet.note && (
+              <p style={{ fontSize: 11.5, color: "#4A4540", lineHeight: 1.6, margin: "0 0 4px", fontFamily: "Inter, sans-serif", paddingLeft: 10, borderLeft: "2px solid rgba(0,0,0,0.07)" }}>
+                {m.racquet.note}
               </p>
             )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+              <span style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", background: "rgba(0,0,0,0.035)", padding: "2px 6px", borderRadius: 4 }}>{m.racquet.shapeId}</span>
+              <span style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", background: "rgba(0,0,0,0.035)", padding: "2px 6px", borderRadius: 4 }}>{m.racquet.weightG}g</span>
+              <span style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", background: "rgba(0,0,0,0.035)", padding: "2px 6px", borderRadius: 4 }}>{m.racquet.balanceCm}cm balance</span>
+              <span style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", background: "rgba(0,0,0,0.035)", padding: "2px 6px", borderRadius: 4 }}>{m.racquet.priceTier}</span>
+              {m.racquet.sourceConfidence === "approximate" && (
+                <span style={{ fontSize: 10, color: "#92400E", fontFamily: "Inter, sans-serif", padding: "2px 6px", background: "#FEF3C7", borderRadius: 4 }}>⚠ specs approximate</span>
+              )}
+            </div>
           </div>
         ))}
-        <p style={{ fontSize: 10.5, color: "#4A5568", lineHeight: 1.5, marginTop: 12, fontFamily: "Inter, sans-serif" }}>
+        <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, marginTop: 12, fontFamily: "Inter, sans-serif" }}>
           Specs were cross-checked against multiple independent sources where possible. Padel brands frequently update models year to year and offer weight-adjustment systems on several of these racquets, so treat exact weight/balance figures as approximate — verify current specs with the retailer before purchasing.
         </p>
       </div>
 
       {mode === "manufacturer" && (
-        <p style={{ fontSize:11, color:"#4A5568", lineHeight:1.6, marginBottom:32, fontFamily:"Inter, sans-serif" }}>
+        <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.6, marginBottom:32, fontFamily:"Inter, sans-serif" }}>
           Material playability characteristics are drawn from publicly available manufacturer and OEM technical guides current as of mid-2026. Brand-specific marketing names are intentionally not used — this tool models the underlying material science. Always confirm freedom-to-operate with qualified patent counsel before committing a design to production.
         </p>
       )}
@@ -4331,35 +4755,35 @@ export default function App() {
   };
 
   return (
-    <div style={{ fontFamily:"Inter, system-ui, sans-serif", background:"#080B10", minHeight:"100dvh", color:"#EAE6DC" }}>
+    <div style={{ fontFamily:"Inter, system-ui, sans-serif", background:"#F0EBE0", minHeight:"100dvh", color:"#18181B" }}>
       <style>{`
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
         scrollbar-width: none;
-        input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; background: rgba(255,255,255,0.12); border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #AEFB00; cursor: pointer; border: 2px solid #080B10; box-shadow: 0 0 0 2px rgba(174,251,0,0.3); }
-        input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #AEFB00; cursor: pointer; border: 2px solid #080B10; }
-        select option { background: #1A2030; color: #EAE6DC; }
+        input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; background: rgba(0,0,0,0.08); border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #1A5C2A; cursor: pointer; border: 2px solid #FFFFFF; box-shadow: 0 0 0 2px rgba(26,92,42,0.4); }
+        input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #1A5C2A; cursor: pointer; border: 2px solid #FFFFFF; }
+        select option { background: #FFFFFF; color: #18181B; }
         button { -webkit-tap-highlight-color: transparent; }
-        @keyframes racquetlab-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spin { animation: racquetlab-spin 0.8s linear infinite; }
+        @keyframes forja-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: forja-spin 0.8s linear infinite; }
       `}</style>
 
       {/* ── HEADER ── */}
-      <header style={{ background:"rgba(8,11,16,0.95)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:"1px solid rgba(255,255,255,0.07)", position:"sticky", top:0, zIndex:50 }}>
+      <header style={{ background:"#FFFFFF", borderBottom:"1.5px solid #D4CCB8", position:"sticky", top:0, zIndex:50 }}>
         <div className="header-row" style={{ maxWidth:1024, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             {/* Racquet icon */}
-            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(174,251,0,0.15)", border:"1px solid rgba(174,251,0,0.25)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(26,92,42,0.15)", border:"1px solid rgba(26,92,42,0.35)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <ellipse cx="9" cy="9" rx="7" ry="7" stroke="#AEFB00" strokeWidth="1.8"/>
-                <path d="M14.5 14.5 L21 21" stroke="#AEFB00" strokeWidth="2.2" strokeLinecap="round"/>
-                <circle cx="9" cy="9" r="2.5" fill="rgba(174,251,0,0.2)" stroke="#AEFB00" strokeWidth="1.2" strokeDasharray="2 2"/>
+                <ellipse cx="9" cy="9" rx="7" ry="7" stroke="#1A5C2A" strokeWidth="1.8"/>
+                <path d="M14.5 14.5 L21 21" stroke="#1A5C2A" strokeWidth="2.2" strokeLinecap="round"/>
+                <circle cx="9" cy="9" r="2.5" fill="rgba(26,92,42,0.25)" stroke="#1A5C2A" strokeWidth="1.2" strokeDasharray="2 2"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#EAE6DC", lineHeight:1 }}>RACQUET<span style={{color:"#AEFB00"}}>LAB</span></div>
-              <div style={{ fontSize:10, color:"#6A7485", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
+              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>FOR<span style={{color:"#1A5C2A"}}>JA</span></div>
+              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
             </div>
           </div>
 
@@ -4371,9 +4795,9 @@ export default function App() {
             title={!supabaseConfigured ? "Save & Share is coming soon" : undefined}
             style={{
               display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${supabaseConfigured ? "rgba(174,251,0,0.25)" : "rgba(255,255,255,0.08)"}`,
-              background: shareStatus === "saved" ? "rgba(174,251,0,0.15)" : "rgba(255,255,255,0.04)",
-              color: supabaseConfigured ? "#AEFB00" : "#6A7485",
+              border: `1px solid ${supabaseConfigured ? "rgba(26,92,42,0.35)" : "rgba(0,0,0,0.06)"}`,
+              background: shareStatus === "saved" ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)",
+              color: supabaseConfigured ? "#1A5C2A" : "#7A7268",
               fontSize: 12, fontWeight: 700, cursor: supabaseConfigured && shareStatus !== "saving" ? "pointer" : "default",
               fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
               WebkitTapHighlightColor: "transparent", flexShrink: 0,
@@ -4396,12 +4820,12 @@ export default function App() {
           </button>
 
           {/* Mode toggle */}
-          <div style={{ display:"flex", gap:4, background:"rgba(255,255,255,0.05)", padding:3, borderRadius:8, border:"1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ display:"flex", gap:4, background:"rgba(0,0,0,0.04)", padding:3, borderRadius:8, border:"1px solid rgba(0,0,0,0.05)" }}>
             {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Factory",icon:<Wrench size={12}/>}].map(m => (
               <button key={m.id} onClick={() => { setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
                 display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
-                background: mode===m.id ? "#AEFB00" : "transparent",
-                color: mode===m.id ? "#080B10" : "#6A7485",
+                background: mode===m.id ? "#1A5C2A" : "transparent",
+                color: mode===m.id ? "#F0EBE0" : "#7A7268",
                 fontSize:11.5, fontWeight:700, cursor:"pointer",
                 fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.05em", textTransform:"uppercase",
                 WebkitTapHighlightColor:"transparent", transition:"all 0.15s ease",
@@ -4413,15 +4837,15 @@ export default function App() {
       </header>
 
       {loadStatus === "error" && (
-        <div style={{ background: "rgba(255,180,0,0.08)", borderBottom: "1px solid rgba(255,180,0,0.2)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <AlertTriangle size={14} color="#FFB400" />
-          <span style={{ fontSize: 12.5, color: "#C88A00", fontFamily: "Inter, sans-serif" }}>That build link doesn't exist or may have been removed — showing the default build instead.</span>
+        <div style={{ background: "#FEF3C7", borderBottom: "1px solid #D97706", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <AlertTriangle size={14} color="#D97706" />
+          <span style={{ fontSize: 12.5, color: "#92400E", fontFamily: "Inter, sans-serif" }}>That build link doesn't exist or may have been removed — showing the default build instead.</span>
         </div>
       )}
       {shareStatus === "error" && shareError && (
-        <div style={{ background: "rgba(255,80,80,0.08)", borderBottom: "1px solid rgba(255,80,80,0.2)", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <AlertTriangle size={14} color="#FF5050" />
-          <span style={{ fontSize: 12.5, color: "#FF8080", fontFamily: "Inter, sans-serif" }}>{shareError}</span>
+        <div style={{ background: "#FEE2E2", borderBottom: "1px solid #F87171", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <AlertTriangle size={14} color="#991B1B" />
+          <span style={{ fontSize: 12.5, color: "#991B1B", fontFamily: "Inter, sans-serif" }}>{shareError}</span>
         </div>
       )}
 
@@ -4433,7 +4857,7 @@ export default function App() {
           <style>{`
             @media (min-width: 768px) {
               .content-grid { grid-template-columns: 380px 1fr !important; min-height: calc(100dvh - 57px); }
-              .left-col { border-right: 1px solid rgba(255,255,255,0.07); overflow-y: auto; height: calc(100dvh - 57px); position: sticky; top: 57px; }
+              .left-col { border-right: 1px solid rgba(0,0,0,0.05); overflow-y: auto; height: calc(100dvh - 57px); position: sticky; top: 57px; }
               .right-col { padding: 0; display: flex; flex-direction: column; }
               .bottom-nav { display: none !important; }
               .mobile-only { display: none !important; }
@@ -4458,13 +4882,13 @@ export default function App() {
           {/* Right col: view + scores (desktop only) */}
           <div className="right-col">
             {/* Tab strip */}
-            <div className="desktop-right-tabs" style={{ display:"none", padding:"12px 20px 0", gap:8, borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+            <div className="desktop-right-tabs" style={{ display:"none", padding:"12px 20px 0", gap:8, borderBottom:"1px solid rgba(0,0,0,0.05)" }}>
               {[{id:"view",label:"Visualize",icon:<Eye size={14}/>},{id:"scores",label:"Scores & Summary",icon:<BarChart3 size={14}/>}].map(t => (
                 <button key={t.id} onClick={() => setActiveTab(t.id as any)} style={{
                   display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:"8px 8px 0 0",
-                  border:"1px solid rgba(255,255,255,0.07)", borderBottom:"none",
-                  background: activeTab===t.id ? "rgba(174,251,0,0.1)" : "transparent",
-                  color: activeTab===t.id ? "#AEFB00" : "#6A7485",
+                  border:"1px solid rgba(0,0,0,0.05)", borderBottom:"none",
+                  background: activeTab===t.id ? "#EAF3EC" : "transparent",
+                  color: activeTab===t.id ? "#1A5C2A" : "#7A7268",
                   fontSize:12.5, fontWeight:700, cursor:"pointer",
                   fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase",
                   WebkitTapHighlightColor:"transparent",
@@ -4488,8 +4912,8 @@ export default function App() {
       {/* Bottom nav (mobile only) */}
       <nav className="bottom-nav" style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:100,
-        background:"rgba(8,11,16,0.97)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
-        borderTop:"1px solid rgba(255,255,255,0.08)",
+        background:"#FFFFFF",
+        borderTop:"1.5px solid #D4CCB8",
         paddingBottom:"env(safe-area-inset-bottom)",
         display:"flex",
         transform:"translateZ(0)", WebkitTransform:"translateZ(0)", willChange:"transform",
@@ -4498,12 +4922,12 @@ export default function App() {
           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} style={{
             flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
             padding:"10px 4px", border:"none", background:"none", cursor:"pointer",
-            color: activeTab===tab.id ? "#AEFB00" : "#3A4455",
+            color: activeTab===tab.id ? "#1A5C2A" : "#B0A898",
             WebkitTapHighlightColor:"transparent", transition:"color 0.15s ease", gap:4,
           }}>
             <span style={{ transition:"color 0.15s ease" }}>{tab.icon}</span>
             <span style={{ fontSize:9.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase" }}>{tab.label}</span>
-            {activeTab===tab.id && <span style={{ position:"absolute", bottom:"env(safe-area-inset-bottom)", width:20, height:2, borderRadius:1, background:"#AEFB00" }}/>}
+            {activeTab===tab.id && <span style={{ position:"absolute", bottom:"env(safe-area-inset-bottom)", width:20, height:2, borderRadius:1, background:"#1A5C2A" }}/>}
           </button>
         ))}
       </nav>
