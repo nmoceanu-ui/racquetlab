@@ -350,7 +350,15 @@ function computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thick
   const frameScore = FRAME_STIFFNESS_WEIGHT[frameId] ?? 50;
   const kNudge = K_COUNT_NUDGE[faceId] ?? 0;
   const faceScore = (FACE_CATEGORY_BASE[faceId] ?? 60) + kNudge;
-  const thicknessScore = ((thicknessMm - 28) / (38 - 28)) * 100;
+  // Beam bending stiffness scales with thickness CUBED, not linearly — this
+  // is standard beam theory (deflection under a given load is inversely
+  // proportional to thickness^3). A linear 0-100 scale across 28-38mm
+  // understates how much stiffer the top of the range is relative to the
+  // bottom: going from 37mm to 38mm adds nearly twice the stiffness that
+  // going from 28mm to 29mm does, even though both are "1mm." Normalized
+  // against the legal max (38mm) so the score still lands in a sane 0-100
+  // range, just correctly nonlinear within it.
+  const thicknessScore = Math.pow(thicknessMm / 38, 3) * 100;
   let bridgeBonus = 0;
   if (bridgeId === "closed") bridgeBonus = 8;
   else if (beamOrientation === "diagonal") bridgeBonus = 6;
@@ -518,7 +526,7 @@ function computeHoleCenterEdgeSplit(holes: HolePoint[]): { centerFrac: number; e
   return { centerFrac: centerCount / holes.length, edgeFrac: edgeCount / holes.length, meanDist: distSum / holes.length };
 }
 
-function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
+function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core, face, frame, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
   const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
   const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
@@ -527,6 +535,42 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core
   const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : shape === "diamond-wide" ? 38 : 40;
   const stabilityScale = 0.78 + stability * 0.5;
   let r = baseR * stabilityScale;
+
+  // Face width — direct physical contribution, not just its diluted path
+  // through computeStability. A wider face literally has more material
+  // between the intended contact zone and the frame perimeter, so the
+  // usable sweet-spot area scales up close to linearly with face width
+  // (more room for the flex zone to exist within, independent of how
+  // that width affects overall torsional stability). FIP width range in
+  // this tool is 200-260mm; 255mm (the app's typical default) is the
+  // reference point this scales around.
+  const widthMmVal = widthMm ?? 255;
+  const widthFactor = 0.85 + ((widthMmVal - 200) / 60) * 0.3; // 0.85x at 200mm, 1.15x at 260mm
+  r *= widthFactor;
+
+  // Face thickness — real, direct physical contribution established
+  // alongside the thickness playability engine: bending stiffness scales
+  // with thickness cubed. A stiffer (thicker) face resists cooperative
+  // flex across a wide area, concentrating the effective sweet spot into
+  // a smaller, more sharply-defined zone. A thinner, more flexible face
+  // lets a wider area of material participate in absorbing an off-center
+  // hit, which is part of why thin, flexible constructions are described
+  // as more forgiving even before core or hole pattern are considered.
+  const thicknessMmVal = thicknessMm ?? 38;
+  const relStiffness = Math.pow(thicknessMmVal / 38, 3); // 0-1, matches the thickness playability engine exactly
+  const thicknessFactor = 1.12 - relStiffness * 0.24; // 1.12x at minimum stiffness (28mm), 0.88x at max (38mm)
+  r *= thicknessFactor;
+
+  // Weight — direct physical contribution via effective swingweight. A
+  // heavier racquet carries more momentum through contact, which resists
+  // the frame twisting or decelerating on an off-center hit — the same
+  // physical principle (moment of inertia resisting angular acceleration)
+  // that makes heavier tennis frames more forgiving on mishits, distinct
+  // from the general torsional-stability role weight already plays in
+  // computeStability above.
+  const weightGVal = weightG ?? 365;
+  const weightFactor = 0.92 + ((weightGVal - 350) / 30) * 0.16; // 0.92x at 350g, 1.08x at 380g
+  r *= weightFactor;
 
   const faceWidthMm = widthMm ?? 255;
   const faceHeightMm = faceWidthMm * 1.14; // matches this file's existing head aspect ratio elsewhere
@@ -2266,34 +2310,135 @@ function computeFactoryBriefWithAlternatives(input: FactoryBriefInput): FactoryB
 // ---------------------------------------------------------------------------
 
 function explainLength(mm) {
-  if (mm >= 450) return "At the long end — maximum reach on serves and overheads. Costs some maneuverability in fast net exchanges.";
-  if (mm >= 430) return "Mid-to-long range. Keeps most reach and leverage while trimming a little swing weight.";
-  return "Shorter end. Easier to whip through fast exchanges and volleys, at the cost of some reach.";
+  // Swingweight (resistance to angular acceleration about the wrist/handle
+  // pivot) scales with the SQUARE of the distance from pivot to head mass
+  // — a small length change near the head end has an outsized leverage
+  // effect compared to the same change distributed near the handle. FIP
+  // legal max is 455mm; this normalizes against that ceiling the same way
+  // the thickness engine normalizes against the 38mm legal max.
+  const relLength = mm / 455;
+  const leverageIndex = Math.pow(relLength, 2) * 100; // 0-100, quadratic leverage proxy
+  const reachWord = mm >= 448 ? "maximum" : mm >= 438 ? "long" : mm >= 425 ? "mid-to-long" : mm >= 412 ? "mid" : "short";
+  const maneuverWord = mm >= 448 ? "the most compromised" : mm >= 438 ? "reduced" : mm >= 425 ? "reasonably preserved" : mm >= 412 ? "good" : "at its best";
+  const leverageNote = leverageIndex >= 90
+    ? "Leverage on serves and overheads is at its highest here — the extra distance from wrist to contact point meaningfully increases head speed for a given swing effort, but that same distance is what slows recovery for the next shot."
+    : leverageIndex >= 65
+    ? "Leverage on reaching shots is strong without being at the extreme — most of the serve and overhead benefit of a longer frame, with recovery speed less compromised than at the legal max."
+    : leverageIndex >= 40
+    ? "Leverage sits in the middle of what this slider offers — a genuine compromise point rather than optimizing for either reach or quickness."
+    : "Leverage is intentionally traded away here in favor of quickness — reach on serves and overheads is reduced, but the shorter lever arm means less swingweight to decelerate between shots.";
+  return `${mm}mm is ${(relLength * 100).toFixed(0)}% of the FIP 455mm legal maximum. Reach is ${reachWord}; close-range maneuverability in fast net exchanges is ${maneuverWord}. ${leverageNote} Swingweight scales with the square of this distance, not linearly — the last 10mm toward the legal max adds more effective leverage than the first 10mm off the shortest legal length does.`;
 }
 function explainWidth(mm, shapeId) {
-  if (mm >= 250) return "Near the 260mm legal max. Widest practical hitting area, enlarging the sweet spot.";
-  if (mm >= 230) return "Mid-range width. Reasonable balance between sweet-spot size and compact feel.";
-  return "Narrower head. Smaller hitting area — more compact and maneuverable.";
+  // Directly mirrors the widthFactor now used in computeSweetSpotAndStability
+  // — face width contributes close to linearly to usable sweet-spot area,
+  // since a wider face simply has more material for the flex zone to exist
+  // within, largely independent of the width's smaller secondary role in
+  // overall torsional stability.
+  const widthFactor = 0.85 + ((mm - 200) / 60) * 0.3;
+  const pctOfMax = (mm / 260) * 100;
+  const sweetSpotWord = widthFactor >= 1.1 ? "meaningfully enlarges" : widthFactor >= 1.0 ? "modestly enlarges" : widthFactor >= 0.92 ? "keeps close to neutral" : "measurably shrinks";
+  const twistNote = mm >= 250
+    ? "The extra width also raises twistweight (resistance to the face rotating on an off-center hit), which is a second, independent reason wide faces feel more forgiving beyond the larger sweet-spot area alone."
+    : mm >= 230
+    ? "Twistweight at this width is adequate but not class-leading — off-center hits will rotate the face somewhat more than at the widest legal setting."
+    : "Twistweight is reduced at this width — off-center contact will rotate the face more readily than a wider build, on top of the smaller sweet-spot area itself.";
+  return `${mm}mm is ${pctOfMax.toFixed(0)}% of the FIP 260mm legal maximum. This ${sweetSpotWord} the usable sweet-spot area versus the mid-point of this slider. ${twistNote}`;
 }
 function explainThickness(mm) {
-  if (mm >= 37) return "Near the 38mm legal max — maximizes face stiffness for direct power transfer.";
-  if (mm >= 33) return "Slightly below the 38mm standard. Marginally softer, more comfortable feel.";
-  return "Noticeably thinner — softer feel and easier handling, less face stiffness for power.";
+  // Beam bending stiffness scales with thickness CUBED (standard beam
+  // theory), not linearly. This is the actual physical reason the top of
+  // the 28-38mm range matters far more per millimeter than the bottom —
+  // and it's exactly what a coarse three-bucket description hides. Every
+  // value the slider can land on gets language and numbers computed fresh
+  // from that value, rather than snapping to the nearest of three fixed
+  // bands — including the qualitative descriptions below, not just the
+  // headline percentage, so adjacent mm values read as genuinely distinct
+  // rather than sharing identical paragraphs with only a number swapped.
+  const relStiffness = Math.pow(mm / 38, 3) * 100; // 0-100, relative to the 38mm legal max
+  const stepStiffness = mm > 28 ? Math.pow(mm / 38, 3) * 100 - Math.pow((mm - 1) / 38, 3) * 100 : 0;
+
+  // Dwell time (how long the ball stays in contact with the face) is
+  // inversely related to stiffness — a thinner face flexes more under
+  // impact, extending contact time. This is the same physical mechanism
+  // that makes soft EVA cores feel "controlled": more dwell = more
+  // opportunity to direct the shot, less peak-return energy.
+  const dwellRel = 100 - relStiffness; // rough inverse proxy, 0-100
+
+  // Vibration frequency rises with the square root of stiffness for a
+  // beam of fixed mass (natural frequency ∝ √(stiffness/mass)) — using
+  // that relationship rather than a flat tier gives a continuously
+  // shifting descriptor instead of three fixed bands. Expressed here as a
+  // 0-100 "harshness" proxy for readable language.
+  const vibrationHarshness = Math.sqrt(relStiffness / 100) * 100;
+  const vibrationWord = vibrationHarshness >= 90 ? "highest" : vibrationHarshness >= 75 ? "high" : vibrationHarshness >= 55 ? "moderate-high" : vibrationHarshness >= 35 ? "moderate" : vibrationHarshness >= 15 ? "moderate-low" : "lowest";
+  const vibrationNote = vibrationHarshness >= 75
+    ? `Vibration frequency runs ${vibrationWord} at this thickness — centered hits feel crisp and immediate, but off-center contact transmits more shock to the hand than at the softer end of this range.`
+    : vibrationHarshness >= 35
+    ? `Vibration frequency is ${vibrationWord} here — a reasonably direct feel without the harshness of the thickest constructions.`
+    : `Vibration frequency runs ${vibrationWord} at this thickness — the face itself absorbs more of the impact before it reaches the frame, contributing to a comfortable feel independent of core or grip choice.`;
+
+  const durabilityNote = relStiffness >= 80
+    ? "Durability is near its best on this slider — the added material thickness gives real margin against the wall/floor impacts and flexural fatigue that eventually crack a face."
+    : relStiffness <= 45
+    ? "Durability is a genuine tradeoff at this end of the range — thinner face material has less margin before repeated flex cycles or a hard mishit causes a stress fracture, particularly at the perimeter near any holes."
+    : "Durability sits in the middle of what this slider offers — adequate for normal use without the added margin of the thickest constructions.";
+
+  const dwellWord = dwellRel >= 60 ? "long" : dwellRel >= 45 ? "moderately long" : dwellRel >= 30 ? "moderate" : dwellRel >= 15 ? "moderately short" : "short";
+  const dwellNote = dwellRel >= 45
+    ? `Estimated dwell time is ${dwellWord} relative to the rest of this range — the face flexes more under impact, giving more time to direct the shot at some cost to peak power.`
+    : dwellRel >= 25
+    ? `Estimated dwell time is ${dwellWord} — a working balance between control and direct power transfer.`
+    : `Estimated dwell time is ${dwellWord} — energy returns to the ball almost immediately, favoring raw power over shot-shaping.`;
+
+  const stepNote = mm > 28
+    ? ` Moving from ${mm - 1}mm to this thickness alone added ${stepStiffness.toFixed(1)} points of relative stiffness${relStiffness >= 80 ? " — more than the equivalent step would add anywhere below this range, since the cubic relationship means each additional mm counts for more as thickness increases." : "."}`
+    : "";
+
+  return `${mm}mm ≈ ${relStiffness.toFixed(0)}% of the stiffness available at the 38mm legal max (bending stiffness scales with thickness cubed, not linearly).${stepNote} ${vibrationNote} ${dwellNote} ${durabilityNote}`;
 }
 function explainWeight(g) {
-  if (g >= 374) return "Heavy — more mass behind the ball. Extra power and stability, but slower to redirect.";
-  if (g >= 362) return "Mid-weight. The most common range — balance between power, stability, and maneuverability.";
-  return "Light — faster reactions and less arm fatigue. Less raw mass behind smashes.";
+  // Mirrors the weightFactor now used in computeSweetSpotAndStability —
+  // more mass resists angular deceleration on off-center contact (moment
+  // of inertia), which is the physical mechanism behind heavier frames
+  // feeling more forgiving on mishits, independent of the general power/
+  // stability role weight already plays elsewhere in this tool.
+  const relWeight = (g - 350) / 30; // 0 at 350g, 1 at 380g
+  const forgivenessWord = relWeight >= 0.75 ? "meaningfully increases" : relWeight >= 0.4 ? "modestly increases" : relWeight >= 0.15 ? "keeps close to neutral" : "reduces";
+  const fatigueNote = g >= 374
+    ? "That extra mass has a real cost over a long session — more forearm and shoulder work to accelerate and decelerate the frame on every shot, which compounds across a match."
+    : g >= 362
+    ? "This sits in the range most players tolerate for a full session without the frame feeling like a genuine fatigue factor."
+    : "The lower mass reduces cumulative arm fatigue across a long session, at the cost of the momentum that would otherwise carry through a mishit.";
+  return `${g}g resists off-center-hit deceleration ${forgivenessWord === "reduces" ? "less than the mid-point of this slider" : forgivenessWord + " forgiveness on off-center contact versus the mid-point of this slider"} — more mass in motion resists the frame slowing or twisting on a mishit, the same physical principle that makes heavier tennis frames more forgiving. ${fatigueNote}`;
 }
 function explainBalance(cm, shapeId) {
-  if (cm >= 26.5) return "Head-heavy — more leverage on smashes. Harder to redirect quickly on defense.";
-  if (cm >= 25.3) return "Neutral balance. A working compromise — enough leverage without sacrificing speed.";
-  return "Head-light — faster to move and redirect, gentler on the arm. Less natural leverage on smashes.";
+  // Mirrors the balanceShift math already driving the sweet spot's Y
+  // position in computeSweetSpotAndStability — this is the one dimension
+  // that was already correctly wired to the visualization, so this
+  // explanation describes the real formula rather than an approximation
+  // of it.
+  const balanceShift = ((cm - 25.5) / 1.5) * 0.07;
+  const shiftDirection = balanceShift > 0.01 ? "lower, toward the throat" : balanceShift < -0.01 ? "higher, toward the tip" : "close to this shape's natural default position";
+  const leverageWord = cm >= 26.8 ? "maximum" : cm >= 26.0 ? "strong" : cm >= 25.0 ? "moderate" : cm >= 24.3 ? "reduced" : "minimal";
+  const redirectWord = cm >= 26.8 ? "significantly slower" : cm >= 26.0 ? "somewhat slower" : cm >= 25.0 ? "close to neutral" : cm >= 24.3 ? "faster" : "fastest";
+  return `${cm.toFixed(1)}cm shifts the visualized sweet spot ${shiftDirection} versus this shape's default. Smash and overhead leverage is ${leverageWord} at this balance point; redirecting the frame on defense is ${redirectWord} relative to the mid-point of this slider. Balance point is the single strongest lever in this tool for moving the sweet spot's location on the face — shape sets where it starts, balance moves it from there.`;
 }
 function explainGripCirc(mm) {
-  if (mm >= 40) return "Wide grip — more stable on powerful shots, restricts wrist snap.";
-  if (mm >= 37) return "Mid-range. Close to what most factory grips ship at before overgrip.";
-  return "Narrow grip — frees wrist snap for spin and reflex volleys. Tighter squeeze required on power shots.";
+  // Grip circumference has no physical link to the face's sweet spot —
+  // it's a handle-mechanics dimension, not a face-geometry one, so unlike
+  // width/thickness/weight/balance this one is correctly absent from
+  // computeSweetSpotAndStability. Scoped honestly here to what it actually
+  // affects: hand mechanics, not sweet spot size or location.
+  const relCirc = (mm - 35) / 7; // 0 at 35mm min, 1 at 42mm max
+  const stabilityWord = relCirc >= 0.7 ? "at its most stable" : relCirc >= 0.4 ? "reasonably stable" : relCirc >= 0.15 ? "a working middle ground" : "at its most mobile";
+  const snapWord = relCirc >= 0.7 ? "most restricted" : relCirc >= 0.4 ? "somewhat restricted" : relCirc >= 0.15 ? "close to neutral" : "least restricted";
+  const gripForceNote = mm <= 37
+    ? "A narrower circumference also reduces the grip force needed to hold the handle securely — more surface contact per unit of squeeze — which is a genuine factor in reducing forearm fatigue over a long session."
+    : mm >= 40
+    ? "The wider circumference requires more grip force from a given hand size to hold securely, which can be a real factor in cumulative forearm fatigue for players without a correspondingly large grip span."
+    : "This mid-range circumference is close to what most factory grips ship at before overgrip — a reasonable default before optimizing toward either stability or reduced grip force.";
+  return `${mm}mm grip: hand stability on powerful shots is ${stabilityWord} at this circumference; wrist snap for spin and reflex volleys is ${snapWord} versus the mid-point of this slider. ${gripForceNote} This dimension affects handle mechanics only — it has no physical link to the sweet spot's size or location on the face.`;
 }
 function sweetSpotPosLabel(shapeId, balanceCm) {
   const sw = shapeId === "round" ? "low / centered" : shapeId === "diamond" ? "high, near the tip" : shapeId === "diamond-wide" ? "high, wider than standard diamond" : "mid-face";
@@ -2528,12 +2673,12 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   );
 }
 
-function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
+function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
   const STROKE = "#4A4540";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const tint = faceVisual.tint;
   // Frame material gets a distinct rim stroke — fiberglass frames render
@@ -2812,6 +2957,7 @@ function RacquetIllustration3D({
   holeDiameterMm,
   lengthMm,
   widthMm,
+  thicknessMm,
   balanceCm,
   weightG,
   coreObj,
@@ -2849,7 +2995,7 @@ function RacquetIllustration3D({
     if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45;
     return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
   };
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
   // Illustration mode uses its own, more strongly differentiated
   // tint/darkTone (see ILLUSTRATION_FACE_VISUAL) since this view has no
   // weave-line overlay to help distinguish materials the way the flat
@@ -4868,7 +5014,7 @@ export default function App() {
   // Shared diagram props
   const diagramProps = {
     shape: shapeId, faceId, surfaceId, gripShapeId, holes, holeDiameterMm,
-    lengthMm, widthMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
+    lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
     bridgeId, beamCount, beamOrientation,
   };
 
