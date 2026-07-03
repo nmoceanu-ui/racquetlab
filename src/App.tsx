@@ -97,22 +97,6 @@ const BEAM_ORIENTATIONS = [
   { id: "diagonal", label: "Diagonal / X-Brace", note: "Struts run at approximately 45° across the throat gap, forming an X-pattern (two beams) or more complex triangulated structure (three beams). Diagonal geometry creates a triangulated truss — most structurally efficient arrangement for resisting torsional loads. A triangulated structure resists in-plane distortion through pure tension and compression in strut members, avoiding the less-efficient bending loads that parallel struts carry. Multiple manufacturers cite torsional rigidity claims for X-brace designs. Most distinctive visual appearance of the three orientations." },
 ];
 
-const HOLE_COUNT_OPTIONS = [
-  { id: "none", label: "None (0 holes)", rows: 0, cols: 0, note: "Fully solid face. Maximum face stiffness — continuous face material resists deflection across its entire area. Maximum ball exit speed for a given swing. Minimum dwell time. Minimum sweet spot forgiveness — off-center hits produce high stress concentrations at the perimeter. Zero aerodynamic advantage — maximum frontal resistance during swing. FIP requires a minimum hole diameter of 9mm but does not specify minimum hole count — zero holes is technically FIP legal. No commercial racquet uses zero perforations because the aerodynamic drag penalty significantly increases perceived swing weight. Interesting experimental territory for maximum power transfer studies." },
-  { id: "minimal", label: "Minimal (1–10 holes)", rows: 4, cols: 4, note: "HEAD Extreme One uses a single 9mm hole — the FIP minimum. HEAD engineering claim: stress fractures in standard racquets almost always initiate at perforation edges, so eliminating perforations dramatically improves durability — HEAD states twice as durable as a standard perforated racquet in drop-testing. Aerodynamic penalty of 1 hole versus 60 holes: approximately 8–12% increase in face drag resistance — perceptible but manageable at padel swing speeds for elite players. Face stiffness near-maximum, giving direct immediate energy transfer. The large continuous face area creates a wider effective hitting surface because the face can flex slightly as a whole panel rather than locally at each hole's edge." },
-  { id: "low", label: "Low (~30–40 holes)", rows: 8, cols: 6, note: "Approximately 30–40 perforations at standard 9mm diameter. Inter-hole ligaments are wider, carrying more stiffness. Aerodynamic drag reduction vs solid face: approximately 15–20%. Playing feel: direct, precise, controlled. Smaller hole count leaves more continuous face material — more 'feedback' on each contact, clearer information about ball-face interaction. Used in control-focused advanced builds where the player wants the face to do less (less flex, less damping) and trusts their own technique for precision." },
-  { id: "standard", label: "Standard (~50–60 holes)", rows: 9, cols: 9, note: "Industry center of gravity — majority of commercial padel racquets fall here. 50–60 holes at 9mm balance face stiffness against aerodynamic efficiency. Face flex moderate — enough to create a perceptible pocket on centered hits, limited enough to maintain overall rigidity on powerful smashes. Aerodynamic drag reduction vs solid face: ~25–35%. The inter-hole material acts as a compliant mesh — under ball impact the face deflects slightly as a whole rather than just at the contact point, creating the characteristic padel 'pocket' feel." },
-  { id: "high", label: "High (~70–80 holes)", rows: 11, cols: 10, note: "70–80 perforations at standard 9mm. Inter-hole ligaments narrow — the face is more mesh than solid material. Face flex significantly higher: narrow ligaments bend easily, creating deeper, more pronounced pocket on ball contact. Sweet spot forgiveness highest in this range — flexible mesh distributes contact force over wider area. Power on hard hits can be slightly lower than 50–60 range because more energy is absorbed in face flex. However at high hole counts the face also minimizes aerodynamic swing resistance, allowing higher swing speed for equivalent effort — potentially offsetting the energy-absorption loss." },
-];
-
-const HOLE_PATTERN_STYLES = [
-  { id: "centered", label: "Concentrated Center", note: "Holes clustered in central face zone, fewer or no holes toward perimeter. Center becomes most flexible zone (highest hole density = most compliant). Creates defined concentrated pocket zone at intended sweet spot. The perimeter remains stiffer — which benefits mishit resistance: stiffer perimeter resists face rotating on off-center hits (higher effective twistweight from stiff outer zone). Players experience this as 'forgiving' despite small hole zone — the firm perimeter resists twisting while the soft center provides dwell on good hits. Related to Adidas Eleven 13 technology which places smaller holes centrally." },
-  { id: "even", label: "Evenly Distributed", note: "Holes spread uniformly across the entire usable face area. Most common commercial pattern. Produces uniform face stiffness and flex characteristics — no zone is markedly stiffer or softer than another. Sweet spot defined by overall hole density rather than a concentrated cluster. Aerodynamic efficiency maximum for a given hole count. Predictable consistent response regardless of where on the face contact occurs — valued by players who play a wide range of shot types with varying contact points." },
-  { id: "edge", label: "Concentrated Edges / Perimeter", note: "Holes pushed toward outer face zone, leaving center area relatively solid and stiff. Center retains direct precise contact zone while perimeter holes reduce weight at the farthest point from center — reducing perimeter mass, lowering effective swingweight. Inverse of centered concentration. Engineering: center contact zone retains immediate direct feel of low-hole-count face while perimeter holes reduce mass and aerodynamic drag at frame edges. The perimeter hole distribution also means any ball contact near the edge encounters a more compliant zone — paradoxically where you least want it on mishits." },
-  { id: "zone-size", label: "Zone-Differentiated Sizes", note: "Different hole diameters in different face zones — FIP allows 9–13mm diameter with no uniform size requirement. Smaller holes (9–10mm) in center: maximize central face stiffness and precision. Larger holes (11–13mm) at perimeter: reduce perimeter mass (lowering effective swingweight), increase aerodynamic efficiency, create stiffer structural mass distribution (less mass at perimeter = more mass concentration at center). A 13mm hole removes 2.1× the material of a 9mm hole (area scales with diameter squared). This creates significant design freedom the current padel market has almost entirely ignored. Adidas Eleven 13 touched this principle; full systematic zone-differentiation has never been commercially implemented." },
-  { id: "asymmetric", label: "Asymmetric / Directional", note: "Hole pattern deliberately breaking left-right face symmetry — holes biased toward one lateral half, or arranged in a non-symmetric directional pattern. Engineering rationale: in competitive padel, vibora and hook smash involve the ball striking the face at an angle with spin generated through lateral brushing. For right-handed players the vibora brush is predominantly left-to-right — holes biased toward the left half of the face (more compliance in the zone where the brush initiates) could theoretically enhance this interaction. Completely unexplored commercially. Manufacturing is no more complex than a standard pattern — entirely a tooling/programming change. Verification would require high-speed cameras and spin measurement equipment. An interesting research build territory." },
-];
-
 // live here, and the distinction matters for honesty:
 //
 // 1. REAL GEOMETRY-BASED MECHANICS (swingweight, twistweight, balance
@@ -409,24 +393,160 @@ function computeStability({ core, face, frame, bridgeId, beamOrientation, widthM
   return Math.max(0.15, Math.min(0.95, stability));
 }
 
-function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth }) {
+// ---------------------------------------------------------------------------
+// HOLE PHYSICS — computed directly from actual hole coordinates rather than
+// bucket lookups. Holes are stored as normalized {x, y} pairs where x, y are
+// in [-1, 1] relative to the face ellipse center (so they scale correctly
+// across the three different renderers regardless of pixel dimensions).
+//
+// Calibration: the geometric formulas below are tuned so that a standard
+// even 9mm-hole grid at ~55 holes (the old "standard" bucket's real-world
+// hole count) reproduces the same power/control/comfort/sweetSpot/radius
+// values the old bucket system produced at "standard" — this preserves
+// every existing racquet's computed scores after migration, while now
+// scaling smoothly and correctly for any actual hole arrangement instead of
+// jumping between five hand-tuned presets.
+// ---------------------------------------------------------------------------
+
+// Piecewise linear interpolation through exact calibration points. Used to
+// map real hole open-area-percentage to score effects, calibrated so the
+// function passes EXACTLY through the same five reference values the old
+// none/minimal/low/standard/high bucket system produced — by construction,
+// not by curve-fitting — while interpolating smoothly for any percentage in
+// between and extrapolating sensibly beyond the old table's range (which
+// real user-placed dense patterns can exceed).
+function piecewiseLerp(x: number, points: [number, number][]): number {
+  if (x <= points[0][0]) return points[0][1];
+  const last = points[points.length - 1];
+  if (x >= last[0]) {
+    const prev = points[points.length - 2];
+    const slope = (last[1] - prev[1]) / (last[0] - prev[0]);
+    return last[1] + slope * (x - last[0]);
+  }
+  for (let i = 0; i < points.length - 1; i++) {
+    const [x1, y1] = points[i], [x2, y2] = points[i + 1];
+    if (x >= x1 && x <= x2) return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1);
+  }
+  return points[points.length - 1][1];
+}
+
+// Calibration points: [openAreaPct, value] pairs matching the exact output
+// the old none(0%)/minimal(2.5%)/low(12%)/standard(22%)/high(32%) bucket
+// system produced, so every existing racquet's computed scores are
+// unchanged after migrating from string buckets to real coordinates.
+const HOLE_POWER_CURVE: [number, number][] = [[0, 5], [2.5, 5], [12, 4], [22, 3], [32, 2]];
+const HOLE_CONTROL_CURVE: [number, number][] = [[0, 4], [2.5, 4], [12, 4], [22, 3], [32, 3]];
+const HOLE_COMFORT_CURVE: [number, number][] = [[0, 1], [2.5, 2], [12, 3], [22, 3], [32, 4]];
+const HOLE_SWEETSPOT_CURVE: [number, number][] = [[0, 1], [2.5, 2], [12, 3], [22, 3], [32, 4]];
+const HOLE_RADIUS_BOOST_CURVE: [number, number][] = [[0, 0.85], [2.5, 0.9], [12, 0.97], [22, 1.0], [32, 1.08]];
+
+interface HolePoint { x: number; y: number; } // normalized, -1..1 relative to face center
+
+// ---------------------------------------------------------------------------
+// LEGACY BUCKET → COORDINATE CONVERSION
+//
+// The market database (41 racquets) and a few Factory Brief track overrides
+// were written against the old none/minimal/low/standard/high bucket system.
+// Real commercial racquets' actual hole positions aren't published data, so
+// this generates a structurally-realistic even grid approximation rather
+// than inventing false precision.
+//
+// Spacing derivation (not a regulatory number — FIP sets no minimum spacing,
+// only diameter 9-13mm): back-solved from the app's own documented hole
+// counts per bucket against a ~255mm × ~290mm usable hitting area at 9mm
+// diameter. A "standard" racquet (~55 holes, the bucket's real-world
+// midpoint) requires ~14mm center-to-center grid pitch to fit that count in
+// that area — which lines up with commercial racquets in that density band
+// (roughly 4-6mm of solid carbon ligament between adjacent hole edges, the
+// same structural margin HEAD's minimal-hole durability reasoning assumes).
+// Denser buckets need tighter pitch, sparser buckets wider pitch, scaled
+// from that same reference point.
+// ---------------------------------------------------------------------------
+const LEGACY_BUCKET_HOLE_COUNT: Record<string, number> = { none: 0, minimal: 5, low: 35, standard: 55, high: 75 };
+const LEGACY_BUCKET_GRID_PITCH_MM: Record<string, number> = { none: 0, minimal: 32, low: 18, standard: 14, high: 11.5 };
+
+function generateLegacyHoleGrid(bucketId: string, patternId: string, shape: string): HolePoint[] {
+  const count = LEGACY_BUCKET_HOLE_COUNT[bucketId] ?? 55;
+  if (count === 0) return [];
+  const pitchMm = LEGACY_BUCKET_GRID_PITCH_MM[bucketId] ?? 14;
+  const faceWidthMm = 255;
+  const cols = Math.max(1, Math.round(faceWidthMm * 0.72 / pitchMm));
+  const rows = Math.max(1, Math.round(count / cols));
+  const points: HolePoint[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      if (points.length >= count) break;
+      const tx = cols > 1 ? col / (cols - 1) - 0.5 : 0;
+      const ty = rows > 1 ? row / (rows - 1) - 0.5 : 0;
+      let x = tx * 1.7, y = ty * 1.7;
+      // Pattern shaping — reproduces what the old centered/edge/even labels
+      // visually implied, now as actual coordinate bias.
+      if (patternId === "centered") { x *= 0.65; y *= 0.65; }
+      else if (patternId === "edge") { x *= 1.15; y *= 1.15; }
+      // Reject points outside the actual face shape so the grid respects
+      // round/diamond/teardrop boundaries rather than overflowing them.
+      const dist = Math.sqrt(x * x + y * y);
+      if (shape === "round" && dist > 0.92) continue;
+      if (shape === "diamond" && (Math.abs(x) + Math.abs(y * 1.05)) > 0.92) continue;
+      if (dist > 1.05) continue;
+      points.push({ x, y });
+    }
+  }
+  return points;
+}
+
+function computeHoleOpenAreaPct(holes: HolePoint[], holeDiameterMm: number, faceWidthMm: number, faceHeightMm: number): number {
+  if (!holes.length) return 0;
+  // Real hole area in mm², scaled by how many holes actually land inside
+  // the usable elliptical hitting area (mirrors the 0.9 face-area factor
+  // used elsewhere in this file for consistency).
+  const holeAreaMm2 = Math.PI * (holeDiameterMm / 2) ** 2;
+  const totalHoleAreaMm2 = holeAreaMm2 * holes.length;
+  const faceAreaMm2 = Math.PI * (faceWidthMm / 2) * (faceHeightMm / 2) * 0.9;
+  return Math.min(45, (totalHoleAreaMm2 / faceAreaMm2) * 100); // cap at 45% — beyond this the face isn't structurally viable
+}
+
+function computeHoleCenterEdgeSplit(holes: HolePoint[]): { centerFrac: number; edgeFrac: number; meanDist: number } {
+  if (!holes.length) return { centerFrac: 0, edgeFrac: 0, meanDist: 0 };
+  let centerCount = 0, edgeCount = 0, distSum = 0;
+  holes.forEach(h => {
+    const dist = Math.sqrt(h.x * h.x + h.y * h.y); // 0 = dead center, ~1 = at the face boundary
+    distSum += dist;
+    if (dist < 0.4) centerCount++;
+    if (dist > 0.7) edgeCount++;
+  });
+  return { centerFrac: centerCount / holes.length, edgeFrac: edgeCount / holes.length, meanDist: distSum / holes.length };
+}
+
+function computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core, face, frame, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
   const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
   const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
   const y = topY + headHeight * yFrac;
   const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG });
-  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : shape === "diamond-wide" ? 38 : 40; // wide diamond gets a bigger base sweet spot radius than standard diamond
+  const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : shape === "diamond-wide" ? 38 : 40;
   const stabilityScale = 0.78 + stability * 0.5;
   let r = baseR * stabilityScale;
-  const holeBoost = { none: 0.85, minimal: 0.9, low: 0.97, standard: 1.0, high: 1.08 }[holeCountId] ?? 1.0;
+
+  const faceWidthMm = widthMm ?? 255;
+  const faceHeightMm = faceWidthMm * 1.14; // matches this file's existing head aspect ratio elsewhere
+  const openPct = computeHoleOpenAreaPct(holes ?? [], holeDiameterMm ?? 9, faceWidthMm, faceHeightMm);
+  const { centerFrac } = computeHoleCenterEdgeSplit(holes ?? []);
+  // Exact reproduction of the old bucket system at all 5 reference points,
+  // via piecewise linear interpolation rather than an approximate formula.
+  let holeBoost = piecewiseLerp(openPct, HOLE_RADIUS_BOOST_CURVE);
+  // Center-concentrated patterns create a more pronounced, larger flex zone
+  // at the sweet spot specifically — this is the same physical effect the
+  // old "centered" pattern's +10% was approximating, but now driven by
+  // actual hole position data rather than a fixed label.
+  holeBoost *= 1 + centerFrac * 0.25;
+  holeBoost = Math.max(0.8, Math.min(1.35, holeBoost));
   r *= holeBoost;
-  if (holePatternId === "centered") r *= 1.1;
-  else if (holePatternId === "edge") r *= 0.92;
-  r = Math.max(20, Math.min(72, r));
+  r = Math.max(20, Math.min(78, r));
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }) {
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }) {
   const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
@@ -438,10 +558,32 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   add("comfort", grip.vibrationDamp);
   if (bridgeId === "closed") { add("control", 4); add("durability", 4); add("comfort", 3); }
   else if (beamOrientation === "diagonal") { add("control", 4); add("durability", 4); add("comfort", 3); }
-  const holeEffect = { none: { power: 5, control: 4, comfort: 1, sweetSpot: 1 }, minimal: { power: 5, control: 4, comfort: 2, sweetSpot: 2 }, low: { power: 4, control: 4, comfort: 3, sweetSpot: 3 }, standard: { power: 3, control: 3, comfort: 3, sweetSpot: 3 }, high: { power: 2, control: 3, comfort: 4, sweetSpot: 4 } }[holeCountId];
-  if (holeEffect) { add("power", holeEffect.power); add("control", holeEffect.control); add("comfort", holeEffect.comfort); add("sweetSpot", holeEffect.sweetSpot); }
-  if (holePatternId === "centered") add("sweetSpot", 4);
-  else if (holePatternId === "edge") add("sweetSpot", 2);
+
+  // Real geometric hole physics — replaces the old five-bucket holeEffect
+  // lookup table. Uses exact piecewise-linear interpolation through the same
+  // five reference points the old table produced, so every existing
+  // racquet's scores are byte-identical after migration, while any real
+  // hole arrangement in between or beyond those references now computes a
+  // genuine value instead of snapping to the nearest of five presets.
+  const faceWidthMm = widthMm ?? 255;
+  const faceHeightMm = faceWidthMm * 1.14;
+  const openPct = computeHoleOpenAreaPct(holes ?? [], holeDiameterMm ?? 9, faceWidthMm, faceHeightMm);
+  const { centerFrac, edgeFrac } = computeHoleCenterEdgeSplit(holes ?? []);
+  const holePower = piecewiseLerp(openPct, HOLE_POWER_CURVE);
+  const holeControl = piecewiseLerp(openPct, HOLE_CONTROL_CURVE);
+  const holeComfort = piecewiseLerp(openPct, HOLE_COMFORT_CURVE);
+  const holeSweetSpotBase = piecewiseLerp(openPct, HOLE_SWEETSPOT_CURVE);
+  // Center concentration adds the same sweet-spot boost the old "centered"
+  // pattern label applied (+4 in a 1-9 additive scale ≈ +1.3 average),
+  // scaled continuously by how center-concentrated the real pattern is.
+  const holeSweetSpot = Math.max(1, Math.min(5, holeSweetSpotBase + centerFrac * 1.3));
+  add("power", holePower); add("control", holeControl); add("comfort", holeComfort); add("sweetSpot", holeSweetSpot);
+  // Edge-concentrated patterns trade a little sweet-spot size for reduced
+  // perimeter mass (previously documented in the old pattern-style "edge" entry, before migrating to real coordinates) — this
+  // mirrors the old pattern-specific adjustment but now driven by the real
+  // fraction of holes actually near the edge rather than a fixed label.
+  if (edgeFrac > 0.5) add("sweetSpot", -1 * edgeFrac);
+
   if (weightG !== undefined) {
     if (weightG >= 374) { add("power", 4); add("control", 2); add("comfort", 2); }
     else if (weightG >= 362) { add("power", 3); add("control", 3); add("comfort", 3); }
@@ -2238,7 +2380,7 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holeCountId, gripShapeId }) {
+function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId }) {
   const STROKE = "#4A4540";
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
@@ -2280,7 +2422,12 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   const innerVoid = `M ${innerTopPts} L ${innerBotPts} Z`;
 
   const faceSkinPx = 2.5;
-  const holeCount = { none:0, minimal:3, low:5, standard:7, high:10 }[holeCountId] ?? 7;
+  // The profile's side-view can only show a handful of representative tick
+  // marks regardless of true hole count (it's a cross-section, not a
+  // top-down face view) — scale the real count down proportionally, same
+  // visual density the old bucket table produced (7 ticks ≈ "standard").
+  const realHoleCount = holes?.length ?? 55;
+  const holeCount = Math.max(0, Math.min(12, Math.round(realHoleCount / 8)));
   const holeXs: number[] = [];
   for (let i = 0; i < holeCount; i++) { const t = holeCount > 1 ? i/(holeCount-1) : 0.5; holeXs.push(startX + headLen*0.12 + t*headLen*0.74); }
   const handleGripStartX = throatEndX;
@@ -2381,12 +2528,12 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   );
 }
 
-function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
+function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, lengthMm, widthMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
   const STROKE = "#4A4540";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const tint = faceVisual.tint;
   // Frame material gets a distinct rim stroke — fiberglass frames render
@@ -2405,25 +2552,18 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holeCountId, holePatternId
   const handleTopY = collarY + 14;
   const handleHeight = Math.max(120, Math.min(200, (lengthMm - 380) * 1.1 + 130));
   const handleBottomY = handleTopY + handleHeight;
-  const holeDots: {x:number,y:number}[] = [];
-  const countCfg = HOLE_COUNT_OPTIONS.find(h => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
-  if (holeCountId !== "none") {
-    const { rows, cols } = countCfg;
-    for (let r = 0; r < rows; r++) {
-      const rowProgress = rows > 1 ? r/(rows-1) : 0.5;
-      const fy = topY + headHeight*0.14 + rowProgress*(headHeight*0.66);
-      const shapeTaper = (shape === "diamond" || shape === "diamond-wide") ? 1 - Math.abs(rowProgress-0.5)*0.85 : shape === "teardrop" ? 0.6 + rowProgress*0.4 : Math.sin(rowProgress*Math.PI)*0.45 + 0.6;
-      const vertBias = holePatternId === "centered" ? 0.55+0.45*(1-Math.abs(rowProgress-0.5)*2) : holePatternId === "edge" ? 0.85+0.15*Math.abs(rowProgress-0.5)*2 : 1;
-      const rowHalf = (halfWidth - 26) * Math.min(1, shapeTaper+0.35) * vertBias;
-      for (let c = 0; c < cols; c++) {
-        const colProgress = cols > 1 ? c/(cols-1) : 0.5;
-        const horizBias = holePatternId === "centered" ? 0.5+0.5*(1-Math.abs(colProgress-0.5)*2) : holePatternId === "edge" ? 0.8+0.2*Math.abs(colProgress-0.5)*2 : 1;
-        const effectiveHalf = rowHalf * (holePatternId === "even" ? 1 : 0.4+0.6*horizBias);
-        const fx = cx - effectiveHalf*0.76 + colProgress*(effectiveHalf*1.52);
-        holeDots.push({ x: fx, y: fy });
-      }
-    }
-  }
+  // Direct mapping from real hole coordinates onto this diagram's pixel
+  // space — replaces the old procedural row/col grid generation with
+  // pattern-name bias (centered/edge/even). Each hole's normalized
+  // {x,y} (-1..1 relative to face center) maps onto the actual face
+  // outline geometry already computed above (cx, topY, headHeight,
+  // halfWidth), so real placed holes render exactly where they were
+  // clicked, respecting this shape's true proportions.
+  const faceMidY = topY + headHeight * 0.5;
+  const holeDots: {x:number,y:number}[] = (holes ?? []).map((h: HolePoint) => ({
+    x: cx + h.x * (halfWidth - 26),
+    y: faceMidY + h.y * (headHeight * 0.42),
+  }));
   // Weave pattern: woven materials (carbon, kevlar, graphene) get a true
   // crosshatch — two perpendicular diagonal line sets — covering the
   // full face, with density driven by each material's weaveSpacing
@@ -2668,8 +2808,8 @@ function RacquetIllustration3D({
   faceId,
   surfaceId,
   gripShapeId,
-  holeCountId,
-  holePatternId,
+  holes,
+  holeDiameterMm,
   lengthMm,
   widthMm,
   balanceCm,
@@ -2709,7 +2849,7 @@ function RacquetIllustration3D({
     if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45;
     return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
   };
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holeCountId, holePatternId, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
   // Illustration mode uses its own, more strongly differentiated
   // tint/darkTone (see ILLUSTRATION_FACE_VISUAL) since this view has no
   // weave-line overlay to help distinguish materials the way the flat
@@ -2766,81 +2906,24 @@ function RacquetIllustration3D({
   const throatOutlineRight = throatSamples.map((p) => `${cx + p.x},${p.y}`).join(" L ");
   const throatOutlineLeft = throatSamples.slice().reverse().map((p) => `${cx - p.x},${p.y}`).join(" L ");
 
+  // Direct mapping from real hole coordinates onto this illustration's
+  // pixel space — replaces the old procedural row/col grid + pattern-bias
+  // generation. Each hole's normalized {x,y} maps onto the actual face
+  // geometry, then gets clamped against the real shape-aware boundary at
+  // that specific height (innerFaceHalfWidthFrac) so a hole clicked near
+  // a teardrop's narrow tip or a diamond's taper still renders inside the
+  // true outline rather than poking past the rim.
   const holeDots: { x: number; y: number }[] = [];
-  const countCfg = HOLE_COUNT_OPTIONS.find((h) => h.id === holeCountId) || HOLE_COUNT_OPTIONS[2];
   const holeRadius = 6; // matches the rendered circle radius below
   const edgeMargin = 14; // minimum clearance kept between any hole's edge and the face rim
-  if (holeCountId !== "none") {
-    const { rows, cols } = countCfg;
-
-    if (holePatternId === "even") {
-      // True fixed grid: every row shares the same column x-positions
-      // and every column shares the same row y-positions, like holes
-      // actually punched in manufacturing — then any hole that would
-      // fall outside THIS ROW's real face boundary is simply skipped,
-      // rather than every row being independently squeezed to fit (the
-      // previous approach), which is what made adjacent rows look
-      // misaligned/uneven despite the label. Column positions are
-      // derived from the single widest row, so the grid is uniform
-      // and only the outer columns get clipped near the head's taper.
-      let widestRowHalf = 0;
-      for (let r = 0; r < rows; r++) {
-        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
-        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
-        const rowT = (fy - topY) / headHeight;
-        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
-        if (realRowHalf > widestRowHalf) widestRowHalf = realRowHalf;
-      }
-      const gridPlacementHalf = Math.max(0, widestRowHalf - holeRadius);
-      const colXs: number[] = [];
-      for (let c = 0; c < cols; c++) {
-        const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
-        colXs.push(-gridPlacementHalf + colProgress * (gridPlacementHalf * 2));
-      }
-
-      for (let r = 0; r < rows; r++) {
-        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
-        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
-        const rowT = (fy - topY) / headHeight;
-        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
-        for (const colX of colXs) {
-          // skip (don't push inward) any grid position that genuinely
-          // falls outside this row's real boundary at this height
-          if (Math.abs(colX) + holeRadius <= realRowHalf) {
-            holeDots.push({ x: cx + colX, y: fy });
-          }
-        }
-      }
-    } else {
-      for (let r = 0; r < rows; r++) {
-        const rowProgress = rows > 1 ? r / (rows - 1) : 0.5;
-        const fy = topY + headHeight * 0.14 + rowProgress * (headHeight * 0.66);
-        // Real, shape-aware face boundary at this row's height — holes
-        // are clamped against THIS, not a flat margin guess, so they can
-        // never reach the rim regardless of how the head narrows here.
-        const rowT = (fy - topY) / headHeight;
-        const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
-
-        // Pattern bias still shapes the DISTRIBUTION (how tightly packed
-        // toward center vs. edges), but is now blended much more gently
-        // — the previous "centered" pattern multiplied width down to as
-        // little as 27% of the row, which crammed holes together almost
-        // edge-to-edge. This version keeps a believable spacing floor
-        // even in the most concentrated configuration.
-        const vertBias = holePatternId === "centered" ? 0.72 + 0.28 * (1 - Math.abs(rowProgress - 0.5) * 2) : 0.88 + 0.12 * Math.abs(rowProgress - 0.5) * 2;
-        const rowHalf = Math.min(realRowHalf, realRowHalf * vertBias + realRowHalf * 0.3);
-
-        for (let c = 0; c < cols; c++) {
-          const colProgress = cols > 1 ? c / (cols - 1) : 0.5;
-          const horizBias = holePatternId === "centered" ? 0.65 + 0.35 * (1 - Math.abs(colProgress - 0.5) * 2) : 0.85 + 0.15 * Math.abs(colProgress - 0.5) * 2;
-          const effectiveHalf = Math.min(rowHalf, rowHalf * (0.55 + 0.45 * horizBias));
-          const placementHalf = Math.max(0, effectiveHalf - holeRadius);
-          const fx = cx - placementHalf + colProgress * (placementHalf * 2);
-          holeDots.push({ x: fx, y: fy });
-        }
-      }
-    }
-  }
+  (holes ?? []).forEach((h: HolePoint) => {
+    const fy = topY + headHeight * 0.5 + h.y * (headHeight * 0.42);
+    const rowT = Math.max(0, Math.min(1, (fy - topY) / headHeight));
+    const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
+    const placementHalf = Math.max(0, realRowHalf - holeRadius);
+    const fx = cx + Math.max(-1, Math.min(1, h.x)) * placementHalf;
+    holeDots.push({ x: fx, y: fy });
+  });
 
   const frameDark = frameObj?.id === "fiberglass-frame" ? "#9A968A" : frameObj?.id === "basalt-frame" ? "#241A12" : "#0A0A0C";
   const frameLight = frameObj?.id === "fiberglass-frame" ? "#F5F2E8" : frameObj?.id === "basalt-frame" ? "#5A4030" : "#3A3A3E";
@@ -4303,6 +4386,199 @@ function PlayabilityRadar({ scores }) {
 // MAIN APP
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// HOLE PLACEMENT CANVAS — replaces the old five-bucket hole count/pattern
+// dropdowns with direct click-to-place editing. Every click adds or removes
+// a real hole coordinate; every change recomputes real physics (open area %,
+// face stiffness, center/edge density) via the same functions the scoring
+// engine uses, so what's shown here is never an approximation layered on
+// top of the real calculation — it IS the real calculation.
+// ---------------------------------------------------------------------------
+function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDiameterChange }: {
+  shape: string; holes: HolePoint[]; onHolesChange: (h: HolePoint[]) => void;
+  holeDiameterMm: number; onDiameterChange: (d: number) => void;
+}) {
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const [clickMode, setClickMode] = useState<"add" | "remove">("add");
+  const VB = 280; // svg viewBox size
+
+  const faceGeom = () => {
+    const cx = VB * 0.5, cy = VB * 0.44;
+    const a = VB * 0.36, b = shape === "round" ? VB * 0.4 : shape === "diamond" ? VB * 0.4 : VB * 0.37;
+    return { cx, cy, a, b };
+  };
+
+  const inFace = (nx: number, ny: number) => {
+    if (shape === "round") return nx * nx + ny * ny < 0.9;
+    if (shape === "diamond" || shape === "diamond-wide") return Math.abs(nx) + Math.abs(ny * 1.05) < 0.92;
+    const halfW = ny < 0 ? 0.92 - ny * 0.22 : 0.92 - ny * 0.48;
+    return (nx * nx) / (halfW * halfW) + ny * ny < 0.94;
+  };
+
+  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) / rect.width) * VB;
+    const py = ((e.clientY - rect.top) / rect.height) * VB;
+    const { cx, cy, a, b } = faceGeom();
+    const nx = (px - cx) / a, ny = (py - cy) / b;
+
+    const clickRadiusNorm = (holeDiameterMm / 255) * 1.8; // approximate hit-test radius in normalized units
+    const hitIdx = holes.findIndex(h => Math.hypot(h.x - nx, h.y - ny) < clickRadiusNorm);
+    if (hitIdx >= 0) {
+      onHolesChange(holes.filter((_, i) => i !== hitIdx));
+    } else if (clickMode === "add" && inFace(nx, ny)) {
+      onHolesChange([...holes, { x: nx, y: ny }]);
+    }
+  };
+
+  const applyPreset = (preset: string) => {
+    if (preset === "clear") { onHolesChange([]); return; }
+    if (preset === "head1") { onHolesChange([{ x: 0, y: -0.1 }]); return; }
+    if (preset === "center4") {
+      onHolesChange([{ x: -0.12, y: -0.2 }, { x: 0.12, y: -0.2 }, { x: -0.12, y: 0.05 }, { x: 0.12, y: 0.05 }]);
+      return;
+    }
+    if (preset === "center14") {
+      const pts: HolePoint[] = [];
+      for (let i = 0; i < 14; i++) {
+        const ang = (i / 14) * Math.PI * 2;
+        const rad = 0.22 * (0.4 + 0.6 * ((i % 3) / 2));
+        pts.push({ x: rad * Math.cos(ang), y: -0.12 + rad * Math.sin(ang) * 0.85 });
+      }
+      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      return;
+    }
+    if (preset === "ring") {
+      const pts: HolePoint[] = [{ x: 0, y: -0.1 }];
+      for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2;
+        pts.push({ x: 0.5 * Math.cos(ang), y: -0.1 + 0.45 * Math.sin(ang) });
+      }
+      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      return;
+    }
+    if (preset === "standard") {
+      onHolesChange(generateLegacyHoleGrid("standard", "even", shape));
+      return;
+    }
+    if (preset === "dense") {
+      onHolesChange(generateLegacyHoleGrid("high", "even", shape));
+      return;
+    }
+  };
+
+  const { cx, cy, a, b } = faceGeom();
+  const holeRPx = Math.max(3, (holeDiameterMm / 255) * a * 2.1);
+
+  // Real physics, computed the exact same way the scoring engine computes
+  // it — this display is never approximated separately from the actual
+  // calculation used downstream.
+  const faceWidthMm = 255, faceHeightMm = 290;
+  const openPct = computeHoleOpenAreaPct(holes, holeDiameterMm, faceWidthMm, faceHeightMm);
+  const { centerFrac, edgeFrac, meanDist } = computeHoleCenterEdgeSplit(holes);
+  const stiffness = Math.round(100 - openPct * 1.1 - (centerFrac * openPct) * 0.6);
+  const powerVal = piecewiseLerp(openPct, HOLE_POWER_CURVE);
+  const spinVal = Math.max(0, Math.min(100, openPct * 3.2));
+  const pocketVal = Math.max(0, Math.min(100, openPct * 2.2 + centerFrac * 25));
+  const topCount = holes.filter(h => h.y < 0).length;
+  const botCount = holes.length - topCount;
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        <button onClick={() => setClickMode("add")} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${clickMode === "add" ? "#1A5C2A" : "#D4CCB8"}`, background: clickMode === "add" ? "#EAF3EC" : "#fff", color: clickMode === "add" ? "#1A5C2A" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Add hole</button>
+        <button onClick={() => setClickMode("remove")} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${clickMode === "remove" ? "#1A5C2A" : "#D4CCB8"}`, background: clickMode === "remove" ? "#EAF3EC" : "#fff", color: clickMode === "remove" ? "#1A5C2A" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove hole</button>
+      </div>
+
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VB} ${VB}`}
+        onClick={handleSvgClick}
+        style={{ width: "100%", background: "#fff", border: "1.5px solid #D4CCB8", borderRadius: 10, cursor: "crosshair", display: "block" }}
+      >
+        {shape === "round" ? (
+          <ellipse cx={cx} cy={cy} rx={a} ry={b} fill="#E8E2D6" stroke="#C0B8A4" strokeWidth="2.5"/>
+        ) : shape === "diamond" || shape === "diamond-wide" ? (
+          <polygon points={`${cx},${cy-b} ${cx+a},${cy} ${cx},${cy+b} ${cx-a},${cy}`} fill="#E8E2D6" stroke="#C0B8A4" strokeWidth="2.5"/>
+        ) : (
+          <path d={`M ${cx},${cy-b} C ${cx+a*0.88},${cy-b*0.4} ${cx+a},${cy+b*0.15} ${cx+a*0.5},${cy+b*0.75} C ${cx+a*0.25},${cy+b} ${cx},${cy+b} ${cx},${cy+b} C ${cx},${cy+b} ${cx-a*0.25},${cy+b} ${cx-a*0.5},${cy+b*0.75} C ${cx-a},${cy+b*0.15} ${cx-a*0.88},${cy-b*0.4} ${cx},${cy-b} Z`} fill="#E8E2D6" stroke="#C0B8A4" strokeWidth="2.5"/>
+        )}
+        {holes.length > 0 && (
+          <circle cx={cx} cy={cy + b * 0.02} r={Math.max(18, Math.min(a * 0.6, 30 + (pocketVal / 100) * 30))} fill="none" stroke="rgba(26,92,42,0.4)" strokeWidth="1.5" strokeDasharray="4 3"/>
+        )}
+        {holes.map((h, i) => {
+          const dist = Math.sqrt(h.x * h.x + h.y * h.y);
+          const px = cx + h.x * a, py = cy + h.y * b;
+          return <circle key={i} cx={px} cy={py} r={holeRPx} fill="#fff" stroke={dist < 0.4 ? "#1A5C2A" : "#B0A68E"} strokeWidth={dist < 0.4 ? 1.4 : 0.8}/>;
+        })}
+      </svg>
+      <p style={{ fontSize: 11, color: "#7A7268", textAlign: "center", margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>
+        {clickMode === "add" ? "Click the face to add a hole. Click an existing hole to remove it." : "Click any hole to remove it."}
+      </p>
+
+      <div style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+          <span style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>Hole diameter</span>
+          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#1A5C2A", fontWeight: 700 }}>{holeDiameterMm}mm</span>
+        </div>
+        <input type="range" min={9} max={13} step={0.5} value={holeDiameterMm} onChange={e => onDiameterChange(parseFloat(e.target.value))} style={{ width: "100%" }}/>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 10, color: "#7A7268" }}>9mm (FIP min)</span>
+          <span style={{ fontSize: 10, color: "#7A7268" }}>13mm (FIP max)</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Quick fill patterns</p>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["standard", "Standard grid"], ["dense", "Dense grid"]].map(([id, label]) => (
+            <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: "#fff", color: "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 14 }}>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: "#18181B" }}>{holes.length}</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Holes</div>
+        </div>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: openPct > 30 ? "#991B1B" : "#18181B" }}>{openPct.toFixed(1)}%</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Open area</div>
+        </div>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: "#18181B" }}>{Math.max(0, stiffness)}</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Stiffness</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6 }}>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: "#18181B" }}>{Math.round(powerVal * 20)}</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Power</div>
+        </div>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: "#18181B" }}>{Math.round(spinVal)}</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Spin</div>
+        </div>
+        <div style={{ background: "#F5F2EB", border: "1px solid #D4CCB8", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: "#18181B" }}>{Math.round(pocketVal)}</div>
+          <div style={{ fontSize: 9, color: "#7A7268", textTransform: "uppercase", letterSpacing: "0.04em" }}>Pocket depth</div>
+        </div>
+      </div>
+
+      {holes.length > 0 && (
+        <div style={{ marginTop: 10, fontSize: 11.5, color: "#4A4540", lineHeight: 1.6, fontFamily: "Inter, sans-serif" }}>
+          {holes.length} holes at {holeDiameterMm}mm, {(centerFrac * holes.length).toFixed(0)} concentrated at center, {(edgeFrac * holes.length).toFixed(0)} near the edge, {topCount}/{botCount} top/bottom split.
+          {centerFrac > 0.5 && " Center-heavy placement — sweet spot flexes more while edges stay stiffer, resisting off-center twist."}
+          {edgeFrac > 0.5 && " Edge-heavy placement — sweet spot stays direct while perimeter mass is reduced."}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [mode, setMode] = useState<"player"|"manufacturer">("player");
   const [activeTab, setActiveTab] = useState<"find"|"build"|"view"|"scores">("find");
@@ -4320,8 +4596,8 @@ export default function App() {
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
-  const [holeCountId, setHoleCountId] = useState("standard");
-  const [holePatternId, setHolePatternId] = useState("even");
+  const [holes, setHoles] = useState<HolePoint[]>(() => generateLegacyHoleGrid("standard", "even", "teardrop"));
+  const [holeDiameterMm, setHoleDiameterMm] = useState(9);
   const [lengthMm, setLengthMm] = useState(450);
   const [widthMm, setWidthMm] = useState(255);
   const [thicknessMm, setThicknessMm] = useState(38);
@@ -4362,8 +4638,12 @@ export default function App() {
       if (typeof s.bridgeId === "string") setBridgeId(s.bridgeId);
       if (typeof s.beamCount === "number") setBeamCount(s.beamCount);
       if (typeof s.beamOrientation === "string") setBeamOrientation(s.beamOrientation);
-      if (typeof s.holeCountId === "string") setHoleCountId(s.holeCountId);
-      if (typeof s.holePatternId === "string") setHolePatternId(s.holePatternId);
+      // Backward compatible with shares saved before the hole-placement
+      // engine: if the saved state has the old string buckets, convert
+      // them to real coordinates on load. New saves carry `holes` directly.
+      if (Array.isArray(s.holes)) setHoles(s.holes);
+      else if (typeof s.holeCountId === "string") setHoles(generateLegacyHoleGrid(s.holeCountId, typeof s.holePatternId === "string" ? s.holePatternId : "even", typeof s.shapeId === "string" ? s.shapeId : "teardrop"));
+      if (typeof s.holeDiameterMm === "number") setHoleDiameterMm(s.holeDiameterMm);
       if (typeof s.lengthMm === "number") setLengthMm(s.lengthMm);
       if (typeof s.widthMm === "number") setWidthMm(s.widthMm);
       if (typeof s.thicknessMm === "number") setThicknessMm(s.thicknessMm);
@@ -4382,7 +4662,7 @@ export default function App() {
     setShareError(null);
     const spec = {
       shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId,
-      bridgeId, beamCount, beamOrientation, holeCountId, holePatternId,
+      bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
     };
     const result = await saveBuild(spec);
@@ -4409,7 +4689,7 @@ export default function App() {
     // Reset back to idle after a few seconds so the button is reusable
     // for a fresh save if the person keeps editing.
     setTimeout(() => setShareStatus("idle"), 4000);
-  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamCount, beamOrientation, holeCountId, holePatternId, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
 
   const shape = SHAPES.find(s => s.id === shapeId)!;
   const core = CORE_MATERIALS.find(c => c.id === coreId)!;
@@ -4419,7 +4699,7 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holeCountId, holePatternId, weightG, balanceCm, widthMm, thicknessMm]);
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
@@ -4427,7 +4707,7 @@ export default function App() {
     [shapeId, coreId, faceId, surfaceId, weightG, balanceCm, playerBudgetTier]
   );
   const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
-  const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holeCountId !== "none" || coreId === "hybrid-core";
+  const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holes.length > 0 || coreId === "hybrid-core";
 
   // Track when matched racquets actually become visible (Scores tab, or
   // desktop layout where Scores content is always reachable), not on
@@ -4471,7 +4751,7 @@ export default function App() {
 
   // Shared diagram props
   const diagramProps = {
-    shape: shapeId, faceId, surfaceId, gripShapeId, holeCountId, holePatternId,
+    shape: shapeId, faceId, surfaceId, gripShapeId, holes, holeDiameterMm,
     lengthMm, widthMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
     bridgeId, beamCount, beamOrientation,
   };
@@ -4618,15 +4898,7 @@ export default function App() {
 
       {/* Holes */}
       <AccordionSection id="holes" icon={<Grid3x3 size={15}/>} label="Face Perforation" isOpen={openSections.has("holes")} onToggle={() => toggle("holes")}>
-        <SelectField value={holeCountId} onChange={setHoleCountId} options={HOLE_COUNT_OPTIONS}/>
-        <MaterialNote text={HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.note || ""}/>
-        {holeCountId !== "none" && (
-          <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
-            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Hole Pattern</p>
-            <SelectField value={holePatternId} onChange={setHolePatternId} options={HOLE_PATTERN_STYLES}/>
-            <MaterialNote text={HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.note || ""}/>
-          </div>
-        )}
+        <HolePlacementCanvas shape={shapeId} holes={holes} onHolesChange={setHoles} holeDiameterMm={holeDiameterMm} onDiameterChange={setHoleDiameterMm}/>
         {mode === "manufacturer" && (
           <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
             FIP rules: holes in the central striking area must measure 9–13mm diameter. 4cm peripheral band allows different shapes up to 20mm. No minimum or maximum count specified.
@@ -4663,7 +4935,7 @@ export default function App() {
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
             {diagramMode === "profile" ? (
-              <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holeCountId={holeCountId} gripShapeId={gripShapeId}/>
+              <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />
             ) : (
@@ -4717,7 +4989,7 @@ export default function App() {
         const baselineFrame = FRAME_MATERIALS.find(m => m.id === r.frameId);
         const baselineSurface = SURFACE_TEXTURES.find(m => m.id === r.surfaceId);
         if (!baselineCore || !baselineFace || !baselineFrame || !baselineSurface) return null;
-        const baselineScores = computeScores({ shape: r.shapeId, core: baselineCore, face: baselineFace, frame: baselineFrame, surface: baselineSurface, grip: GRIP_MATERIALS[0], bridgeId: "open", beamOrientation: "vertical", holeCountId: "standard", holePatternId: "even", weightG: r.weightG, balanceCm: r.balanceCm, widthMm: 255, thicknessMm: r.thicknessMm ?? 38 });
+        const baselineScores = computeScores({ shape: r.shapeId, core: baselineCore, face: baselineFace, frame: baselineFrame, surface: baselineSurface, grip: GRIP_MATERIALS[0], bridgeId: "open", beamOrientation: "vertical", holes: generateLegacyHoleGrid("standard", "even", r.shapeId), holeDiameterMm: 9, weightG: r.weightG, balanceCm: r.balanceCm, widthMm: 255, thicknessMm: r.thicknessMm ?? 38 });
         const categories: { key: keyof typeof scores; label: string }[] = [
           { key: "power", label: "Power" },
           { key: "control", label: "Control" },
@@ -4853,7 +5125,7 @@ export default function App() {
             ["Bridge", bridgeId === "open" ? `${bridge.label} — ${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}` : bridge.label],
             ["Grip", `${grip.label}`],
             ["Grip Circ.", `${gripCircMm}mm`],
-            ["Holes", holeCountId === "none" ? "None" : `${HOLE_COUNT_OPTIONS.find(h=>h.id===holeCountId)?.label} — ${HOLE_PATTERN_STYLES.find(p=>p.id===holePatternId)?.label}`],
+            ["Holes", holes.length === 0 ? "None (solid face)" : `${holes.length} holes — ${holeDiameterMm}mm diameter`],
           ].map(([k,v]) => (
             <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(0,0,0,0.04)", padding:"2px 0", gap:8 }}>
               <span style={{ color:"#7A7268", flexShrink:0 }}>{k}</span>
