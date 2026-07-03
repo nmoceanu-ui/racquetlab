@@ -43,9 +43,9 @@ const FRAME_MATERIALS = [
   { id: "hybrid-frame", label: "Carbon/Fiberglass Hybrid Frame", stiffness: 3, weightImpact: "Mid", torsionalRigidity: "Medium", vibrationFrequency: "Medium", note: "Alternating or combined carbon and fiberglass layers in the frame perimeter. Carbon provides structural stiffness; fiberglass adds impact toughness and vibration damping at the perimeter. Better vibration characteristics than pure carbon (fiberglass layers act as damping interlayers), better stiffness than pure fiberglass. Wilson Bela LT, Nox Equation Soft, Head Speed Motion. Most common frame choice for intermediate-tier racquets.", manufacturingNote: "Single mixed pre-preg or separately applied layers. Verify layup order — carbon-outer vs. glass-outer produces different surface properties and durability." },
   { id: "basalt-frame", label: "Basalt Fiber Frame", stiffness: 3, weightImpact: "Mid", torsionalRigidity: "Medium-high", vibrationFrequency: "Medium", note: "Volcanic rock-derived mineral fiber (see basalt-face for full material description). Frame benefit: more consistent stiffness across temperature range of outdoor play. Most padel racquets soften slightly in summer heat — basalt frames reduce this variation. Vibration frequency medium — less harsh than full carbon but more direct than fiberglass. Essentially unused commercially in padel as a primary frame material. Genuine differentiation story.", manufacturingNote: "Processing identical to fiberglass. Minor cost premium over E-glass. Must specify from suppliers with consistent fiber quality — basalt properties vary by geographic source." },
   { id: "auxetic-frame", label: "Auxetic Carbon Frame", stiffness: 4, weightImpact: "Light-mid", torsionalRigidity: "High", vibrationFrequency: "High", note: "Negative Poisson's ratio: frame material expands laterally on impact rather than contracting. Ball impact causes material to move toward the contact center rather than away — extending dwell time and expanding the effective sweet spot. Head's Auxetic 2.0 in the Coello Pro and Speed Motion. Achieved through specific fiber weave architectures (re-entrant hexagonal lattice patterns) rather than special fiber chemistry — standard carbon fibers arranged in an auxetic geometry. Head holds IP on this in racquet sports — any competitive implementation requires patent counsel review.", manufacturingNote: "Not available from standard padel OEM factories. Requires specialist composite supplier with auxetic weave capability. Head AG patents cover racquet-specific auxetic applications." },
-  { id: "hollow-tubular-frame", label: "Hollow Tubular Frame", stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "Very high", note: "Standard in tennis for 40+ years, essentially absent from padel. A hollow tube distributes bending loads to the outer walls (perimeter) where they generate highest internal stresses — structurally more efficient than solid cross-section. A 1.5mm-wall hollow carbon tube is stiffer in bending per gram than a 5mm solid carbon rod of the same outer diameter. Manufacturing: bladder molding — pre-preg carbon wrapped around inflatable nylon bladder, placed in clamshell mold, heated to 140–150°C while bladder pressurized to 5–8 bar, forcing carbon against mold walls. After cure (~25 min), demolded. In hollow tube padel construction: NO foam inside the frame tube — foam sits in the central face area. Throat is a continuous narrowing of the same hollow tube — structurally continuous, eliminating the main failure zone of current padel construction. Weight: 10–18g lighter than foam-filled equivalent at same stiffness. Vibration frequency is higher — some players describe as 'livelier'. Can cause arm fatigue over long sessions if not compensated with damping materials at grip/throat.", manufacturingNote: "Bladder molding tooling: $8,000–$14,000 vs $3,000–$5,000 for standard padel molds. Bladder nylon inserts are low-cost per-part consumables. Cure time similar to standard padel (~25–30 min). Critical design element: transition from hollow perimeter tube to the face panel area." },
-  { id: "honeycomb-reinforced-frame", label: "Honeycomb-Reinforced Frame", stiffness: 4, weightImpact: "Mid", torsionalRigidity: "High", vibrationFrequency: "Medium-high", note: "Structural honeycomb core (aluminum alloy or Nomex aramid paper) bonded inside a hollow carbon tube frame. The honeycomb occupies the void inside the tubular frame perimeter, providing shear resistance in the frame wall — preventing thin carbon walls from buckling under compressive load. Standard in premium tennis frames since the 1970s and aerospace sandwich panels. Near-zero density but very high out-of-plane shear modulus — stabilizes frame wall against local buckling without meaningful weight. Vs solid foam fill: 30–50% weight reduction, higher structural rigidity, better vibration damping (honeycomb cell geometry excels at absorbing high-frequency vibrations). Not commercially applied in padel.", manufacturingNote: "More complex than standard hollow tube. Honeycomb must be pre-cut to frame cross-section profile and bonded inside before or during cure. Nomex honeycomb preferred over aluminum for vibration characteristics. Adds cost vs hollow tube alone." },
-  { id: "two-piece-clamshell-frame", label: "Two-Piece Clamshell Frame (Modular Hollow)", stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "High", note: "Frame manufactured as two horizontal halves — the racquet laid flat, split along the face plane — bonded together around a pre-placed foam insert. Direct precedent in tennis patents (US6071203 'Two piece sports racquet', US6800239). Manufacturing sequence: (1) Upper half laid up in carbon pre-preg in its half-mold and B-staged (partially cured — pliable but formed). (2) Foam insert placed inside lower half. (3) Upper half pressed onto lower half. (4) Full press at 140–150°C completes cure and fuses the two halves. The bond line runs around the full frame perimeter at the face mid-plane — under ball impact loads the seam is in shear, which is the optimal loading condition for co-cure bonds. Co-cure bonding achieves strength indistinguishable from one-piece construction in mechanical testing. Throat-to-handle continues as a continuous hollow tube — only the face/frame section uses the clamshell approach, avoiding the highest-stress junction. Key advantages: foam is mechanically captured without bonding (retained by geometry and 2–3% compression fit), frame mold reused for all foam variants, holes can be pre-formed during cure using pin inserts rather than drilled afterward. IP status: this specific combination — hollow tube padel frame + captured foam cassette + clamshell bond + solid face geometry — is novel in padel and potentially patentable.", manufacturingNote: "Requires upper and lower half-molds (two tools per frame shape). Alignment fixtures critical. Total tooling: ~$12,000–$18,000 vs $3,000–$5,000 conventional. Assembly adds 2–3 steps per unit. Long-term per-unit economics potentially favorable due to modular foam line extensions." },
+  { id: "hollow-tubular-frame", label: "Hollow Tubular Frame", experimental: true, stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "Very high", note: "Standard in tennis for 40+ years, essentially absent from padel. A hollow tube distributes bending loads to the outer walls (perimeter) where they generate highest internal stresses — structurally more efficient than solid cross-section. A 1.5mm-wall hollow carbon tube is stiffer in bending per gram than a 5mm solid carbon rod of the same outer diameter. Manufacturing: bladder molding — pre-preg carbon wrapped around inflatable nylon bladder, placed in clamshell mold, heated to 140–150°C while bladder pressurized to 5–8 bar, forcing carbon against mold walls. After cure (~25 min), demolded. In hollow tube padel construction: NO foam inside the frame tube — foam sits in the central face area. Throat is a continuous narrowing of the same hollow tube — structurally continuous, eliminating the main failure zone of current padel construction. Weight: 10–18g lighter than foam-filled equivalent at same stiffness. Vibration frequency is higher — some players describe as 'livelier'. Can cause arm fatigue over long sessions if not compensated with damping materials at grip/throat.", manufacturingNote: "Bladder molding tooling: $8,000–$14,000 vs $3,000–$5,000 for standard padel molds. Bladder nylon inserts are low-cost per-part consumables. Cure time similar to standard padel (~25–30 min). Critical design element: transition from hollow perimeter tube to the face panel area." },
+  { id: "honeycomb-reinforced-frame", label: "Honeycomb-Reinforced Frame", experimental: true, stiffness: 4, weightImpact: "Mid", torsionalRigidity: "High", vibrationFrequency: "Medium-high", note: "Structural honeycomb core (aluminum alloy or Nomex aramid paper) bonded inside a hollow carbon tube frame. The honeycomb occupies the void inside the tubular frame perimeter, providing shear resistance in the frame wall — preventing thin carbon walls from buckling under compressive load. Standard in premium tennis frames since the 1970s and aerospace sandwich panels. Near-zero density but very high out-of-plane shear modulus — stabilizes frame wall against local buckling without meaningful weight. Vs solid foam fill: 30–50% weight reduction, higher structural rigidity, better vibration damping (honeycomb cell geometry excels at absorbing high-frequency vibrations). Not commercially applied in padel.", manufacturingNote: "More complex than standard hollow tube. Honeycomb must be pre-cut to frame cross-section profile and bonded inside before or during cure. Nomex honeycomb preferred over aluminum for vibration characteristics. Adds cost vs hollow tube alone." },
+  { id: "two-piece-clamshell-frame", label: "Two-Piece Clamshell Frame (Modular Hollow)", experimental: true, stiffness: 5, weightImpact: "Light", torsionalRigidity: "Very high", vibrationFrequency: "High", note: "Frame manufactured as two horizontal halves — the racquet laid flat, split along the face plane — bonded together around a pre-placed foam insert. Direct precedent in tennis patents (US6071203 'Two piece sports racquet', US6800239). Manufacturing sequence: (1) Upper half laid up in carbon pre-preg in its half-mold and B-staged (partially cured — pliable but formed). (2) Foam insert placed inside lower half. (3) Upper half pressed onto lower half. (4) Full press at 140–150°C completes cure and fuses the two halves. The bond line runs around the full frame perimeter at the face mid-plane — under ball impact loads the seam is in shear, which is the optimal loading condition for co-cure bonds. Co-cure bonding achieves strength indistinguishable from one-piece construction in mechanical testing. Throat-to-handle continues as a continuous hollow tube — only the face/frame section uses the clamshell approach, avoiding the highest-stress junction. Key advantages: foam is mechanically captured without bonding (retained by geometry and 2–3% compression fit), frame mold reused for all foam variants, holes can be pre-formed during cure using pin inserts rather than drilled afterward. IP status: this specific combination — hollow tube padel frame + captured foam cassette + clamshell bond + solid face geometry — is novel in padel and potentially patentable.", manufacturingNote: "Requires upper and lower half-molds (two tools per frame shape). Alignment fixtures critical. Total tooling: ~$12,000–$18,000 vs $3,000–$5,000 conventional. Assembly adds 2–3 steps per unit. Long-term per-unit economics potentially favorable due to modular foam line extensions." },
 ];
 
 const SURFACE_TEXTURES = [
@@ -2526,13 +2526,21 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // ---------------------------------------------------------------------------
 
 function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId }) {
-  const STROKE = "#4A4540";
+  const STROKE = "#2A2620"; // darker, higher-contrast outline (was #4A4540, too faint)
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const faceTint = faceVisual.tint;
   const coreTint = PROFILE_CORE_TINT[coreObj?.id] || "#E3DCC8";
-  const frameTint = frameObj?.id?.includes("carbon") ? "#1F1F24" : "#2B2A26";
+  // Profile frame color: previously near-black (#1F1F24 / #2B2A26), which
+  // made dark strokes and mid-grey labels vanish into it — everything
+  // blended together. Now a medium slate/green that reads as a visible
+  // BORDER enclosing a light foam interior, rather than a dark solid fill.
+  // The frame outline is what the eye follows continuously from head
+  // through throat into the grip, exactly as a real hollow-tube frame
+  // would appear in cross-section.
+  const frameTint = frameObj?.id?.includes("carbon") ? "#3D4A44" : "#4A4A42";
+  const frameBorderColor = "#1A5C2A"; // the continuous frame-border stroke color, high-contrast against the light foam fill
 
   // Hollow frame types — these get a cross-section showing the wall + void
   const isHollowTubular = frameObj?.id === "hollow-tubular-frame";
@@ -2598,28 +2606,34 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
 
       <ellipse cx={(startX+handleEndX)/2+6} cy={midY+headThick/2+16} rx={(handleEndX-startX)/2.1} ry={8} fill="#000" opacity="0.07"/>
 
-      {/* Main silhouette */}
-      <path d={silhouette} fill={showHollowSection ? frameTint : faceTint} stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+      {/* Main silhouette — for hollow frames, fill LIGHT (foam interior)
+          with a strong frame-border stroke so the border reads as a
+          continuous outline from head through throat into the grip,
+          rather than a dark solid blob everything else disappears into.
+          Conventional solid frames keep the material face tint. */}
+      <path d={silhouette} fill={showHollowSection ? coreTint : faceTint} stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "3" : "2"} strokeLinejoin="round"/>
 
       {/* For hollow/honeycomb/clamshell frames: show the internal void */}
       {showHollowSection && (
         <>
-          {/* Internal void — shows as lighter/empty space inside the carbon walls */}
-          <path d={innerVoid} fill={isHoneycombFrame ? "url(#honeycombPat)" : isClamshell ? coreTint : "#F0EBE0"} opacity={isHoneycombFrame ? 0.9 : isClamshell ? 0.6 : 0.85}/>
+          {/* Internal void — now that the silhouette is light foam, the
+              void reads via a subtle inset tint + border rather than a
+              light-on-dark reveal. */}
+          <path d={innerVoid} fill={isHoneycombFrame ? "url(#honeycombPat)" : isClamshell ? coreTint : "#FBF9F4"} stroke={frameTint} strokeWidth="0.75" opacity={isHoneycombFrame ? 0.9 : 0.7}/>
           {/* Core layer inside the void */}
-          <path d={`M ${startX+headLen*0.06},${midY-headThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY-throatThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY+throatThick/2-wallPx-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-wallPx-faceSkinPx} Z`} fill={coreTint} opacity={isClamshell ? 0.75 : 0.5}/>
+          <path d={`M ${startX+headLen*0.06},${midY-headThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY-throatThick/2+wallPx+faceSkinPx} L ${headEndX-4},${midY+throatThick/2-wallPx-faceSkinPx} L ${startX+headLen*0.06},${midY+headThick/2-wallPx-faceSkinPx} Z`} fill={coreTint} opacity={isClamshell ? 0.85 : 0.55}/>
           {/* Clamshell seam line — the horizontal split plane where the two halves bond */}
           {isClamshell && (
             <>
-              <line x1={startX+headLen*0.04} y1={midY} x2={headEndX} y2={midY} stroke="#1A5C2A" strokeWidth="1.2" strokeDasharray="5 2" opacity="0.75"/>
-              <text x={headEndX-30} y={midY-3} fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">bond seam</text>
+              <line x1={startX+headLen*0.04} y1={midY} x2={headEndX} y2={midY} stroke="#991B1B" strokeWidth="1.2" strokeDasharray="5 2" opacity="0.85"/>
+              <text x={headEndX-30} y={midY-3} fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#991B1B" fontWeight="700">bond seam</text>
             </>
           )}
           {/* Wall thickness labels */}
-          <line x1={xsX} y1={xsTop-4} x2={xsX} y2={xsTop+wallPx+2} stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 1"/>
-          <line x1={xsX} y1={xsBot+4} x2={xsX} y2={xsBot-wallPx-2} stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 1"/>
-          <text x={xsX+5} y={xsTop+wallPx/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#1A5C2A">carbon wall</text>
-          <text x={xsX+5} y={xsTop+xsThick/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">{isHoneycombFrame ? "honeycomb core" : isClamshell ? "foam cassette" : "hollow void"}</text>
+          <line x1={xsX} y1={xsTop-4} x2={xsX} y2={xsTop+wallPx+2} stroke="#18181B" strokeWidth="1" strokeDasharray="2 1"/>
+          <line x1={xsX} y1={xsBot+4} x2={xsX} y2={xsBot-wallPx-2} stroke="#18181B" strokeWidth="1" strokeDasharray="2 1"/>
+          <text x={xsX+5} y={xsTop+wallPx/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#18181B" fontWeight="700">carbon wall</text>
+          <text x={xsX+5} y={xsTop+xsThick/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#4A4540">{isHoneycombFrame ? "honeycomb core" : isClamshell ? "foam cassette" : "hollow void"}</text>
         </>
       )}
 
@@ -2647,7 +2661,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
 
       {/* Sheen + outline */}
       <path d={silhouette} fill="url(#profileSheen)"/>
-      <path d={silhouette} fill="none" stroke={STROKE} strokeWidth="2" strokeLinejoin="round"/>
+      <path d={silhouette} fill="none" stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "2.5" : "2"} strokeLinejoin="round"/>
 
       {/* Frame construction badge */}
       {showHollowSection && (
@@ -2660,10 +2674,10 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
       )}
 
       {/* Dimension labels */}
-      <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#6B6960">
-        <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#4A4540" strokeWidth="1"/>
-        <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#4A4540" strokeWidth="1"/>
-        <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#4A4540" strokeWidth="1"/>
+      <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#2A2620">
+        <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#2A2620" strokeWidth="1"/>
+        <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
         <text x={startX+headLen*0.5+12} y={midY+4}>{thicknessMm}mm</text>
         <text x={startX+headLen/2} y={midY+headThick/2+36} textAnchor="middle" fontSize="10">head</text>
         <text x={headEndX+throatLen/2} y={midY+throatThick/2+36} textAnchor="middle" fontSize="10">throat</text>
@@ -2981,6 +2995,14 @@ function RacquetIllustration3D({
   // not from literally rotating the geometry.
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
   const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
+  // Hollow-tube constructions get a distinct inner border in the front
+  // view — a second outline just inside the foam face, reading as the
+  // inner wall of the perimeter tube. This is what visually distinguishes
+  // "the frame is a hollow tube with foam sitting inside it" from a
+  // conventional solid co-molded face, matching how the Profile view
+  // shows the same construction in cross-section.
+  const isHollowFrameIllust = frameObj?.id === "hollow-tubular-frame" || frameObj?.id === "two-piece-clamshell-frame" || frameObj?.id === "honeycomb-reinforced-frame";
+  const tubeWallOutline = isHollowFrameIllust ? headOutlinePath(shape, cx, topY + 14, halfWidth - 17, headHeight - 28) : "";
 
   // Conservative approximation of the inner face's half-width at a given
   // vertical fraction (0=top tip, 1=bottom where the head meets the
@@ -3312,6 +3334,16 @@ function RacquetIllustration3D({
         strokeDashoffset={approxPerimeter * 0.86}
       />
 
+      {/* Hollow-tube frame: inner wall border. The band between this line
+          and the outer rim reads as the perimeter tube wall; the foam
+          face sits inside it. Only drawn for hollow constructions, so a
+          conventional solid frame shows no inner border. */}
+      {isHollowFrameIllust && (
+        <>
+          <path d={tubeWallOutline} fill="none" stroke="#1A5C2A" strokeWidth="1.6" opacity="0.55" strokeDasharray="3 2.5" strokeLinejoin="round"/>
+          <path d={innerOutline} fill="none" stroke="#1A5C2A" strokeWidth="1" opacity="0.3" strokeLinejoin="round"/>
+        </>
+      )}
       <g clipPath="url(#illustInnerClip)">
         <ellipse
           cx={cx - halfWidth * 0.3}
@@ -3409,7 +3441,14 @@ function RacquetIllustration3D({
 // UI PRIMITIVES
 // ---------------------------------------------------------------------------
 
-function SelectField({ value, onChange, options }) {
+function SelectField({ value, onChange, options, groupExperimental }: { value: any; onChange: (v: any) => void; options: any[]; groupExperimental?: boolean }) {
+  // When groupExperimental is set, options flagged { experimental: true }
+  // are split into a separate, clearly-labeled <optgroup> so unproven
+  // theoretical constructions are never presented as interchangeable with
+  // proven, commercially-shipping materials. Other selectors pass no flag
+  // and render as a flat list exactly as before.
+  const proven = groupExperimental ? options.filter(o => !o.experimental) : options;
+  const experimental = groupExperimental ? options.filter(o => o.experimental) : [];
   return (
     <select
       value={value}
@@ -3423,7 +3462,18 @@ function SelectField({ value, onChange, options }) {
         WebkitAppearance: "auto",
       }}
     >
-      {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+      {groupExperimental && experimental.length > 0 ? (
+        <>
+          <optgroup label="Proven — commercially produced">
+            {proven.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </optgroup>
+          <optgroup label="⚗ Experimental — theoretical, unproven in padel">
+            {experimental.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </optgroup>
+        </>
+      ) : (
+        options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)
+      )}
     </select>
   );
 }
@@ -5103,7 +5153,15 @@ export default function App() {
 
       {/* Frame */}
       <AccordionSection id="frame" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>} label="Frame Material" isOpen={openSections.has("frame")} onToggle={() => toggle("frame")}>
-        <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS}/>
+        <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS} groupExperimental/>
+        {(frame as any).experimental && (
+          <div style={{ marginTop: 10, padding: "10px 12px", background: "#FEF3C7", border: "1px solid #D97706", borderRadius: 8 }}>
+            <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#92400E", marginBottom: 3 }}>⚗ Experimental construction</div>
+            <p style={{ fontSize: 12, color: "#78350F", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+              This construction is theoretical — sound in engineering principle and used in adjacent sports, but not commercially proven in padel. The physics estimates below are directional, not validated against production data. Treat it as a research direction requiring prototyping and testing, not a drop-in spec.
+            </p>
+          </div>
+        )}
         <MaterialNote text={frame.note}/>
         {mode === "manufacturer" && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
       </AccordionSection>
