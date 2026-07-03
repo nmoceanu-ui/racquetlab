@@ -4424,7 +4424,11 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
     const { cx, cy, a, b } = faceGeom();
     const nx = (px - cx) / a, ny = (py - cy) / b;
 
-    const clickRadiusNorm = (holeDiameterMm / 255) * 1.8; // approximate hit-test radius in normalized units
+    // Hit-test radius derived from the same corrected physical hole size
+    // (normalized to -1..1 face units), with a small multiplier for click
+    // forgiveness — not an unrelated magic number.
+    const holeRadiusNorm = (holeDiameterMm / 255); // hole diameter as a fraction of full face width, in normalized units
+    const clickRadiusNorm = holeRadiusNorm * 1.6; // ~1.6x the hole's own radius as a forgiving click target
     const hitIdx = holes.findIndex(h => Math.hypot(h.x - nx, h.y - ny) < clickRadiusNorm);
     if (hitIdx >= 0) {
       onHolesChange(holes.filter((_, i) => i !== hitIdx));
@@ -4470,7 +4474,15 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
   };
 
   const { cx, cy, a, b } = faceGeom();
-  const holeRPx = Math.max(3, (holeDiameterMm / 255) * a * 2.1);
+  // Scale factor derived directly from the actual face geometry: 'a' is the
+  // face's half-width in svg units, representing a real 255mm/2 = 127.5mm
+  // half-face in the physical world. This ties hole size to the true
+  // mm-to-pixel ratio of THIS canvas, rather than an arbitrary constant —
+  // a 9mm hole should render at the same proportion to the face as it does
+  // on a real racquet (roughly 1/28th of the face width), not an
+  // eyeballed size that happens to look clickable.
+  const pxPerMm = (a * 2) / 255; // face half-width 'a' represents 127.5mm, so full width (2a) represents 255mm
+  const holeRPx = Math.max(2.2, (holeDiameterMm * pxPerMm) / 2);
 
   // Real physics, computed the exact same way the scoring engine computes
   // it — this display is never approximated separately from the actual
