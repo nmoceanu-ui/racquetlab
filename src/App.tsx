@@ -2626,14 +2626,16 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
           {isClamshell && (
             <>
               <line x1={startX+headLen*0.04} y1={midY} x2={headEndX} y2={midY} stroke="#991B1B" strokeWidth="1.2" strokeDasharray="5 2" opacity="0.85"/>
-              <text x={headEndX-30} y={midY-3} fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#991B1B" fontWeight="700">bond seam</text>
+              <text x={headEndX-24} y={midY-5} fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#991B1B" fontWeight="700" textAnchor="middle">bond seam</text>
             </>
           )}
-          {/* Wall thickness labels */}
-          <line x1={xsX} y1={xsTop-4} x2={xsX} y2={xsTop+wallPx+2} stroke="#18181B" strokeWidth="1" strokeDasharray="2 1"/>
-          <line x1={xsX} y1={xsBot+4} x2={xsX} y2={xsBot-wallPx-2} stroke="#18181B" strokeWidth="1" strokeDasharray="2 1"/>
-          <text x={xsX+5} y={xsTop+wallPx/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#18181B" fontWeight="700">carbon wall</text>
-          <text x={xsX+5} y={xsTop+xsThick/2+4} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#4A4540">{isHoneycombFrame ? "honeycomb core" : isClamshell ? "foam cassette" : "hollow void"}</text>
+          {/* Wall + core callout labels — placed ABOVE the head with a
+              leader line into the wall, so they never overlap the centered
+              thickness dimension (38mm) or the bond-seam label. */}
+          <line x1={startX+headLen*0.18} y1={xsTop+wallPx/2} x2={startX+headLen*0.18} y2={midY-headThick/2-20} stroke="#18181B" strokeWidth="0.75"/>
+          <text x={startX+headLen*0.18} y={midY-headThick/2-24} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#18181B" fontWeight="700" textAnchor="middle">carbon wall</text>
+          <line x1={startX+headLen*0.30} y1={midY} x2={startX+headLen*0.30} y2={midY+headThick/2+18} stroke="#4A4540" strokeWidth="0.75"/>
+          <text x={startX+headLen*0.30} y={midY+headThick/2+29} fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#4A4540" textAnchor="middle">{isHoneycombFrame ? "honeycomb core" : isClamshell ? "foam cassette" : "hollow void"}</text>
         </>
       )}
 
@@ -2666,22 +2668,23 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
       {/* Frame construction badge */}
       {showHollowSection && (
         <g>
-          <rect x={startX} y={midY+headThick/2+22} width={isHoneycombFrame ? 154 : isClamshell ? 168 : 128} height={16} rx={4} fill="#EAF3EC"/>
-          <text x={startX+6} y={midY+headThick/2+33} fontFamily="'JetBrains Mono', monospace" fontSize="9" fill="#1A5C2A" fontWeight="700">
+          <rect x={startX} y={midY+headThick/2+40} width={isHoneycombFrame ? 154 : isClamshell ? 168 : 128} height={16} rx={4} fill="#EAF3EC"/>
+          <text x={startX+6} y={midY+headThick/2+51} fontFamily="'JetBrains Mono', monospace" fontSize="9" fill="#1A5C2A" fontWeight="700">
             {isHoneycombFrame ? "HONEYCOMB REINFORCED" : isClamshell ? "TWO-PIECE CLAMSHELL — MODULAR" : "HOLLOW TUBULAR — TENNIS-DERIVED"}
           </text>
         </g>
       )}
 
-      {/* Dimension labels */}
+      {/* Dimension labels — pushed down when a hollow-frame badge and its
+          callouts are present, so they clear the badge instead of colliding. */}
       <g fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#2A2620">
         <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
         <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#2A2620" strokeWidth="1"/>
         <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
         <text x={startX+headLen*0.5+12} y={midY+4}>{thicknessMm}mm</text>
-        <text x={startX+headLen/2} y={midY+headThick/2+36} textAnchor="middle" fontSize="10">head</text>
-        <text x={headEndX+throatLen/2} y={midY+throatThick/2+36} textAnchor="middle" fontSize="10">throat</text>
-        <text x={throatEndX+(handleEndX-throatEndX)/2} y={midY+handleThick/2+36} textAnchor="middle" fontSize="10">handle</text>
+        <text x={startX+headLen/2} y={midY+headThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">head</text>
+        <text x={headEndX+throatLen/2} y={midY+throatThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">throat</text>
+        <text x={throatEndX+(handleEndX-throatEndX)/2} y={midY+handleThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">handle</text>
       </g>
     </svg>
   );
@@ -3161,7 +3164,37 @@ function RacquetIllustration3D({
           than a cutout from a larger solid shape. This is the same
           technique already proven to work for the flat spec-view
           diagram's throat rendering. */}
-      {bridgeId === "closed" ? (
+      {isHollowFrameIllust ? (() => {
+        // TENNIS-STYLE throat for hollow-tube frames: two frame rails
+        // sweep down from the head and rejoin at the handle, with an open
+        // teardrop gap between them closed at the top by a bridge — the
+        // visual signature of a tube frame continuing unbroken around the
+        // whole racquet, versus the solid padel throat below.
+        const bridgeY = throatTopY + 8;
+        const bridgeHalf = headBottomHalfWidth - 2;
+        const railTopHalf = headBottomHalfWidth;
+        const neckHalf = handleWidth / 2 + 2;
+        const railW = 7;
+        const leftRail = `M ${cx - railTopHalf} ${throatTopY + 2}
+          C ${cx - railTopHalf} ${throatMidY} ${cx - neckHalf - railW} ${throatBottomY - 18} ${cx - neckHalf} ${throatBottomY}
+          L ${cx - neckHalf + railW} ${throatBottomY}
+          C ${cx - railTopHalf + railW + 2} ${throatMidY} ${cx - railTopHalf + railW} ${throatMidY} ${cx - railTopHalf + railW} ${throatTopY + 2} Z`;
+        const rightRail = `M ${cx + railTopHalf} ${throatTopY + 2}
+          C ${cx + railTopHalf} ${throatMidY} ${cx + neckHalf + railW} ${throatBottomY - 18} ${cx + neckHalf} ${throatBottomY}
+          L ${cx + neckHalf - railW} ${throatBottomY}
+          C ${cx + railTopHalf - railW - 2} ${throatMidY} ${cx + railTopHalf - railW} ${throatMidY} ${cx + railTopHalf - railW} ${throatTopY + 2} Z`;
+        return (
+          <g>
+            <path d={leftRail} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"/>
+            <path d={rightRail} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"/>
+            <path
+              d={`M ${cx - bridgeHalf} ${bridgeY} Q ${cx} ${bridgeY + 9} ${cx + bridgeHalf} ${bridgeY} L ${cx + bridgeHalf} ${bridgeY - 6} Q ${cx} ${bridgeY + 3} ${cx - bridgeHalf} ${bridgeY - 6} Z`}
+              fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"
+            />
+            <text x={cx} y={throatMidY + 8} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A" opacity="0.6" textAnchor="middle">bridge throat</text>
+          </g>
+        );
+      })() : bridgeId === "closed" ? (
         <path
           d={`M ${cx + headBottomHalfWidth},${throatTopY} L ${throatOutlineRight} L ${throatOutlineLeft} Z`}
           fill="url(#throatGrad3d)"
