@@ -4394,13 +4394,20 @@ function PlayabilityRadar({ scores }) {
 // engine uses, so what's shown here is never an approximation layered on
 // top of the real calculation — it IS the real calculation.
 // ---------------------------------------------------------------------------
-function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDiameterChange }: {
+function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, holeDiameterMm, onDiameterChange }: {
   shape: string; holes: HolePoint[]; onHolesChange: (h: HolePoint[]) => void;
+  onUndo: () => void; canUndo: boolean;
   holeDiameterMm: number; onDiameterChange: (d: number) => void;
 }) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [clickMode, setClickMode] = useState<"add" | "remove">("add");
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  const [lastBlockedMsg, setLastBlockedMsg] = useState<string | null>(null);
   const VB = 280; // svg viewBox size
+  // Grid spacing derived the same way the legacy-bucket converter derives
+  // it — a "standard" density pitch (~14mm) is a sensible default snap
+  // interval, expressed in normalized face-width units.
+  const GRID_PITCH_NORM = 14 / 255 * 2; // ~0.11 — matches the standard-density grid pitch used elsewhere in this file
 
   const faceGeom = () => {
     const cx = VB * 0.5, cy = VB * 0.44;
@@ -4422,19 +4429,54 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
     const px = ((e.clientX - rect.left) / rect.width) * VB;
     const py = ((e.clientY - rect.top) / rect.height) * VB;
     const { cx, cy, a, b } = faceGeom();
-    const nx = (px - cx) / a, ny = (py - cy) / b;
+    let nx = (px - cx) / a, ny = (py - cy) / b;
 
     // Hit-test radius derived from the same corrected physical hole size
     // (normalized to -1..1 face units), with a small multiplier for click
     // forgiveness — not an unrelated magic number.
-    const holeRadiusNorm = (holeDiameterMm / 255); // hole diameter as a fraction of full face width, in normalized units
+    const holeDiameterNorm = (holeDiameterMm / 255); // hole diameter as a fraction of full face width, in normalized units
+    const holeRadiusNorm = holeDiameterNorm / 2;
     const clickRadiusNorm = holeRadiusNorm * 1.6; // ~1.6x the hole's own radius as a forgiving click target
     const hitIdx = holes.findIndex(h => Math.hypot(h.x - nx, h.y - ny) < clickRadiusNorm);
     if (hitIdx >= 0) {
       onHolesChange(holes.filter((_, i) => i !== hitIdx));
-    } else if (clickMode === "add" && inFace(nx, ny)) {
-      onHolesChange([...holes, { x: nx, y: ny }]);
+      setLastBlockedMsg(null);
+      return;
     }
+    if (clickMode !== "add") return;
+
+    // Grid snap — rounds the click to the nearest grid intersection before
+    // placing, so a full pattern can be built quickly and stays visually
+    // regular. Free placement (snap off) is unaffected.
+    if (snapToGrid) {
+      nx = Math.round(nx / GRID_PITCH_NORM) * GRID_PITCH_NORM;
+      ny = Math.round(ny / GRID_PITCH_NORM) * GRID_PITCH_NORM;
+    }
+    if (!inFace(nx, ny)) return;
+
+    // Ligament check — FIP sets no minimum spacing, so this is deliberately
+    // a WARNING rather than a block: placing two holes close enough that
+    // the carbon between them gets thin is legal and sometimes exactly
+    // what someone wants to test (see the earlier hole-physics discussion
+    // on structural ligament width). Silently blocking it would prevent
+    // testing that exact scenario, so instead the closest neighbor
+    // distance is surfaced as a note under the canvas.
+    // Ligament = gap between the two holes' EDGES = center-to-center
+    // distance minus BOTH radii. Every hole in this tool shares the same
+    // diameter, so "minus both radii" is the same as "minus one full
+    // diameter" — spelled out explicitly here rather than left implicit.
+    const nearestCenterDist = holes.reduce((min, h) => Math.min(min, Math.hypot(h.x - nx, h.y - ny)), Infinity);
+    const ligamentNorm = nearestCenterDist - holeDiameterNorm; // center distance minus (radius + radius) = minus one diameter
+    const ligamentMm = ligamentNorm * 255;
+    if (holes.length > 0 && ligamentMm < 2) {
+      setLastBlockedMsg(ligamentMm < 0
+        ? "This hole would overlap its neighbor — placed anyway, but the two will merge into one slot rather than staying separate."
+        : `Only ~${Math.max(0, ligamentMm).toFixed(1)}mm of carbon left between this hole and its neighbor — thin enough to be a real fracture risk.`);
+    } else {
+      setLastBlockedMsg(null);
+    }
+
+    onHolesChange([...holes, { x: nx, y: ny }]);
   };
 
   const applyPreset = (preset: string) => {
@@ -4499,9 +4541,18 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
         <button onClick={() => setClickMode("add")} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${clickMode === "add" ? "#1A5C2A" : "#D4CCB8"}`, background: clickMode === "add" ? "#EAF3EC" : "#fff", color: clickMode === "add" ? "#1A5C2A" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Add hole</button>
         <button onClick={() => setClickMode("remove")} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${clickMode === "remove" ? "#1A5C2A" : "#D4CCB8"}`, background: clickMode === "remove" ? "#EAF3EC" : "#fff", color: clickMode === "remove" ? "#1A5C2A" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove hole</button>
+        <button onClick={onUndo} disabled={!canUndo} title="Undo last change" style={{ width: 40, padding: "7px 0", borderRadius: 7, border: "1.5px solid #D4CCB8", background: canUndo ? "#fff" : "#F5F2EB", color: canUndo ? "#4A4540" : "#C0B8A4", fontSize: 14, cursor: canUndo ? "pointer" : "default", fontFamily: "Inter, sans-serif" }}>↺</button>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+          <input type="checkbox" checked={snapToGrid} onChange={e => setSnapToGrid(e.target.checked)} style={{ accentColor: "#1A5C2A" }}/>
+          <span style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>Snap to grid</span>
+        </label>
+        <span style={{ fontSize: 10.5, color: "#7A7268", fontFamily: "Inter, sans-serif" }}>({(GRID_PITCH_NORM * 255 / 2).toFixed(0)}mm spacing — free placement still works when off)</span>
       </div>
 
       <svg
@@ -4517,9 +4568,40 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
         ) : (
           <path d={`M ${cx},${cy-b} C ${cx+a*0.88},${cy-b*0.4} ${cx+a},${cy+b*0.15} ${cx+a*0.5},${cy+b*0.75} C ${cx+a*0.25},${cy+b} ${cx},${cy+b} ${cx},${cy+b} C ${cx},${cy+b} ${cx-a*0.25},${cy+b} ${cx-a*0.5},${cy+b*0.75} C ${cx-a},${cy+b*0.15} ${cx-a*0.88},${cy-b*0.4} ${cx},${cy-b} Z`} fill="#E8E2D6" stroke="#C0B8A4" strokeWidth="2.5"/>
         )}
-        {holes.length > 0 && (
-          <circle cx={cx} cy={cy + b * 0.02} r={Math.max(18, Math.min(a * 0.6, 30 + (pocketVal / 100) * 30))} fill="none" stroke="rgba(26,92,42,0.4)" strokeWidth="1.5" strokeDasharray="4 3"/>
-        )}
+        {snapToGrid && (() => {
+          // Faint grid-intersection dots so the snap targets are visible
+          // before clicking — purely a visual guide, not clickable itself.
+          const dots = [];
+          const steps = Math.ceil(1 / GRID_PITCH_NORM);
+          for (let ix = -steps; ix <= steps; ix++) {
+            for (let iy = -steps; iy <= steps; iy++) {
+              const gx = ix * GRID_PITCH_NORM, gy = iy * GRID_PITCH_NORM;
+              if (!inFace(gx, gy)) continue;
+              dots.push(<circle key={`${ix}-${iy}`} cx={cx + gx * a} cy={cy + gy * b} r={1.2} fill="#C0B8A4"/>);
+            }
+          }
+          return <g opacity={0.6}>{dots}</g>;
+        })()}
+        {holes.length > 0 && (() => {
+          // Sweet spot vertical position — mirrors the same baseYFrac
+          // values computeSweetSpotAndStability uses for the Spec View,
+          // Illustration, and Profile tabs, so this canvas's dashed circle
+          // actually sits where the sweet spot is for THIS shape rather
+          // than defaulting to the face's geometric center. (Balance-point
+          // fine-tuning is intentionally omitted here — this canvas only
+          // has shape in scope, not the full material/dimension stack —
+          // but shape alone gets the position correct for round, diamond,
+          // and teardrop within a few percent of the fully-refined value.)
+          const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
+          // baseYFrac is expressed 0(top)..1(bottom) of the head height in
+          // the full spec-view coordinate system; convert to this canvas's
+          // -1..1-from-center convention used by hole coordinates.
+          const sweetSpotNy = (baseYFrac - 0.5) * 1.85;
+          const sweetSpotCx = cx, sweetSpotCy = cy + sweetSpotNy * b;
+          return (
+            <circle cx={sweetSpotCx} cy={sweetSpotCy} r={Math.max(16, Math.min(a * 0.55, 26 + (pocketVal / 100) * 26))} fill="rgba(26,92,42,0.06)" stroke="rgba(26,92,42,0.5)" strokeWidth="1.5" strokeDasharray="4 3"/>
+          );
+        })()}
         {holes.map((h, i) => {
           const dist = Math.sqrt(h.x * h.x + h.y * h.y);
           const px = cx + h.x * a, py = cy + h.y * b;
@@ -4529,6 +4611,11 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, holeDiameterMm, onDi
       <p style={{ fontSize: 11, color: "#7A7268", textAlign: "center", margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>
         {clickMode === "add" ? "Click the face to add a hole. Click an existing hole to remove it." : "Click any hole to remove it."}
       </p>
+      {lastBlockedMsg && (
+        <p style={{ fontSize: 11, color: "#92400E", textAlign: "center", margin: "4px 0 0", fontFamily: "Inter, sans-serif", background: "#FEF3C7", border: "1px solid #D97706", borderRadius: 6, padding: "5px 8px" }}>
+          {lastBlockedMsg}
+        </p>
+      )}
 
       <div style={{ marginTop: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -4608,7 +4695,24 @@ export default function App() {
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
-  const [holes, setHoles] = useState<HolePoint[]>(() => generateLegacyHoleGrid("standard", "even", "teardrop"));
+  const [holes, setHolesRaw] = useState<HolePoint[]>(() => generateLegacyHoleGrid("standard", "even", "teardrop"));
+  // Undo history for the hole placement canvas — a simple linear stack of
+  // previous states, pushed before every change (add, remove, preset fill,
+  // clear) and popped on undo. Capped at 40 entries so it can't grow
+  // unbounded across a long editing session.
+  const [holesUndoStack, setHolesUndoStack] = useState<HolePoint[][]>([]);
+  const setHoles = (next: HolePoint[]) => {
+    setHolesUndoStack(stack => [...stack.slice(-39), holes]);
+    setHolesRaw(next);
+  };
+  const undoHoles = () => {
+    setHolesUndoStack(stack => {
+      if (stack.length === 0) return stack;
+      const prev = stack[stack.length - 1];
+      setHolesRaw(prev);
+      return stack.slice(0, -1);
+    });
+  };
   const [holeDiameterMm, setHoleDiameterMm] = useState(9);
   const [lengthMm, setLengthMm] = useState(450);
   const [widthMm, setWidthMm] = useState(255);
@@ -4653,8 +4757,8 @@ export default function App() {
       // Backward compatible with shares saved before the hole-placement
       // engine: if the saved state has the old string buckets, convert
       // them to real coordinates on load. New saves carry `holes` directly.
-      if (Array.isArray(s.holes)) setHoles(s.holes);
-      else if (typeof s.holeCountId === "string") setHoles(generateLegacyHoleGrid(s.holeCountId, typeof s.holePatternId === "string" ? s.holePatternId : "even", typeof s.shapeId === "string" ? s.shapeId : "teardrop"));
+      if (Array.isArray(s.holes)) setHolesRaw(s.holes);
+      else if (typeof s.holeCountId === "string") setHolesRaw(generateLegacyHoleGrid(s.holeCountId, typeof s.holePatternId === "string" ? s.holePatternId : "even", typeof s.shapeId === "string" ? s.shapeId : "teardrop"));
       if (typeof s.holeDiameterMm === "number") setHoleDiameterMm(s.holeDiameterMm);
       if (typeof s.lengthMm === "number") setLengthMm(s.lengthMm);
       if (typeof s.widthMm === "number") setWidthMm(s.widthMm);
@@ -4910,7 +5014,7 @@ export default function App() {
 
       {/* Holes */}
       <AccordionSection id="holes" icon={<Grid3x3 size={15}/>} label="Face Perforation" isOpen={openSections.has("holes")} onToggle={() => toggle("holes")}>
-        <HolePlacementCanvas shape={shapeId} holes={holes} onHolesChange={setHoles} holeDiameterMm={holeDiameterMm} onDiameterChange={setHoleDiameterMm}/>
+        <HolePlacementCanvas shape={shapeId} holes={holes} onHolesChange={setHoles} onUndo={undoHoles} canUndo={holesUndoStack.length > 0} holeDiameterMm={holeDiameterMm} onDiameterChange={setHoleDiameterMm}/>
         {mode === "manufacturer" && (
           <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
             FIP rules: holes in the central striking area must measure 9–13mm diameter. 4cm peripheral band allows different shapes up to 20mm. No minimum or maximum count specified.
