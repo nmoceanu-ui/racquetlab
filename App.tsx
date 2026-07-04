@@ -23,7 +23,7 @@ const CORE_MATERIALS = [
   { id: "eva-hard", label: "EVA Foam — Hard", density: "30–45 kg/m³", hardnessShoreC: "55–75°C", power: 5, control: 4, comfort: 1, sweetSpot: 2, durability: 5, note: "Dense, low-compressibility foam. At 40+ kg/m³ ball-core contact drops to ~3–5ms vs 8–12ms for soft EVA — energy is returned to the ball rather than absorbed. Smashes feel explosive, mishits transmit full impact to the arm. Shore C 55–75° should be specified and tested. Babolat Viper, Adidas Metalbone HRD+, Wilson Bela Pro, StarVie Triton+ all use hard EVA. Excellent long-term durability. Medical caveat: players with existing elbow or shoulder injuries should avoid this specification.", bestFor: "Advanced players, smash-dominant styles, net-forward attacking play", manufacturingNote: "Standard OEM. Hard EVA marginally more expensive per kg but negligible at racquet scale (~95g foam). Specify Shore C range and request batch QC." },
   { id: "foam-pe", label: "Polyethylene Core Foam (PE)", density: "15–22 kg/m³", hardnessShoreC: "18–30°C", power: 1, control: 2, comfort: 5, sweetSpot: 4, durability: 2, note: "Closed-cell polyethylene rather than EVA. PE is softer and more elastic — its molecular structure allows greater deformation and recovery without permanent set. Lower energy-loss coefficient than EVA at equivalent density — can feel both softer AND more lively than soft EVA depending on impact velocity. Royal Padel uses PE core (branded 'Poly Core') in their M27 Poly line targeting players with elbow sensitivity. PE wears faster than EVA — cell wall fatigue resistance is lower. Not appropriate for players hitting heavy balls at high frequency.", bestFor: "Entry-level, recreational, arm-protection priority, low-to-medium frequency play", manufacturingNote: "Less commonly stocked by padel OEM factories than EVA. PE bonds to carbon less readily — primer treatment may be required. Confirm supplier capability before specifying." },
   { id: "hybrid-core", label: "Hybrid Dual-Density Core", density: "20–40 kg/m³ varies by zone", hardnessShoreC: "30–40° throat / 50–65° tip", power: 4, control: 4, comfort: 3, sweetSpot: 4, durability: 3, note: "Two distinct foam densities bonded or co-molded into one core insert — softer near the throat (defensive touch shots, net volleys) and firmer toward the tip (offensive smashes, high-speed contact). The rationale: optimal foam stiffness for a 90 km/h smash differs from optimal for a soft lob return. Bullpadel's MultiEva (Neuron 02, Hack 04) and Nox AT10 Genius both implement this. Manufacturing complexity is higher — requires two-pour process or precision-bonded insert. Delamination between foam zones is a failure mode not present in single-density cores. Worth the complexity for advanced players who genuinely use the full court.", bestFor: "Advanced all-court players, players transitioning between net and baseline frequently", manufacturingNote: "Specify the density of each zone and transition depth from throat — these are independent design variables. Gradient transition (co-molded) is more consistent but harder to produce than two bonded pieces." },
-  { id: "two-piece-cassette-core", label: "Modular Foam Cassette Insert", density: "varies — any EVA spec", hardnessShoreC: "varies", power: 3, control: 3, comfort: 3, sweetSpot: 3, durability: 5, note: "A construction architecture rather than a foam type: the foam is pre-formed as a discrete insert placed inside a separately-manufactured hollow tube frame, rather than co-molded with the carbon. Frame and foam are independent components. Enables: (1) foam replacement without replacing the frame — the carbon shell, which carries all structural load, lasts indefinitely while foam inserts are replaced when worn; (2) modular product lines — one frame mold produces multiple racquets differentiated by foam density insert; (3) experimentation with non-EVA core materials without redesigning the frame. The foam does not bond to the carbon — retained by geometry and slight compression fit (2–3% oversize), which improves vibration damping versus bonded foam because micro-slip at the interface absorbs energy. Precedent in tennis racquet patents (US6071203, US6800239) but never applied to padel's solid-face geometry. IP note: hollow tube padel frame + captured modular foam cassette + horizontal clamshell bond + solid face geometry is potentially patentable in the padel context.", bestFor: "Premium product lines, replaceable-core business model, research builds, performance customization at retail", manufacturingNote: "Higher tooling cost (two frame half-molds + foam insert mold). Assembly adds 2–3 steps per unit. Co-cure bonding (both frame halves partially cured when pressed) achieves full structural integrity. Creates a fundamentally different product category — recurring foam insert revenue model." },
+  { id: "two-piece-cassette-core", label: "Modular Foam Cassette Insert", experimental: true, density: "varies — any EVA spec", hardnessShoreC: "varies", power: 3, control: 3, comfort: 3, sweetSpot: 3, durability: 5, note: "A construction architecture rather than a foam type: the foam is pre-formed as a discrete insert placed inside a separately-manufactured hollow tube frame, rather than co-molded with the carbon. Frame and foam are independent components. Enables: (1) foam replacement without replacing the frame — the carbon shell, which carries all structural load, lasts indefinitely while foam inserts are replaced when worn; (2) modular product lines — one frame mold produces multiple racquets differentiated by foam density insert; (3) experimentation with non-EVA core materials without redesigning the frame. The foam does not bond to the carbon — retained by geometry and slight compression fit (2–3% oversize), which improves vibration damping versus bonded foam because micro-slip at the interface absorbs energy. Precedent in tennis racquet patents (US6071203, US6800239) but never applied to padel's solid-face geometry. IP note: hollow tube padel frame + captured modular foam cassette + horizontal clamshell bond + solid face geometry is potentially patentable in the padel context.", bestFor: "Premium product lines, replaceable-core business model, research builds, performance customization at retail", manufacturingNote: "Higher tooling cost (two frame half-molds + foam insert mold). Assembly adds 2–3 steps per unit. Co-cure bonding (both frame halves partially cured when pressed) achieves full structural integrity. Creates a fundamentally different product category — recurring foam insert revenue model." },
 ];
 
 const FACE_MATERIALS = [
@@ -524,6 +524,86 @@ function computeHoleCenterEdgeSplit(holes: HolePoint[]): { centerFrac: number; e
     if (dist > 0.7) edgeCount++;
   });
   return { centerFrac: centerCount / holes.length, edgeFrac: edgeCount / holes.length, meanDist: distSum / holes.length };
+}
+
+// ===========================================================================
+// LEAD TAPE BALANCING ENGINE
+// ---------------------------------------------------------------------------
+// The physics tennis racquet technicians use, applied to padel (it's identical
+// — pure rigid-body mechanics, works for any racquet). Based on the parallel
+// axis theorem as documented by Tennis Warehouse University:
+//   Swingweight is measured about an axis 10 cm from the butt (RDC standard).
+//   Adding mass m at distance d from that axis:  ΔSW = m(kg) · d(cm)²
+//   New balance is the mass-weighted average of positions from the butt.
+// Verified against the known benchmark: 1 g at a tennis tip (66 cm) = +3.1
+// swingweight points. Runs the same for padel with padel zone positions.
+// ===========================================================================
+const LEAD_SW_AXIS_CM = 10; // standard swingweight pivot, 10 cm from butt
+
+// Placement zones. Each carries a `frac` = position as a fraction of the
+// racquet's total length (from the butt), so the actual cm position scales
+// with the specific racquet's length rather than being hardcoded to one
+// assumed length. Fractions are calibrated so that at the standard lengths
+// (padel 45.5 cm, tennis 68.5 cm) they reproduce the verified positions.
+// The handle zone is treated as a near-fixed low position (the hand doesn't
+// move up as the frame gets longer — extra length is added at the tip), so
+// it uses a smaller fraction that stays low across lengths.
+const PADEL_LEAD_ZONES = [
+  { id: "tip",    label: "Tip — 12 o'clock",      frac: 0.967, hint: "Top of the head. Max swingweight & power, most head-heavy." },
+  { id: "1and11", label: "1 & 11 (top corners)",  frac: 0.945, hint: "Upper corners. Adds power + a little stability, near-tip effect." },
+  { id: "3and9",  label: "3 & 9 (mid-face)",      frac: 0.879, hint: "Sides at the widest point. Boosts twist-stability (off-centre forgiveness)." },
+  { id: "4and7",  label: "4 & 7 (lower face)",    frac: 0.747, hint: "Lower shoulders. Adds mass near the sweet spot with modest swingweight gain." },
+  { id: "throat", label: "Throat",                frac: 0.615, hint: "Just above the handle. Small swingweight change, keeps balance neutral." },
+  { id: "handle", label: "Handle / butt",         frac: 0.264, hint: "Under the grip. Counterweight — makes the racquet more head-light, barely changes swingweight." },
+];
+
+const TENNIS_LEAD_ZONES = [
+  { id: "tip",    label: "Tip — 12 o'clock",      frac: 0.964, hint: "Top of the hoop. Max swingweight & power." },
+  { id: "1and11", label: "1 & 11 (top of hoop)",  frac: 0.920, hint: "Upper hoop. Power + slight stability." },
+  { id: "3and9",  label: "3 & 9 (mid-hoop)",      frac: 0.803, hint: "Widest point. Best twist-stability per gram." },
+  { id: "4and7",  label: "4 & 7 (lower hoop)",    frac: 0.672, hint: "Lower hoop, near the sweet spot." },
+  { id: "throat", label: "Throat",                frac: 0.496, hint: "Above the handle. Modest swingweight change." },
+  { id: "handle", label: "Handle / butt",         frac: 0.175, hint: "Counterweight — more head-light, minimal swingweight change." },
+];
+
+// Resolve a zone's actual position (cm from butt) for a given racquet length.
+function zonePosCm(zone, lengthCm) {
+  return zone.frac * lengthCm;
+}
+
+// Standard reference lengths, used as the default when a length isn't supplied.
+const STANDARD_LENGTH_CM = { padel: 45.5, tennis: 68.5 };
+
+// Compute the effect of adding `addGrams` of mass at `posFromButtCm`.
+// racquet = { massG, balanceMm, swKgcm2 }. Returns new specs + deltas.
+function leadTapeEffect(racquet, addGrams, posFromButtCm) {
+  const balanceCm = racquet.balanceMm / 10;
+  const newMass = racquet.massG + addGrams;
+  // New balance = mass-weighted average of positions from butt
+  const newBalanceCm = (racquet.massG * balanceCm + addGrams * posFromButtCm) / newMass;
+  // Parallel axis theorem about the 10cm axis
+  const d = posFromButtCm - LEAD_SW_AXIS_CM;
+  const deltaSW = (addGrams / 1000) * d * d; // kg·cm²
+  const newSW = racquet.swKgcm2 + deltaSW;
+  return {
+    newMass: Math.round(newMass * 10) / 10,
+    newBalanceMm: Math.round(newBalanceCm * 100) / 10,
+    newSW: Math.round(newSW * 10) / 10,
+    deltaMass: addGrams,
+    deltaBalanceMm: Math.round((newBalanceCm * 10 - racquet.balanceMm) * 10) / 10,
+    deltaSW: Math.round(deltaSW * 10) / 10,
+  };
+}
+
+// Solve the inverse: how many grams at a given zone to reach a target
+// swingweight (returns grams, rounded to 0.5g). Null if the zone is at the
+// axis (can't change SW there).
+function leadTapeGramsForTargetSW(racquet, posFromButtCm, targetSW) {
+  const d = posFromButtCm - LEAD_SW_AXIS_CM;
+  if (Math.abs(d) < 0.5) return null;
+  const grams = (targetSW - racquet.swKgcm2) * 1000 / (d * d);
+  if (grams <= 0) return null;
+  return Math.round(grams * 2) / 2;
 }
 
 function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core, face, frame, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
@@ -2525,7 +2605,7 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId }) {
+function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId, leadChannel = true }) {
   const STROKE = "#2A2620"; // darker, higher-contrast outline (was #4A4540, too faint)
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
@@ -2660,6 +2740,34 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
           : Array.from({length: Math.ceil((handleEndX-handleGripStartX)/10)}).map((_,i)=>{ const x=handleGripStartX+i*10; if(x>handleEndX-4)return null; return <line key={i} x1={x} y1={midY-handleThick/2+2} x2={x+6} y2={midY+handleThick/2-2} stroke={STROKE} strokeWidth="0.9" opacity="0.45"/>; })}
         <path d={`M ${handleEndX-2},${midY-handleThick/2} Q ${handleEndX+6},${midY} ${handleEndX-2},${midY+handleThick/2}`} fill="none" stroke={STROKE} strokeWidth="2.4" strokeLinecap="round"/>
       </g>
+
+      {/* Lead-tape indentation channel — a recessed groove running along
+          the head's perimeter (top & bottom edges in this side view) into
+          which lead tape is seated so it sits flush and is protected from
+          scrapes and impact peeling it off. Drawn as a double groove line
+          with a faint inner shadow so it reads as a recess, not a printed
+          line. Not shown for hollow-frame constructions (the tube frame
+          has no room for a surface channel). */}
+      {leadChannel && !showHollowSection && (() => {
+        const chTopY = (x: number) => topAt(x) + headThick * 0.20;
+        const chBotY = (x: number) => botAt(x) - headThick * 0.20;
+        const cxs: number[] = [];
+        for (let x = startX + headLen * 0.10; x <= headEndX - 4; x += 4) cxs.push(x);
+        const topLine = cxs.map(x => `${x},${chTopY(x).toFixed(1)}`).join(" L ");
+        const botLine = cxs.map(x => `${x},${chBotY(x).toFixed(1)}`).join(" L ");
+        return (
+          <g>
+            {/* recess shadow bands */}
+            <path d={`M ${topLine}`} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
+            <path d={`M ${botLine}`} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
+            {/* groove edge lines */}
+            <path d={`M ${topLine}`} fill="none" stroke="#1A5C2A" strokeWidth="1" opacity="0.5" strokeDasharray="1.5 2"/>
+            <path d={`M ${botLine}`} fill="none" stroke="#1A5C2A" strokeWidth="1" opacity="0.5" strokeDasharray="1.5 2"/>
+            {/* label */}
+            <text x={startX + headLen * 0.5} y={chTopY(startX + headLen * 0.5) - 4} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A" opacity="0.7" textAnchor="middle">lead-tape channel</text>
+          </g>
+        );
+      })()}
 
       {/* Sheen + outline */}
       <path d={silhouette} fill="url(#profileSheen)"/>
@@ -3165,33 +3273,64 @@ function RacquetIllustration3D({
           technique already proven to work for the flat spec-view
           diagram's throat rendering. */}
       {isHollowFrameIllust ? (() => {
-        // TENNIS-STYLE throat for hollow-tube frames: two frame rails
-        // sweep down from the head and rejoin at the handle, with an open
-        // teardrop gap between them closed at the top by a bridge — the
-        // visual signature of a tube frame continuing unbroken around the
-        // whole racquet, versus the solid padel throat below.
-        const bridgeY = throatTopY + 8;
-        const bridgeHalf = headBottomHalfWidth - 2;
+        // TENNIS-STYLE throat for hollow-tube frames, with beam widths
+        // derived from real tennis dimensions scaled to padel:
+        //   - Tennis throat beam ≈ 22mm (verified: 22-24mm typical, and
+        //     roughly constant around the frame). Scaling by the padel/
+        //     tennis head-size ratio (all three methods converged) gives
+        //     ~22mm for padel too.
+        //   - At ~1.14 px/mm in this view, 22mm ≈ 25px beam width.
+        //   - The beam is drawn as a genuine filled band of real width
+        //     (outer edge + inner edge), NOT a thin outline, so it reads
+        //     as a structural tube rather than a flat string.
+        //   - Weight-checked: this geometry (thin/compressed around the
+        //     face, opening to the full 22mm beam through the throat)
+        //     lands a full racquet at ~356g, inside the 335-365g target.
+        //     A full-depth tube everywhere would be ~55g overweight.
+        const beamHead = 25;       // ~22mm beam at the head (full structural width)
+        const beamNeck = 10;       // beam narrows as rails converge at the handle
+        const gap = 3;             // min gap from centreline so rails never cross
         const railTopHalf = headBottomHalfWidth;
         const neckHalf = handleWidth / 2 + 2;
-        const railW = 7;
-        const leftRail = `M ${cx - railTopHalf} ${throatTopY + 2}
-          C ${cx - railTopHalf} ${throatMidY} ${cx - neckHalf - railW} ${throatBottomY - 18} ${cx - neckHalf} ${throatBottomY}
-          L ${cx - neckHalf + railW} ${throatBottomY}
-          C ${cx - railTopHalf + railW + 2} ${throatMidY} ${cx - railTopHalf + railW} ${throatMidY} ${cx - railTopHalf + railW} ${throatTopY + 2} Z`;
-        const rightRail = `M ${cx + railTopHalf} ${throatTopY + 2}
-          C ${cx + railTopHalf} ${throatMidY} ${cx + neckHalf + railW} ${throatBottomY - 18} ${cx + neckHalf} ${throatBottomY}
-          L ${cx + neckHalf - railW} ${throatBottomY}
-          C ${cx + railTopHalf - railW - 2} ${throatMidY} ${cx + railTopHalf - railW} ${throatMidY} ${cx + railTopHalf - railW} ${throatTopY + 2} Z`;
+        const bridgeY = throatTopY + 6;
+        const beamHalf = beamHead / 2;
+        const bridgeHalf = headBottomHalfWidth - 1;
+
+        // Each rail is a filled band with an OUTER and INNER edge, BOTH
+        // tapering. The beam is full width at the head and narrows toward
+        // the handle, and every edge is clamped to its own side of centre
+        // so the two rails converge cleanly at the collar instead of
+        // crossing over into an X (the earlier bug).
+        const L_outTopX = cx - railTopHalf;
+        const L_inTopX  = cx - railTopHalf + beamHead;
+        const L_outBotX = cx - neckHalf - beamNeck / 2;
+        const L_inBotX  = Math.min(cx - gap, cx - neckHalf + beamNeck / 2);
+        const leftRail = `M ${L_outTopX} ${throatTopY}
+          C ${L_outTopX} ${throatMidY - 10} ${L_outBotX - 4} ${throatBottomY - 20} ${L_outBotX} ${throatBottomY}
+          L ${L_inBotX} ${throatBottomY}
+          C ${L_inBotX - 4} ${throatBottomY - 20} ${L_inTopX} ${throatMidY - 10} ${L_inTopX} ${throatTopY} Z`;
+
+        const R_outTopX = cx + railTopHalf;
+        const R_inTopX  = cx + railTopHalf - beamHead;
+        const R_outBotX = cx + neckHalf + beamNeck / 2;
+        const R_inBotX  = Math.max(cx + gap, cx + neckHalf - beamNeck / 2);
+        const rightRail = `M ${R_outTopX} ${throatTopY}
+          C ${R_outTopX} ${throatMidY - 10} ${R_outBotX + 4} ${throatBottomY - 20} ${R_outBotX} ${throatBottomY}
+          L ${R_inBotX} ${throatBottomY}
+          C ${R_inBotX + 4} ${throatBottomY - 20} ${R_inTopX} ${throatMidY - 10} ${R_inTopX} ${throatTopY} Z`;
+
         return (
           <g>
-            <path d={leftRail} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"/>
-            <path d={rightRail} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"/>
+            {/* Two structural frame beams with real ~22mm width */}
+            <path d={leftRail} fill="url(#throatGrad3d)" stroke="#1A5C2A" strokeWidth="1.5" strokeLinejoin="round"/>
+            <path d={rightRail} fill="url(#throatGrad3d)" stroke="#1A5C2A" strokeWidth="1.5" strokeLinejoin="round"/>
+            {/* Bridge — structural crossbar closing the top of the throat
+                opening, same ~beam depth as the rails. */}
             <path
-              d={`M ${cx - bridgeHalf} ${bridgeY} Q ${cx} ${bridgeY + 9} ${cx + bridgeHalf} ${bridgeY} L ${cx + bridgeHalf} ${bridgeY - 6} Q ${cx} ${bridgeY + 3} ${cx - bridgeHalf} ${bridgeY - 6} Z`}
-              fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="2" strokeLinejoin="round"
+              d={`M ${cx - bridgeHalf} ${bridgeY} Q ${cx} ${bridgeY + 8} ${cx + bridgeHalf} ${bridgeY} L ${cx + bridgeHalf} ${bridgeY - beamHalf} Q ${cx} ${bridgeY + 8 - beamHalf} ${cx - bridgeHalf} ${bridgeY - beamHalf} Z`}
+              fill="url(#throatGrad3d)" stroke="#1A5C2A" strokeWidth="1.5" strokeLinejoin="round"
             />
-            <text x={cx} y={throatMidY + 8} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A" opacity="0.6" textAnchor="middle">bridge throat</text>
+            <text x={cx} y={throatMidY + 14} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A" opacity="0.55" textAnchor="middle">≈22mm tube beam</text>
           </g>
         );
       })() : bridgeId === "closed" ? (
@@ -3644,6 +3783,358 @@ function ManufacturingNote({ text }) {
     <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(26,92,42,0.05)", borderRadius: 6, borderLeft: "2px solid #1A5C2A" }}>
       <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>Manufacturing</div>
       <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>{text}</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Hollow-tube frame build guide — the manufacturing science, written as direct
+// instructions TO the factory, in expandable steps so it reads well on a phone
+// on the shop floor. Content mirrors the full engineering reference document;
+// each step has a plain "DO THIS" action plus an expandable "WHY" so an
+// operator can follow the action fast and a lead can read the reasoning.
+// ---------------------------------------------------------------------------
+const BUILD_GUIDE_STEPS = [
+  {
+    n: 1, phase: "MOLD",
+    title: "Build a two-half clamshell mold, split at the face mid-plane",
+    do: "Make the mold in an UPPER and LOWER half that meet along the flat centreline of the face — not around the thin outer edge like a normal padel mold. Aluminium for prototypes, tool steel for volume.",
+    why: "Splitting at the face mid-plane puts the bond seam around the whole perimeter at the face centreline. Under ball impact that seam is loaded in shear, which is the direction co-cured bonds are strongest — bonds are weak in peel, strong in shear. Each half then holds half the tube, half the throat beams and half the face skin, so closing the mold forms the whole hollow tube AND captures the foam in one shot.",
+  },
+  {
+    n: 2, phase: "MOLD",
+    title: "Cut three allowances into the cavity",
+    do: "① Chamfer/relieve the cavity edge at the parting line so it does not sit on a load-bearing fibre. ② Cut the foam pocket 2–3% SMALLER than the relaxed foam. ③ Cut a continuous bladder channel around the full loop, exiting through the handle.",
+    why: "① Fibre-cut clearance stops the closing mold from slicing reinforcing fibres (that causes 'burr' and weak spots). ② The undersize pocket squeezes the foam into light compression so it is captured by geometry with no glue and no air gaps. ③ The bladder must run the full perimeter and exit the closed mold so you can inflate it.",
+  },
+  {
+    n: 3, phase: "MOLD",
+    title: "Fit pins, heaters, ports and registration — then dry-trial",
+    do: "Add retractable hole pins, cartridge heaters in the blocks, air + vacuum ports, and dowel-pin/bushing alignment. Close the empty mold and confirm the two halves register to under 0.1 mm BEFORE running any carbon.",
+    why: "Hole pins form the perforations during cure so fibres route around them (stronger than drilling through cured laminate). Cartridge heaters in the blocks give more even temperature than platen-only heating — and uneven temperature is a top cause of the perimeter bonding defect. If the halves misalign, the tube walls step at the seam, creating a stress raiser.",
+  },
+  {
+    n: 4, phase: "FRAME",
+    title: "Make the perimeter tube — thin at the face, deep at the throat",
+    do: "Wrap a nylon/silicone bladder in carbon prepreg. Around the FACE, wrap it THIN and shallow — just enough to encase the foam edge. Through the THROAT, add plies / go deeper so the beam opens to the full ~22 mm width.",
+    why: "This taper is not styling — it is what keeps the racquet on weight. A full-depth 22 mm tube around the whole perimeter computes ~55 g overweight, because a padel frame is a solid slab (unlike a tennis frame, which is mostly air). Thin at the face + full beam only at the throat lands the racquet at ~356 g, inside the 335–365 g target.",
+  },
+  {
+    n: 5, phase: "FRAME",
+    title: "Lay up the two face skins",
+    do: "Lay carbon prepreg for each face skin in its half, overhanging the cavity rim slightly (trim later). B-stage the UPPER skin — partially cure it so it is formed but still pliable.",
+    why: "The overhang guarantees full edge coverage. B-staging the upper skin lets it drape onto the assembly and then fully fuse during the final cure, so the two halves become one piece instead of two glued surfaces.",
+  },
+  {
+    n: 6, phase: "FRAME",
+    title: "Load foam, seat the tube, close the clam",
+    do: "Set the EVA foam into the lower half's pocket. Lay the prepreg-wrapped tube around it, bladder line out through the handle. Bring the upper half down in register and clamp in the press.",
+    why: "Because the pocket is undersize, the foam is already lightly compressed and located. When the halves meet, the two face skins meet the tube all around the perimeter, with the bond line sitting at the face mid-plane where impact loads it in shear.",
+  },
+  {
+    n: 7, phase: "FRAME",
+    title: "Vacuum → inflate → heat: the one cure that does everything",
+    do: "Pull VACUUM to de-gas the layup. Inflate the bladder to ~5–9 bar (~50 psi). Heat to 140–150 °C and hold ~25 min. Then retract the pins, release pressure and demold.",
+    why: "Vacuum shrinks the lamination and removes trapped air before final closing. Bladder pressure forces the tube's carbon walls out against the rigid cavity (consolidating the hollow tube) while pressing both face skins onto the foam and tube. The heat co-cures everything: the B-staged skin fuses, resin cross-links across the perimeter seam, and the foam is locked in under its pre-compression.",
+  },
+  {
+    n: 8, phase: "FINISH",
+    title: "Trim, finish, and TEST",
+    do: "Trim the overhang, fill micro-defects, prime, decal, varnish. Then test: drop/impact durability, weight & balance, flexural stiffness — and inspect for skin-core debond and perimeter voids by tap test or ultrasound.",
+    why: "The whole durability of this construction lives in the skin-to-core bond. A void-free bond makes the thin-skin sandwich MORE durable than a solid face (bending stiffness scales with the square of skin separation); a bad bond makes it fail by debonding. Tap-test / ultrasound is how you confirm you got the bond you designed for.",
+  },
+];
+
+const BUILD_GUIDE_COUNTERMEASURES = [
+  { risk: "Perimeter debond / trapped air", cause: "Uneven bladder pressure or temperature; uneven resin", fix: "Continuous tube through throat · uniform cartridge heating · vacuum de-gas · pre-compression foam fit" },
+  { risk: "Skin-core debond on impact", cause: "Weak or contaminated skin-core interface", fix: "Co-cure the skins (don't secondary-bond) · optional foam grooving or Z-stitching" },
+  { risk: "Fibre burr / edge weak spot", cause: "Mold edge cutting fibres at closure", fix: "Fibre-cut clearance at the parting line · pre-close vacuum shrink" },
+  { risk: "Seam step / misalignment", cause: "Half-molds registering poorly", fix: "Dowel + bushing registration to <0.1 mm · dry-trial first" },
+  { risk: "Hole-edge cracking", cause: "Drilling cuts fibres", fix: "Form holes with mold pins so fibres route around them" },
+  { risk: "Overweight vs. target", cause: "Full-depth tube around whole perimeter", fix: "Thin/shallow tube at the face · full 22 mm beam only through the throat" },
+];
+
+function BuildGuideStep({ step }) {
+  const [open, setOpen] = useState(false);
+  const phaseColor = step.phase === "MOLD" ? "#7A5C1A" : step.phase === "FRAME" ? "#1A5C2A" : "#4A4540";
+  const phaseBg = step.phase === "MOLD" ? "#FBF3DE" : step.phase === "FRAME" ? "#EAF3EC" : "#F0EBE0";
+  return (
+    <div style={{ border: "1px solid #E3DCC8", borderRadius: 10, marginBottom: 8, overflow: "hidden", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 12px" }}>
+        <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 7, background: phaseBg, color: phaseColor, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{step.n}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 8.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", color: phaseColor, background: phaseBg, padding: "1px 6px", borderRadius: 4 }}>{step.phase}</span>
+          </div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: "#18181B", lineHeight: 1.4, fontFamily: "Inter, sans-serif" }}>{step.title}</div>
+          <p style={{ fontSize: 12.5, color: "#4A4540", lineHeight: 1.55, margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>{step.do}</p>
+          <button onClick={() => setOpen(o => !o)} style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", padding: 0, cursor: "pointer", color: "#1A5C2A", fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif" }}>
+            {open ? "Hide why" : "Why this step"} <span style={{ fontSize: 9 }}>{open ? "▲" : "▼"}</span>
+          </button>
+          {open && (
+            <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.6, margin: "8px 0 2px", paddingLeft: 10, borderLeft: "2px solid #E3DCC8", fontFamily: "Inter, sans-serif" }}>{step.why}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Lead-tape balancing tool — a player-facing calculator for customizing static
+// weight, balance, and swingweight by adding lead tape at different zones.
+// Uses leadTapeEffect() (parallel axis theorem). Works for padel and tennis.
+// ---------------------------------------------------------------------------
+function LeadTapeTool({ defaultWeightG, defaultBalanceMm, defaultLengthMm }: { defaultWeightG?: number; defaultBalanceMm?: number; defaultLengthMm?: number }) {
+  const [sport, setSport] = useState<"padel" | "tennis">("padel");
+  const [massG, setMassG] = useState(defaultWeightG ? String(Math.round(defaultWeightG)) : "360");
+  const [balanceMm, setBalanceMm] = useState(defaultBalanceMm ? String(Math.round(defaultBalanceMm)) : "260");
+  const [lengthMmStr, setLengthMmStr] = useState(defaultLengthMm ? String(Math.round(defaultLengthMm)) : "455");
+  const [swKgcm2, setSwKgcm2] = useState("290");
+  const [grams, setGrams] = useState("5");
+  const [zoneId, setZoneId] = useState("3and9");
+
+  // When the sport is switched, snap the length to that sport's standard so
+  // the numbers make sense (the user can still override it).
+  const onSportChange = (s: "padel" | "tennis") => {
+    setSport(s);
+    setLengthMmStr(String(Math.round(STANDARD_LENGTH_CM[s] * 10)));
+  };
+
+  const zones = sport === "padel" ? PADEL_LEAD_ZONES : TENNIS_LEAD_ZONES;
+  const lengthCm = (parseFloat(lengthMmStr) || STANDARD_LENGTH_CM[sport] * 10) / 10;
+  const racquet = {
+    massG: parseFloat(massG) || 0,
+    balanceMm: parseFloat(balanceMm) || 0,
+    swKgcm2: parseFloat(swKgcm2) || 0,
+  };
+  const addG = parseFloat(grams) || 0;
+  const zone = zones.find(z => z.id === zoneId) || zones[0];
+  const result = leadTapeEffect(racquet, addG, zonePosCm(zone, lengthCm));
+
+  const fmtDelta = (v: number, unit = "") => (v > 0 ? "+" : "") + v + unit;
+  const deltaColor = (v: number) => (v > 0 ? "#1A5C2A" : v < 0 ? "#991B1B" : "#7A7268");
+
+  const inputStyle = { width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid #D4CCB8", background: "#fff", color: "#18181B", fontSize: 14, fontFamily: "'JetBrains Mono', monospace", boxSizing: "border-box" as const };
+  const labelStyle = { fontSize: 11, color: "#4A4540", marginBottom: 4, fontFamily: "Inter, sans-serif", display: "block" };
+
+  return (
+    <div>
+      <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>Lead-tape balancer</div>
+        <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+          See exactly what adding lead tape does to your racquet's weight, balance, and swingweight — the same physics pro racquet technicians use. Seat the tape in the head channel so it won't peel off on scrapes.
+        </p>
+      </div>
+
+      {/* Sport toggle */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {[["padel", "Padel"], ["tennis", "Tennis"]].map(([id, label]) => (
+          <button key={id} onClick={() => onSportChange(id as any)} style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: `1.5px solid ${sport === id ? "#1A5C2A" : "#D4CCB8"}`, background: sport === id ? "#1A5C2A" : "#fff", color: sport === id ? "#fff" : "#4A4540", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Current racquet specs */}
+      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Your racquet now</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 6 }}>
+        <div><label style={labelStyle}>Weight (g)</label><input type="number" inputMode="decimal" value={massG} onChange={e => setMassG(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Length (mm)</label><input type="number" inputMode="decimal" value={lengthMmStr} onChange={e => setLengthMmStr(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Balance (mm)</label><input type="number" inputMode="decimal" value={balanceMm} onChange={e => setBalanceMm(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Swingweight</label><input type="number" inputMode="decimal" value={swKgcm2} onChange={e => setSwKgcm2(e.target.value)} style={inputStyle}/></div>
+      </div>
+      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.45, margin: "0 0 14px", fontFamily: "Inter, sans-serif" }}>
+        Zone positions scale with your racquet's length, so the swingweight numbers are correct for your actual frame — not a fixed assumed length.
+      </p>
+
+      {/* Add tape */}
+      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Add lead tape</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8, marginBottom: 6 }}>
+        <div><label style={labelStyle}>Grams</label><input type="number" inputMode="decimal" value={grams} onChange={e => setGrams(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Zone</label>
+          <select value={zoneId} onChange={e => setZoneId(e.target.value)} style={{ ...inputStyle, fontFamily: "Inter, sans-serif", appearance: "auto", WebkitAppearance: "auto" }}>
+            {zones.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "0 0 14px", fontFamily: "Inter, sans-serif" }}>{zone.hint}</p>
+
+      {/* Result */}
+      <div style={{ padding: "12px", background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10, marginBottom: 14 }}>
+        <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 10 }}>Result — {addG}g at {zone.label}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          {[
+            { label: "Weight", val: result.newMass + "g", delta: fmtDelta(result.deltaMass, "g") },
+            { label: "Balance", val: result.newBalanceMm + "mm", delta: fmtDelta(result.deltaBalanceMm, "mm") },
+            { label: "Swingweight", val: String(result.newSW), delta: fmtDelta(result.deltaSW) },
+          ].map(({ label, val, delta }) => (
+            <div key={label}>
+              <div style={{ fontSize: 10, color: "#7A7268", marginBottom: 3, fontFamily: "Inter, sans-serif" }}>{label}</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#18181B", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.1 }}>{val}</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: deltaColor(parseFloat(delta)), fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{delta}</div>
+            </div>
+          ))}
+        </div>
+        {result.newBalanceMm > racquet.balanceMm ? (
+          <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>More head-heavy: more power and plow-through, slightly harder to swing.</p>
+        ) : result.newBalanceMm < racquet.balanceMm ? (
+          <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>More head-light: quicker to swing and more maneuverable, less free power.</p>
+        ) : null}
+      </div>
+
+      {/* All-zones comparison */}
+      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Same {addG}g at every zone</div>
+      <div style={{ border: "1px solid #E3DCC8", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 0.8fr", background: "#1A5C2A", padding: "6px 10px", gap: 6 }}>
+          {["Zone", "Balance", "Swingwt", "ΔSW"].map(h => <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#fff", fontFamily: "Inter, sans-serif" }}>{h}</span>)}
+        </div>
+        {zones.map((z, i) => {
+          const r = leadTapeEffect(racquet, addG, zonePosCm(z, lengthCm));
+          const active = z.id === zoneId;
+          return (
+            <div key={z.id} onClick={() => setZoneId(z.id)} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 0.8fr", padding: "7px 10px", gap: 6, background: active ? "#EAF3EC" : i % 2 ? "#F5F2EB" : "#fff", cursor: "pointer", alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "#18181B", fontFamily: "Inter, sans-serif", fontWeight: active ? 600 : 400 }}>{z.label}</span>
+              <span style={{ fontSize: 11, color: "#4A4540", fontFamily: "'JetBrains Mono', monospace" }}>{r.newBalanceMm}</span>
+              <span style={{ fontSize: 11, color: "#4A4540", fontFamily: "'JetBrains Mono', monospace" }}>{r.newSW}</span>
+              <span style={{ fontSize: 11, color: deltaColor(r.deltaSW), fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{fmtDelta(r.deltaSW)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>
+        Swingweight is measured about the standard 10&nbsp;cm axis (from the butt), in kg·cm² — the same standard used for tennis. Mass at the tip raises swingweight most; mass in the handle barely changes it but shifts balance toward head-light. Physics via the parallel axis theorem, ΔSW = mass × distance².
+      </p>
+    </div>
+  );
+}
+
+// Innovation-specific option sets — only the materials that are part of, or
+// make engineering sense with, the hollow-tube / clamshell / captured-foam
+// system. Kept separate from the standard build lists so the conventional
+// build flow stays clean and this experimental track is clearly bounded.
+const INNOVATION_FRAME_IDS = ["hollow-tubular-frame", "two-piece-clamshell-frame", "honeycomb-reinforced-frame"];
+const INNOVATION_CORE_IDS = ["two-piece-cassette-core", "hybrid-core", "eva-soft", "eva-medium", "eva-hard"];
+// Face skins: the sandwich's face sheets. Any carbon works; these are the
+// sensible skins to pair with a thin-skin sandwich, incl. the two padel-
+// unexplored options that suit an experimental build.
+const INNOVATION_FACE_IDS = ["carbon-3k", "carbon-12k", "carbon-18k", "carbon-ud", "basalt-face", "kevlar-reinforced"];
+
+function InnovationSelect({ label, hint, value, onChange, options }: { label: string; hint?: string; value: string; onChange: (v: string) => void; options: any[] }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#18181B", fontFamily: "Inter, sans-serif" }}>{label}</span>
+        {hint && <span style={{ fontSize: 10.5, color: "#7A7268", fontFamily: "Inter, sans-serif" }}>{hint}</span>}
+      </div>
+      <SelectField value={value} onChange={onChange} options={options}/>
+    </div>
+  );
+}
+
+function HollowFrameInnovationPanel({
+  mode, frameId, setFrameId, coreId, setCoreId, faceId, setFaceId,
+  frame, core, face,
+}: any) {
+  const frameOptions = FRAME_MATERIALS.filter((f: any) => INNOVATION_FRAME_IDS.includes(f.id));
+  const coreOptions = INNOVATION_CORE_IDS.map(id => CORE_MATERIALS.find((c: any) => c.id === id)).filter(Boolean);
+  const faceOptions = INNOVATION_FACE_IDS.map(id => FACE_MATERIALS.find((f: any) => f.id === id)).filter(Boolean);
+  const frameIsInnovation = INNOVATION_FRAME_IDS.includes(frameId);
+
+  return (
+    <div>
+      {/* Intro */}
+      <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 14 }}>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>⚗ Experimental innovation track</div>
+        <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+          Everything for the hollow-tube frame lives here — construction, the foam and skin that pair with it, and the full build guide. Choices here drive the live visualization and physics, same as the standard build. This is a prototype path to test and measure, not a proven production spec.
+        </p>
+      </div>
+
+      {/* Scoped selectors */}
+      <div style={{ padding: "12px 12px 4px", background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10, marginBottom: 14 }}>
+        <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 10 }}>Configure the innovation</div>
+
+        <InnovationSelect label="Frame construction" hint="hollow / clamshell" value={frameIsInnovation ? frameId : INNOVATION_FRAME_IDS[0]} onChange={setFrameId} options={frameOptions}/>
+        {!frameIsInnovation && (
+          <p style={{ fontSize: 11, color: "#92400E", lineHeight: 1.5, margin: "-8px 0 12px", fontFamily: "Inter, sans-serif" }}>
+            A conventional frame is currently selected. Pick a construction above to switch the build onto the innovation track.
+          </p>
+        )}
+
+        <InnovationSelect label="Foam core / cassette" hint="the captured foam" value={coreId} onChange={setCoreId} options={coreOptions}/>
+        <InnovationSelect label="Face skin" hint="the sandwich skins" value={faceId} onChange={setFaceId} options={faceOptions}/>
+      </div>
+
+      {/* Selected-frame explainer + weight-parity note */}
+      {frameIsInnovation && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ padding: "10px 12px", background: "#FEF3C7", border: "1px solid #D97706", borderRadius: 8 }}>
+            <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#92400E", marginBottom: 3 }}>Why it's experimental</div>
+            <p style={{ fontSize: 12, color: "#78350F", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+              Sound in engineering principle and standard in tennis, but not commercially proven in padel. Physics estimates are directional, not validated against production data.
+            </p>
+            {(frameId === "hollow-tubular-frame" || frameId === "two-piece-clamshell-frame") && (
+              <p style={{ fontSize: 11.5, color: "#78350F", lineHeight: 1.55, margin: "8px 0 0", fontFamily: "Inter, sans-serif" }}>
+                <strong>Weight-parity constraint:</strong> to match a conventional ~355g racquet, the tube must be thin/compressed around the face and open to a full ~22mm tennis-derived beam only through the throat. A full-depth 22mm tube around the whole perimeter computes ~55g overweight — the taper is what keeps it weight-viable.
+              </p>
+            )}
+          </div>
+          <MaterialNote text={frame.note}/>
+          {mode === "manufacturer" && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
+        </div>
+      )}
+
+      {/* Build guide */}
+      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", margin: "4px 0 10px" }}>Production build guide</div>
+      <HollowFrameBuildGuide/>
+    </div>
+  );
+}
+
+function HollowFrameBuildGuide() {
+  const [tab, setTab] = useState<"steps" | "risks">("steps");
+  return (
+    <div>
+      <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>For the manufacturer</div>
+        <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+          How to build the hollow-tube frame in two bondable halves that compress the foam. Tap any step for the reasoning behind it. This is a prototype path to test and measure — not yet a proven production spec.
+        </p>
+      </div>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {[["steps", "Build steps"], ["risks", "Risks & fixes"]].map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id as any)} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${tab === id ? "#1A5C2A" : "#D4CCB8"}`, background: tab === id ? "#1A5C2A" : "#fff", color: tab === id ? "#fff" : "#4A4540", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
+        ))}
+      </div>
+
+      {tab === "steps" && (
+        <div>
+          {BUILD_GUIDE_STEPS.map(s => <BuildGuideStep key={s.n} step={s} />)}
+          <div style={{ marginTop: 6, padding: "11px 12px", background: "#F5F2EB", borderRadius: 8, border: "1px solid #E3DCC8" }}>
+            <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 5 }}>The one sentence to remember</div>
+            <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.6, margin: 0, fontFamily: "Inter, sans-serif" }}>
+              A hollow tube is consolidated by internal bladder pressure against a rigid mold; two clam-halves co-cure at a shear-loaded seam to capture pre-compressed foam; and it is more durable than a solid face <strong>only if</strong> the skin-to-core bond is void-free — the same bond the foam fit and vacuum cure are built to perfect.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === "risks" && (
+        <div>
+          {BUILD_GUIDE_COUNTERMEASURES.map((c, i) => (
+            <div key={i} style={{ border: "1px solid #E3DCC8", borderRadius: 10, marginBottom: 8, padding: "11px 12px", background: "#fff" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: "#D97706", flexShrink: 0 }}/>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#18181B", fontFamily: "Inter, sans-serif" }}>{c.risk}</span>
+              </div>
+              <p style={{ fontSize: 11.5, color: "#92400E", lineHeight: 1.5, margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}><strong>Cause:</strong> {c.cause}</p>
+              <div style={{ padding: "7px 9px", background: "#EAF3EC", borderRadius: 6, borderLeft: "2px solid #1A5C2A" }}>
+                <p style={{ fontSize: 11.5, color: "#1A5C2A", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}><strong>Fix:</strong> {c.fix}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -5161,7 +5652,7 @@ export default function App() {
 
       {/* Core Material */}
       <AccordionSection id="core" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>} label="Core Material" isOpen={openSections.has("core")} onToggle={() => toggle("core")}>
-        <SelectField value={coreId} onChange={setCoreId} options={CORE_MATERIALS}/>
+        <SelectField value={coreId} onChange={setCoreId} options={CORE_MATERIALS.filter((c:any) => !c.experimental)}/>
         <div style={{ fontSize:11.5, color:"#7A7268", marginTop:6, fontFamily:"'JetBrains Mono', monospace" }}>density: {core.density}</div>
         <MaterialNote text={core.note}/>
         {mode === "manufacturer" && <ManufacturingNote text={(core as any).manufacturingNote}/>}
@@ -5184,20 +5675,37 @@ export default function App() {
         )}
       </AccordionSection>
 
-      {/* Frame */}
+      {/* Frame — conventional constructions only. The experimental hollow /
+          clamshell / honeycomb frames live entirely in the Innovation
+          section below, so the standard build flow stays clean. */}
       <AccordionSection id="frame" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>} label="Frame Material" isOpen={openSections.has("frame")} onToggle={() => toggle("frame")}>
-        <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS} groupExperimental/>
-        {(frame as any).experimental && (
+        <SelectField value={frameId} onChange={setFrameId} options={FRAME_MATERIALS.filter((f:any) => !f.experimental)}/>
+        {(frame as any).experimental ? (
           <div style={{ marginTop: 10, padding: "10px 12px", background: "#FEF3C7", border: "1px solid #D97706", borderRadius: 8 }}>
-            <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#92400E", marginBottom: 3 }}>⚗ Experimental construction</div>
             <p style={{ fontSize: 12, color: "#78350F", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
-              This construction is theoretical — sound in engineering principle and used in adjacent sports, but not commercially proven in padel. The physics estimates below are directional, not validated against production data. Treat it as a research direction requiring prototyping and testing, not a drop-in spec.
+              An experimental construction (<strong>{frame.label}</strong>) is active. Configure and read about it in the <strong>Hollow Frame Innovation</strong> section below.
             </p>
           </div>
+        ) : (
+          <MaterialNote text={frame.note}/>
         )}
-        <MaterialNote text={frame.note}/>
-        {mode === "manufacturer" && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
+        {mode === "manufacturer" && !(frame as any).experimental && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
       </AccordionSection>
+
+      {/* Hollow Frame Innovation — the complete experimental track in one
+          place: scoped frame/core/face selectors, the weight-parity note,
+          and the full production build guide. Manufacturer mode only. */}
+      {mode === "manufacturer" && (
+        <AccordionSection id="innovation" icon={<Wrench size={15}/>} label="Hollow Frame Innovation" isOpen={openSections.has("innovation")} onToggle={() => toggle("innovation")} badge={(frame as any).experimental ? "ACTIVE" : "⚗"}>
+          <HollowFrameInnovationPanel
+            mode={mode}
+            frameId={frameId} setFrameId={setFrameId}
+            coreId={coreId} setCoreId={setCoreId}
+            faceId={faceId} setFaceId={setFaceId}
+            frame={frame} core={core} face={face}
+          />
+        </AccordionSection>
+      )}
 
       {/* Surface Texture */}
       <AccordionSection id="surface" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6l9-4 9 4v12l-9 4-9-4z"/></svg>} label="Surface Texture" isOpen={openSections.has("surface")} onToggle={() => toggle("surface")}>
@@ -5257,6 +5765,15 @@ export default function App() {
             FIP rules: holes in the central striking area must measure 9–13mm diameter. 4cm peripheral band allows different shapes up to 20mm. No minimum or maximum count specified.
           </p>
         )}
+      </AccordionSection>
+
+      {/* Lead-tape customization tool — a secondary player-facing tool for
+          tuning static weight, balance, and swingweight with lead tape.
+          Available in both modes; the head channel that seats the tape is
+          shown in the Profile view. Prefilled with the current build's
+          weight/balance as a starting point. */}
+      <AccordionSection id="leadtape" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="9"/></svg>} label="Lead Tape & Balance" isOpen={openSections.has("leadtape")} onToggle={() => toggle("leadtape")}>
+        <LeadTapeTool defaultWeightG={weightG} defaultBalanceMm={balanceCm * 10} defaultLengthMm={lengthMm}/>
       </AccordionSection>
 
       {mode === "manufacturer" && fto_flagged && (
