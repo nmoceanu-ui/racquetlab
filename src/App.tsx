@@ -2744,27 +2744,38 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
       {/* Lead-tape indentation channel — a recessed groove running along
           the head's perimeter (top & bottom edges in this side view) into
           which lead tape is seated so it sits flush and is protected from
-          scrapes and impact peeling it off. Drawn as a double groove line
-          with a faint inner shadow so it reads as a recess, not a printed
-          line. Not shown for hollow-frame constructions (the tube frame
-          has no room for a surface channel). */}
+          scrapes and impact peeling it off. Drawn as recessed bands that
+          BREAK around the central 38mm dimension callout so neither
+          overlaps the other. Explained by name in the Lead Tape & Balance
+          customization section, so no on-diagram label is needed. Not shown
+          for hollow-frame constructions (no room for a surface channel). */}
       {leadChannel && !showHollowSection && (() => {
-        const chTopY = (x: number) => topAt(x) + headThick * 0.20;
-        const chBotY = (x: number) => botAt(x) - headThick * 0.20;
-        const cxs: number[] = [];
-        for (let x = startX + headLen * 0.10; x <= headEndX - 4; x += 4) cxs.push(x);
-        const topLine = cxs.map(x => `${x},${chTopY(x).toFixed(1)}`).join(" L ");
-        const botLine = cxs.map(x => `${x},${chBotY(x).toFixed(1)}`).join(" L ");
+        const chTopY = (x: number) => topAt(x) + headThick * 0.18;
+        const chBotY = (x: number) => botAt(x) - headThick * 0.18;
+        const dimX = startX + headLen * 0.5; // where the 38mm dimension line sits
+        // Two x-ranges: left of the dimension line, and right of it, each
+        // with a clear margin so the dashed lines never touch the callout.
+        const ranges = [
+          [startX + headLen * 0.10, dimX - 20],
+          [dimX + 22, headEndX - 6],
+        ];
+        const mkLine = (yf: (x: number) => number, a: number, b: number) => {
+          const pts: string[] = [];
+          for (let x = a; x <= b; x += 4) pts.push(`${x},${yf(x).toFixed(1)}`);
+          return pts.length ? `M ${pts.join(" L ")}` : "";
+        };
         return (
           <g>
-            {/* recess shadow bands */}
-            <path d={`M ${topLine}`} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
-            <path d={`M ${botLine}`} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
-            {/* groove edge lines */}
-            <path d={`M ${topLine}`} fill="none" stroke="#1A5C2A" strokeWidth="1" opacity="0.5" strokeDasharray="1.5 2"/>
-            <path d={`M ${botLine}`} fill="none" stroke="#1A5C2A" strokeWidth="1" opacity="0.5" strokeDasharray="1.5 2"/>
-            {/* label */}
-            <text x={startX + headLen * 0.5} y={chTopY(startX + headLen * 0.5) - 4} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A" opacity="0.7" textAnchor="middle">lead-tape channel</text>
+            {ranges.map(([a, b], i) => (
+              <g key={i}>
+                {/* recess shadow bands */}
+                <path d={mkLine(chTopY, a, b)} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
+                <path d={mkLine(chBotY, a, b)} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
+                {/* groove edge lines */}
+                <path d={mkLine(chTopY, a, b)} fill="none" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
+                <path d={mkLine(chBotY, a, b)} fill="none" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
+              </g>
+            ))}
           </g>
         );
       })()}
@@ -3927,6 +3938,16 @@ function LeadTapeTool({ defaultWeightG, defaultBalanceMm, defaultLengthMm }: { d
         </p>
       </div>
 
+      <div style={{ padding: "8px 10px", background: "rgba(26,92,42,0.05)", borderRadius: 6, borderLeft: "2px solid #1A5C2A", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+        <svg width="34" height="16" viewBox="0 0 34 16" style={{ flexShrink: 0 }}>
+          <line x1="1" y1="4" x2="33" y2="4" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
+          <line x1="1" y1="12" x2="33" y2="12" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
+        </svg>
+        <p style={{ fontSize: 11, color: "#4A4540", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}>
+          The dashed green lines along the head in the <strong>Profile</strong> view mark this recessed channel — where the lead tape sits flush.
+        </p>
+      </div>
+
       {/* Sport toggle */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         {[["padel", "Padel"], ["tennis", "Tennis"]].map(([id, label]) => (
@@ -4002,6 +4023,90 @@ function LeadTapeTool({ defaultWeightG, defaultBalanceMm, defaultLengthMm }: { d
       </div>
       <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>
         Swingweight is measured about the standard 10&nbsp;cm axis (from the butt), in kg·cm² — the same standard used for tennis. Mass at the tip raises swingweight most; mass in the handle barely changes it but shifts balance toward head-light. Physics via the parallel axis theorem, ΔSW = mass × distance².
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Lanyard concept — the wick-and-evaporate detachable wrist strap. This is an
+// exploration/concept feature (like the hollow-frame track): it presents the
+// design thesis and the engineering rationale, not a configurable spec yet.
+// Lead problem addressed: sweat management (wick, don't absorb or repel).
+// ---------------------------------------------------------------------------
+function LanyardConcept() {
+  const band = "url(#lanyBand)";
+  return (
+    <div>
+      <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>⚗ Concept — wick &amp; evaporate lanyard</div>
+        <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
+          A detachable wrist strap built around sweat management. Today's market either soaks sweat (cuffs, stays wet) or repels it (runs onto the handle). This design does neither — it wicks moisture off the skin, spreads it, and lets it evaporate, like technical sportswear. Detachable so it swaps like Wilson Zipcord / Babolat Smart Buttcap / NOX SmartStrap.
+        </p>
+      </div>
+
+      {/* Panel 1 — worn */}
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 10, padding: 12 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Flat band, worn on the wrist</div>
+        <svg viewBox="0 0 326 120" width="100%" style={{ display: "block" }}>
+          <defs>
+            <linearGradient id="lanyBand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D46"/><stop offset="100%" stopColor="#1A5C2A"/></linearGradient>
+            <radialGradient id="lanySkin" cx="0.4" cy="0.35"><stop offset="0%" stopColor="#EADEC9"/><stop offset="100%" stopColor="#D3C4A6"/></radialGradient>
+          </defs>
+          <path d="M 40 46 Q 90 40 120 46 L 120 82 Q 90 88 40 82 Z" fill="url(#lanySkin)" stroke="#C0B08C" strokeWidth="1.3"/>
+          <rect x="64" y="38" width="22" height="52" rx="4" fill={band}/>
+          <rect x="64" y="38" width="22" height="52" rx="4" fill="none" stroke="#0F3D1B" strokeWidth="0.8" opacity="0.4"/>
+          <path d="M 75 90 L 75 112" stroke={band} strokeWidth="18" strokeLinecap="round"/>
+          <rect x="63" y="104" width="24" height="14" rx="3" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/>
+          <text x="150" y="52" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#4A4540">≈20mm wide band</text>
+          <text x="150" y="66" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">spreads hold force,</text>
+          <text x="150" y="80" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">no thin-cord dig-in</text>
+          <text x="150" y="108" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">click-in anchor — swappable</text>
+        </svg>
+      </div>
+
+      {/* Panel 2 — flat vs round */}
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 10, padding: 12 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Why flat, not a round cord</div>
+        <svg viewBox="0 0 326 96" width="100%" style={{ display: "block" }}>
+          <circle cx="55" cy="40" r="10" fill="#8A7B5C"/>
+          <line x1="55" y1="54" x2="55" y2="66" stroke="#C0392B" strokeWidth="3"/>
+          <rect x="30" y="66" width="50" height="6" rx="1" fill="#E8DCC8" stroke="#C0B08C" strokeWidth="1"/>
+          <text x="55" y="88" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#C0392B">round: force on a line</text>
+          <rect x="200" y="30" width="60" height="9" rx="3" fill={band}/>
+          <g stroke="#1A5C2A" strokeWidth="2" opacity="0.5">
+            <line x1="210" y1="42" x2="210" y2="52"/><line x1="225" y1="42" x2="225" y2="52"/><line x1="240" y1="42" x2="240" y2="52"/><line x1="250" y1="42" x2="250" y2="52"/>
+          </g>
+          <rect x="195" y="66" width="70" height="6" rx="1" fill="#E8DCC8" stroke="#C0B08C" strokeWidth="1"/>
+          <text x="230" y="88" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">flat: force spread wide</text>
+          <text x="130" y="46" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="16" fill="#7A7268">vs</text>
+        </svg>
+      </div>
+
+      {/* Panel 3 — cutaway */}
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 4, padding: 12 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Wick &amp; evaporate — not soak</div>
+        <svg viewBox="0 0 326 120" width="100%" style={{ display: "block" }}>
+          <g stroke="#1A5C2A" strokeWidth="1.2" opacity="0.55">
+            <path d="M 60 44 L 56 30" fill="none"/><path d="M 110 44 L 106 30" fill="none"/><path d="M 160 44 L 156 30" fill="none"/><path d="M 210 44 L 206 30" fill="none"/>
+          </g>
+          <text x="240" y="34" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">evaporates →</text>
+          <rect x="40" y="44" width="190" height="14" rx="2" fill={band}/>
+          <text x="240" y="55" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">spread + dry face</text>
+          <rect x="40" y="58" width="190" height="11" rx="2" fill="#7FB894"/>
+          <text x="240" y="67" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">wicking mesh</text>
+          <rect x="40" y="69" width="190" height="13" rx="2" fill="#D8C9AE" stroke="#C0B08C" strokeWidth="1"/>
+          <text x="240" y="79" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#8A7B5C">skin side (dry-touch)</text>
+          <g fill="#4FA3C7" opacity="0.7">
+            <circle cx="80" cy="76" r="2"/><circle cx="130" cy="74" r="2"/><circle cx="180" cy="76" r="2"/>
+          </g>
+          <text x="40" y="104" fontFamily="Inter, sans-serif" fontSize="9" fill="#7A7268">Moisture pulls off the skin, spreads across the</text>
+          <text x="40" y="116" fontFamily="Inter, sans-serif" fontSize="9" fill="#7A7268">outer face, and dries — never soaks and stays wet.</text>
+        </svg>
+      </div>
+
+      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "12px 0 0", fontFamily: "Inter, sans-serif" }}>
+        Concept exploration — the comfort (flat-band pressure spread) and tightness-lock ideas are noted for a later pass. This first pass leads with sweat management, per the brief.
       </p>
     </div>
   );
@@ -5774,6 +5879,12 @@ export default function App() {
           weight/balance as a starting point. */}
       <AccordionSection id="leadtape" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="9"/></svg>} label="Lead Tape & Balance" isOpen={openSections.has("leadtape")} onToggle={() => toggle("leadtape")}>
         <LeadTapeTool defaultWeightG={weightG} defaultBalanceMm={balanceCm * 10} defaultLengthMm={lengthMm}/>
+      </AccordionSection>
+
+      {/* Lanyard concept — wick-and-evaporate detachable wrist strap. Concept
+          exploration section, available in both modes. */}
+      <AccordionSection id="lanyard" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/></svg>} label="Lanyard Concept" isOpen={openSections.has("lanyard")} onToggle={() => toggle("lanyard")} badge="⚗">
+        <LanyardConcept/>
       </AccordionSection>
 
       {mode === "manufacturer" && fto_flagged && (
