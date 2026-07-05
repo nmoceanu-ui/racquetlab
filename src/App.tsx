@@ -4097,39 +4097,93 @@ function LanyardConfigurator() {
         </p>
       </div>
 
-      {/* Live visual */}
-      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 12, padding: 12 }}>
-        <svg viewBox="0 0 326 132" width="100%" style={{ display: "block" }}>
+      {/* Live visual — the lanyard hanging off a racquet grip, redrawing
+          per the current picks. Cord shape sets strand width (flat = wide,
+          round = thin); the lock element is drawn distinctly (the cam is
+          deliberately the most prominent); the buttcap attachment differs
+          for detachable vs fixed. */}
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 12, padding: 12, display: "flex", justifyContent: "center" }}>
+        <svg viewBox="0 0 160 218" width="170" style={{ display: "block" }}>
           <defs>
             <linearGradient id="cfgBand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D46"/><stop offset="100%" stopColor="#1A5C2A"/></linearGradient>
           </defs>
-          {/* wrist */}
-          <ellipse cx="70" cy="66" rx="30" ry="38" fill="#EADEC9" stroke="#C0B08C" strokeWidth="1.3"/>
-          <text x="70" y="69" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#8A7B5C">wrist</text>
-          {/* strap around wrist: flat = wide rect, round = thin */}
-          {isRound ? (
-            <path d="M 70 28 A 30 38 0 0 1 70 104" fill="none" stroke="url(#cfgBand)" strokeWidth="6"/>
-          ) : (
-            <path d="M 70 24 A 34 42 0 0 1 70 108" fill="none" stroke="url(#cfgBand)" strokeWidth="16" strokeLinecap="round"/>
-          )}
-          {/* cord to lock */}
-          <path d={`M 70 104 L 70 118 L 150 118`} fill="none" stroke="#1A5C2A" strokeWidth={isRound ? 5 : 9} strokeLinecap="round"/>
-          {/* lock element */}
-          {lockId === "cam" && (<><rect x="150" y="108" width="40" height="20" rx="5" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.3"/><rect x="164" y="102" width="12" height="9" rx="2" fill="#7FB894" stroke="#1A5C2A" strokeWidth="0.8"/></>)}
-          {lockId === "ratchet" && (<circle cx="170" cy="118" r="12" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.3"/>)}
-          {lockId === "slider" && (<rect x="158" y="110" width="24" height="16" rx="8" fill="#7FB894" stroke="#1A5C2A" strokeWidth="1.1"/>)}
-          {lockId === "braided" && (<path d="M 152 118 q 6 -6 12 0 q 6 6 12 0 q 6 -6 12 0" fill="none" stroke="#1A5C2A" strokeWidth="3"/>)}
-          {lockId === "elastic" && (<g stroke="#7FB894" strokeWidth="2.5" fill="none"><path d="M 152 118 q 5 -5 10 0 q 5 5 10 0 q 5 -5 10 0"/></g>)}
-          {/* attachment end */}
-          <path d={`M ${lockId === "ratchet" ? 182 : 190} 118 L 250 118`} fill="none" stroke="#1A5C2A" strokeWidth={isRound ? 5 : 9} strokeLinecap="round"/>
-          {attachId === "detachable" ? (
-            <><rect x="250" y="110" width="22" height="16" rx="3" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/><circle cx="261" cy="118" r="3.5" fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="1"/><text x="284" y="121" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">clip</text></>
-          ) : (
-            <><rect x="250" y="112" width="18" height="12" rx="2" fill="#8A7B5C"/><text x="276" y="121" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">fixed</text></>
-          )}
-          {/* labels */}
-          <text x="120" y="102" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">{shape.label.toLowerCase()}</text>
-          <text x="150" y="98" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">{lock.label.split(" ")[0].toLowerCase()}</text>
+          {(() => {
+            const cx = 80;
+            const bw = isRound ? 6 : 15;      // strand width: round thin, flat wide
+            // Grip stub
+            const gripRows = [];
+            for (let i = 0; i < 5; i++) gripRows.push(<line key={i} x1={cx - 16} y1={18 + i * 9} x2={cx + 16} y2={22 + i * 9} stroke="#2A2620" strokeWidth="0.7" opacity="0.4"/>);
+            // Attachment start point
+            const startY = attachId === "detachable" ? 82 : 76;
+            const openTop = 152;
+            const ly = startY + 42; // lock position on the strand
+            return (
+              <>
+                {/* grip + buttcap */}
+                <rect x={cx - 16} y={10} width={32} height={54} rx={7} fill="#E8E2D6" stroke="#2A2620" strokeWidth="1.6"/>
+                {gripRows}
+                <rect x={cx - 18} y={62} width={36} height={8} rx={3} fill="#2A2620"/>
+                <text x={cx} y={9} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#8A7B5C">grip</text>
+
+                {/* attachment at buttcap */}
+                {attachId === "detachable" ? (
+                  <>
+                    <rect x={cx - 9} y={70} width={18} height={12} rx={3} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/>
+                    <circle cx={cx} cy={76} r={3} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="1"/>
+                    <text x={cx + 30} y={79} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#4A4540">clip-off</text>
+                  </>
+                ) : (
+                  <>
+                    <path d={`M ${cx - 6} 70 L ${cx} 76 L ${cx + 6} 70`} fill="none" stroke="#8A7B5C" strokeWidth="2"/>
+                    <text x={cx + 26} y={76} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#4A4540">fixed-in</text>
+                  </>
+                )}
+
+                {/* hanging lanyard loop — two strands into a wrist opening */}
+                <path d={`M ${cx - 4} ${startY} C ${cx - 30} ${startY + 30} ${cx - 34} ${openTop - 20} ${cx - 26} ${openTop}`} fill="none" stroke="url(#cfgBand)" strokeWidth={bw} strokeLinecap="round"/>
+                <path d={`M ${cx + 4} ${startY} C ${cx + 30} ${startY + 30} ${cx + 34} ${openTop - 20} ${cx + 26} ${openTop}`} fill="none" stroke="url(#cfgBand)" strokeWidth={bw} strokeLinecap="round"/>
+                <ellipse cx={cx} cy={openTop + 18} rx={30} ry={20} fill="none" stroke="url(#cfgBand)" strokeWidth={bw}/>
+                <text x={cx} y={openTop + 22} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#8A7B5C">wrist</text>
+
+                {/* cord-shape tag */}
+                <text x={cx + 34} y={startY + 20} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A">{isRound ? "round" : "flat"}</text>
+
+                {/* LOCK element — drawn on the left strand, cam most prominent */}
+                {lockId === "cam" && (
+                  <>
+                    <rect x={cx - 40} y={ly - 11} width={32} height={22} rx={5} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.8"/>
+                    <rect x={cx - 32} y={ly - 18} width={15} height={9} rx={2} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1"/>
+                    <text x={cx - 24} y={ly + 21} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#1A5C2A" fontWeight="700">CAM LOCK</text>
+                  </>
+                )}
+                {lockId === "ratchet" && (
+                  <>
+                    <circle cx={cx - 24} cy={ly} r={11} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.6"/>
+                    {Array.from({ length: 8 }).map((_, a) => { const rad = a * Math.PI / 4; return <line key={a} x1={cx - 24 + Math.cos(rad) * 7} y1={ly + Math.sin(rad) * 7} x2={cx - 24 + Math.cos(rad) * 11} y2={ly + Math.sin(rad) * 11} stroke="#7FB894" strokeWidth="1.4"/>; })}
+                    <text x={cx - 24} y={ly + 22} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">DIAL</text>
+                  </>
+                )}
+                {lockId === "slider" && (
+                  <>
+                    <rect x={cx - 36} y={ly - 8} width={22} height={16} rx={8} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1.3"/>
+                    <text x={cx - 25} y={ly + 18} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">SLIDER</text>
+                  </>
+                )}
+                {lockId === "braided" && (
+                  <>
+                    <path d={`M ${cx - 38} ${ly} q 5 -6 10 0 q 5 6 10 0 q 5 -6 10 0`} fill="none" stroke="#1A5C2A" strokeWidth="3.5"/>
+                    <text x={cx - 23} y={ly + 16} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">ROLL-UP</text>
+                  </>
+                )}
+                {lockId === "elastic" && (
+                  <>
+                    <path d={`M ${cx - 40} ${ly} q 4 -6 8 0 q 4 6 8 0 q 4 -6 8 0 q 4 6 8 0`} fill="none" stroke="#7FB894" strokeWidth="2.8"/>
+                    <text x={cx - 24} y={ly + 16} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">ELASTIC</text>
+                  </>
+                )}
+              </>
+            );
+          })()}
         </svg>
       </div>
 
