@@ -4028,85 +4028,158 @@ function LeadTapeTool({ defaultWeightG, defaultBalanceMm, defaultLengthMm }: { d
   );
 }
 
-// ---------------------------------------------------------------------------
-// Lanyard concept — the wick-and-evaporate detachable wrist strap. This is an
-// exploration/concept feature (like the hollow-frame track): it presents the
-// design thesis and the engineering rationale, not a configurable spec yet.
-// Lead problem addressed: sweat management (wick, don't absorb or repel).
-// ---------------------------------------------------------------------------
-function LanyardConcept() {
-  const band = "url(#lanyBand)";
+// ===========================================================================
+// LANYARD CONFIGURATOR — interactive brainstorming tool for the wrist strap.
+// Four independent axes (cord shape, lock mechanism, attachment, material),
+// each carrying real tradeoff deltas grounded in materials research. A live
+// visual redraws round-vs-flat and the chosen lock; a reactive readout scores
+// the combination on sweat management, comfort, security, and durability.
+// ===========================================================================
+const LANYARD_MATERIALS = [
+  { id: "polyester-wick", label: "Wicking polyester", sweat: 5, comfort: 4, security: 4, durability: 5, note: "Hydrophobic (<1% water), quick-dry, UV-stable, holds tension. The technical-sportswear pick — best all-round for a padel strap." },
+  { id: "nylon", label: "Woven nylon", sweat: 3, comfort: 4, security: 4, durability: 4, note: "Breathable and quick-drying, but absorbs some water; elastic so it shock-absorbs. UV-degrades slowly over years." },
+  { id: "silicone", label: "Silicone / TPE", sweat: 4, comfort: 3, security: 3, durability: 3, note: "100% waterproof, won't absorb sweat or odor, grippy and hypoallergenic. But stretches under load and lasts ~1–2 years." },
+  { id: "paracord", label: "550 paracord", sweat: 2, comfort: 2, security: 5, durability: 5, note: "250kg+ strength, 5+ year life, premium tactile feel. Round-only, and can stay damp against the skin." },
+  { id: "rpet-eco", label: "rPET (recycled)", sweat: 4, comfort: 4, security: 4, durability: 4, note: "Recycled-polyester eco option — near-polyester performance with a sustainability story (GRS-certifiable)." },
+];
+const LANYARD_SHAPES = [
+  { id: "flat", label: "Wide flat band", sweat: 1, comfort: 2, security: 0, durability: 0, note: "≈20mm band spreads the hold force over more skin, so pressure drops below the 'I feel it' threshold. More surface area to wick and evaporate. Feathered edges leave no hard line." },
+  { id: "round", label: "Round cord", sweat: 0, comfort: -1, security: 1, durability: 1, note: "Traditional. Concentrates force on a thin line so it can dig in, but it's simple, strong, and grips a cam lock best." },
+];
+const LANYARD_LOCKS = [
+  { id: "cam", label: "Spring cam lock", sweat: 0, comfort: 0, security: 2, durability: 0, note: "Pull to tighten; the cam wedges tighter against loosening, so it holds a set tension all match and never drifts. Thumb-press to release. Sits flush on the outer face at the junction." },
+  { id: "slider", label: "Sliding cord", sweat: 0, comfort: 0, security: 0, durability: 0, note: "Auto-adjusts to wrist thickness with no rolling — comfortable, but it can't lock a chosen tension in place." },
+  { id: "braided", label: "Braided roll-up", sweat: 0, comfort: -1, security: -1, durability: 0, note: "The default on most rackets: roll it on itself to tighten. Friction-based, so it creeps loose during play — the annoyance we're solving." },
+  { id: "elastic", label: "Elastic self-tension", sweat: 0, comfort: 1, security: 1, durability: 0, note: "A sized elastic returns to a preset tension every time. No in-play adjustment because there's nothing to drift — removes the fiddling entirely." },
+  { id: "ratchet", label: "Ratchet dial (premium)", sweat: 0, comfort: 0, security: 2, durability: -1, note: "Click-to-tighten micro-adjust, holds absolutely, glove-friendly. Complex, adds a rigid puck, and BOA-style dials are patented (would need a clean-room equivalent)." },
+];
+const LANYARD_ATTACH = [
+  { id: "detachable", label: "Detachable / swappable", sweat: 1, comfort: 0, security: 0, durability: 1, note: "Pop it off to wash or swap when sweaty — like Wilson Zipcord / Babolat Smart Buttcap / NOX SmartStrap. Best for hygiene and customization; keep the coupling clear of their patents." },
+  { id: "fixed", label: "Fixed-in", sweat: 0, comfort: 0, security: 1, durability: 0, note: "Anchored inside the buttcap — simpler, one less failure point, but can't be removed to wash or replace." },
+];
+
+function LanyardConfigurator() {
+  const [materialId, setMaterialId] = useState("polyester-wick");
+  const [shapeId, setShapeId] = useState("flat");
+  const [lockId, setLockId] = useState("cam");
+  const [attachId, setAttachId] = useState("detachable");
+
+  const material = LANYARD_MATERIALS.find(m => m.id === materialId)!;
+  const shape = LANYARD_SHAPES.find(s => s.id === shapeId)!;
+  const lock = LANYARD_LOCKS.find(l => l.id === lockId)!;
+  const attach = LANYARD_ATTACH.find(a => a.id === attachId)!;
+
+  const clamp = (v: number) => Math.max(0, Math.min(5, v));
+  const scores = {
+    sweat: clamp(material.sweat + shape.sweat + lock.sweat + attach.sweat),
+    comfort: clamp(material.comfort + shape.comfort + lock.comfort + attach.comfort),
+    security: clamp(material.security + shape.security + lock.security + attach.security),
+    durability: clamp(material.durability + shape.durability + lock.durability + attach.durability),
+  };
+  const isRound = shapeId === "round";
+  // Paracord is round-only — reflect that constraint honestly.
+  const paracordFlatConflict = materialId === "paracord" && shapeId === "flat";
+
+  const Chip = ({ active, onClick, children }: any) => (
+    <button onClick={onClick} style={{ padding: "7px 11px", borderRadius: 8, border: `1.5px solid ${active ? "#1A5C2A" : "#D4CCB8"}`, background: active ? "#1A5C2A" : "#fff", color: active ? "#fff" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", marginRight: 6, marginBottom: 6 }}>{children}</button>
+  );
+  const AxisLabel = ({ children }: any) => (
+    <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", margin: "12px 0 6px" }}>{children}</div>
+  );
+  const scoreColor = (v: number) => v >= 4 ? "#1A5C2A" : v >= 3 ? "#7A5C1A" : "#991B1B";
+
   return (
     <div>
       <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>⚗ Concept — wick &amp; evaporate lanyard</div>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>⚗ Lanyard configurator — brainstorm the strap</div>
         <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
-          A detachable wrist strap built around sweat management. Today's market either soaks sweat (cuffs, stays wet) or repels it (runs onto the handle). This design does neither — it wicks moisture off the skin, spreads it, and lets it evaporate, like technical sportswear. Detachable so it swaps like Wilson Zipcord / Babolat Smart Buttcap / NOX SmartStrap.
+          Mix cord shape, lock, attachment, and material. The diagram and the scores below react live, so you can see the tradeoffs of every combination. Concept exploration — directional scoring, not lab-tested.
         </p>
       </div>
 
-      {/* Panel 1 — worn */}
-      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 10, padding: 12 }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Flat band, worn on the wrist</div>
-        <svg viewBox="0 0 326 120" width="100%" style={{ display: "block" }}>
+      {/* Live visual */}
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 12, padding: 12 }}>
+        <svg viewBox="0 0 326 132" width="100%" style={{ display: "block" }}>
           <defs>
-            <linearGradient id="lanyBand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D46"/><stop offset="100%" stopColor="#1A5C2A"/></linearGradient>
-            <radialGradient id="lanySkin" cx="0.4" cy="0.35"><stop offset="0%" stopColor="#EADEC9"/><stop offset="100%" stopColor="#D3C4A6"/></radialGradient>
+            <linearGradient id="cfgBand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D46"/><stop offset="100%" stopColor="#1A5C2A"/></linearGradient>
           </defs>
-          <path d="M 40 46 Q 90 40 120 46 L 120 82 Q 90 88 40 82 Z" fill="url(#lanySkin)" stroke="#C0B08C" strokeWidth="1.3"/>
-          <rect x="64" y="38" width="22" height="52" rx="4" fill={band}/>
-          <rect x="64" y="38" width="22" height="52" rx="4" fill="none" stroke="#0F3D1B" strokeWidth="0.8" opacity="0.4"/>
-          <path d="M 75 90 L 75 112" stroke={band} strokeWidth="18" strokeLinecap="round"/>
-          <rect x="63" y="104" width="24" height="14" rx="3" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/>
-          <text x="150" y="52" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#4A4540">≈20mm wide band</text>
-          <text x="150" y="66" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">spreads hold force,</text>
-          <text x="150" y="80" fontFamily="'JetBrains Mono', monospace" fontSize="8.5" fill="#7A7268">no thin-cord dig-in</text>
-          <text x="150" y="108" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">click-in anchor — swappable</text>
+          {/* wrist */}
+          <ellipse cx="70" cy="66" rx="30" ry="38" fill="#EADEC9" stroke="#C0B08C" strokeWidth="1.3"/>
+          <text x="70" y="69" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#8A7B5C">wrist</text>
+          {/* strap around wrist: flat = wide rect, round = thin */}
+          {isRound ? (
+            <path d="M 70 28 A 30 38 0 0 1 70 104" fill="none" stroke="url(#cfgBand)" strokeWidth="6"/>
+          ) : (
+            <path d="M 70 24 A 34 42 0 0 1 70 108" fill="none" stroke="url(#cfgBand)" strokeWidth="16" strokeLinecap="round"/>
+          )}
+          {/* cord to lock */}
+          <path d={`M 70 104 L 70 118 L 150 118`} fill="none" stroke="#1A5C2A" strokeWidth={isRound ? 5 : 9} strokeLinecap="round"/>
+          {/* lock element */}
+          {lockId === "cam" && (<><rect x="150" y="108" width="40" height="20" rx="5" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.3"/><rect x="164" y="102" width="12" height="9" rx="2" fill="#7FB894" stroke="#1A5C2A" strokeWidth="0.8"/></>)}
+          {lockId === "ratchet" && (<circle cx="170" cy="118" r="12" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.3"/>)}
+          {lockId === "slider" && (<rect x="158" y="110" width="24" height="16" rx="8" fill="#7FB894" stroke="#1A5C2A" strokeWidth="1.1"/>)}
+          {lockId === "braided" && (<path d="M 152 118 q 6 -6 12 0 q 6 6 12 0 q 6 -6 12 0" fill="none" stroke="#1A5C2A" strokeWidth="3"/>)}
+          {lockId === "elastic" && (<g stroke="#7FB894" strokeWidth="2.5" fill="none"><path d="M 152 118 q 5 -5 10 0 q 5 5 10 0 q 5 -5 10 0"/></g>)}
+          {/* attachment end */}
+          <path d={`M ${lockId === "ratchet" ? 182 : 190} 118 L 250 118`} fill="none" stroke="#1A5C2A" strokeWidth={isRound ? 5 : 9} strokeLinecap="round"/>
+          {attachId === "detachable" ? (
+            <><rect x="250" y="110" width="22" height="16" rx="3" fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/><circle cx="261" cy="118" r="3.5" fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="1"/><text x="284" y="121" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">clip</text></>
+          ) : (
+            <><rect x="250" y="112" width="18" height="12" rx="2" fill="#8A7B5C"/><text x="276" y="121" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">fixed</text></>
+          )}
+          {/* labels */}
+          <text x="120" y="102" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">{shape.label.toLowerCase()}</text>
+          <text x="150" y="98" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">{lock.label.split(" ")[0].toLowerCase()}</text>
         </svg>
       </div>
 
-      {/* Panel 2 — flat vs round */}
-      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 10, padding: 12 }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Why flat, not a round cord</div>
-        <svg viewBox="0 0 326 96" width="100%" style={{ display: "block" }}>
-          <circle cx="55" cy="40" r="10" fill="#8A7B5C"/>
-          <line x1="55" y1="54" x2="55" y2="66" stroke="#C0392B" strokeWidth="3"/>
-          <rect x="30" y="66" width="50" height="6" rx="1" fill="#E8DCC8" stroke="#C0B08C" strokeWidth="1"/>
-          <text x="55" y="88" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#C0392B">round: force on a line</text>
-          <rect x="200" y="30" width="60" height="9" rx="3" fill={band}/>
-          <g stroke="#1A5C2A" strokeWidth="2" opacity="0.5">
-            <line x1="210" y1="42" x2="210" y2="52"/><line x1="225" y1="42" x2="225" y2="52"/><line x1="240" y1="42" x2="240" y2="52"/><line x1="250" y1="42" x2="250" y2="52"/>
-          </g>
-          <rect x="195" y="66" width="70" height="6" rx="1" fill="#E8DCC8" stroke="#C0B08C" strokeWidth="1"/>
-          <text x="230" y="88" textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">flat: force spread wide</text>
-          <text x="130" y="46" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="16" fill="#7A7268">vs</text>
-        </svg>
+      {/* Axes */}
+      <AxisLabel>Cord shape</AxisLabel>
+      <div>{LANYARD_SHAPES.map(s => <Chip key={s.id} active={shapeId === s.id} onClick={() => setShapeId(s.id)}>{s.label}</Chip>)}</div>
+
+      <AxisLabel>Lock — how it holds around the wrist</AxisLabel>
+      <div>{LANYARD_LOCKS.map(l => <Chip key={l.id} active={lockId === l.id} onClick={() => setLockId(l.id)}>{l.label}</Chip>)}</div>
+
+      <AxisLabel>Attachment</AxisLabel>
+      <div>{LANYARD_ATTACH.map(a => <Chip key={a.id} active={attachId === a.id} onClick={() => setAttachId(a.id)}>{a.label}</Chip>)}</div>
+
+      <AxisLabel>Material</AxisLabel>
+      <div>{LANYARD_MATERIALS.map(m => <Chip key={m.id} active={materialId === m.id} onClick={() => setMaterialId(m.id)}>{m.label}</Chip>)}</div>
+
+      {paracordFlatConflict && (
+        <div style={{ marginTop: 10, padding: "9px 11px", background: "#FEF3C7", border: "1px solid #D97706", borderRadius: 8 }}>
+          <p style={{ fontSize: 11.5, color: "#78350F", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}>
+            Heads-up: paracord is a round cord by construction — it can't be made into a wide flat band. Pick round cord, or choose a woven material for the flat band.
+          </p>
+        </div>
+      )}
+
+      {/* Scores */}
+      <div style={{ marginTop: 14, padding: 12, background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10 }}>
+        <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 10 }}>How this combination performs</div>
+        {([["Sweat management", scores.sweat], ["Comfort (disappears)", scores.comfort], ["Security (holds tension)", scores.security], ["Durability", scores.durability]] as [string, number][]).map(([label, val]) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 11.5, color: "#4A4540", fontFamily: "Inter, sans-serif", width: 148, flexShrink: 0 }}>{label}</span>
+            <div style={{ flex: 1, height: 8, background: "#E8E2D6", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ width: `${(val / 5) * 100}%`, height: "100%", background: scoreColor(val), borderRadius: 4 }}/>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(val), fontFamily: "'JetBrains Mono', monospace", width: 24, textAlign: "right" }}>{val}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Panel 3 — cutaway */}
-      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 4, padding: 12 }}>
-        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 8 }}>Wick &amp; evaporate — not soak</div>
-        <svg viewBox="0 0 326 120" width="100%" style={{ display: "block" }}>
-          <g stroke="#1A5C2A" strokeWidth="1.2" opacity="0.55">
-            <path d="M 60 44 L 56 30" fill="none"/><path d="M 110 44 L 106 30" fill="none"/><path d="M 160 44 L 156 30" fill="none"/><path d="M 210 44 L 206 30" fill="none"/>
-          </g>
-          <text x="240" y="34" fontFamily="'JetBrains Mono', monospace" fontSize="8" fill="#1A5C2A">evaporates →</text>
-          <rect x="40" y="44" width="190" height="14" rx="2" fill={band}/>
-          <text x="240" y="55" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#4A4540">spread + dry face</text>
-          <rect x="40" y="58" width="190" height="11" rx="2" fill="#7FB894"/>
-          <text x="240" y="67" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#1A5C2A">wicking mesh</text>
-          <rect x="40" y="69" width="190" height="13" rx="2" fill="#D8C9AE" stroke="#C0B08C" strokeWidth="1"/>
-          <text x="240" y="79" fontFamily="'JetBrains Mono', monospace" fontSize="7.5" fill="#8A7B5C">skin side (dry-touch)</text>
-          <g fill="#4FA3C7" opacity="0.7">
-            <circle cx="80" cy="76" r="2"/><circle cx="130" cy="74" r="2"/><circle cx="180" cy="76" r="2"/>
-          </g>
-          <text x="40" y="104" fontFamily="Inter, sans-serif" fontSize="9" fill="#7A7268">Moisture pulls off the skin, spreads across the</text>
-          <text x="40" y="116" fontFamily="Inter, sans-serif" fontSize="9" fill="#7A7268">outer face, and dries — never soaks and stays wet.</text>
-        </svg>
+      {/* Rationale for current picks */}
+      <div style={{ marginTop: 12 }}>
+        {[["Material", material.note], ["Cord shape", shape.note], ["Lock", lock.note], ["Attachment", attach.note]].map(([label, note]) => (
+          <div key={label} style={{ marginBottom: 8, padding: "8px 10px", background: "rgba(26,92,42,0.04)", borderRadius: 6, borderLeft: "2px solid #1A5C2A" }}>
+            <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#1A5C2A" }}>{label}: </span>
+            <span style={{ fontSize: 11.5, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>{note}</span>
+          </div>
+        ))}
       </div>
 
       <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "12px 0 0", fontFamily: "Inter, sans-serif" }}>
-        Concept exploration — the comfort (flat-band pressure spread) and tightness-lock ideas are noted for a later pass. This first pass leads with sweat management, per the brief.
+        Our lead concept: wicking polyester, flat band, spring cam, detachable — cool, dry, unfeelable, and it never needs re-tightening. Try the market default (nylon · round · braided roll-up · fixed) to see the comfort gap.
       </p>
     </div>
   );
@@ -5884,7 +5957,7 @@ export default function App() {
       {/* Lanyard concept — wick-and-evaporate detachable wrist strap. Concept
           exploration section, available in both modes. */}
       <AccordionSection id="lanyard" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/></svg>} label="Lanyard Concept" isOpen={openSections.has("lanyard")} onToggle={() => toggle("lanyard")} badge="⚗">
-        <LanyardConcept/>
+        <LanyardConfigurator/>
       </AccordionSection>
 
       {mode === "manufacturer" && fto_flagged && (
