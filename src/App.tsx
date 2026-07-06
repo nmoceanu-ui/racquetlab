@@ -3044,7 +3044,20 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, len
           <text x={cx} y={topY-24} textAnchor="middle">face width {widthMm}mm</text>
           <line x1={cx+halfWidth+18} y1={topY} x2={cx+halfWidth+18} y2={handleBottomY} stroke="#4A4540" strokeWidth="1"/>
           <text x={cx+halfWidth+26} y={(topY+handleBottomY)/2} transform={`rotate(90 ${cx+halfWidth+26} ${(topY+handleBottomY)/2})`} textAnchor="middle">total length {lengthMm}mm</text>
-          <text x={cx} y={bridgeTopY+bridgeHeight/2+4} textAnchor="middle" fontSize="10" fill="#5A574C">{bridgeId==="closed"?"closed bridge":`${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}`}</text>
+          {bridgeId !== "closed" && (() => {
+            const labelMidY = bridgeTopY + bridgeHeight * 0.62;
+            const labelX = 10; // left canvas margin — guaranteed clear of the face/throat
+            return (
+              <>
+                <path d={`M ${cx - innerNeckHalf - 2} ${labelMidY} L ${labelX + 80} ${labelMidY}`} fill="none" stroke="#8A8578" strokeWidth="0.8"/>
+                <text x={labelX} y={labelMidY - 4} textAnchor="start" fontSize="9" fill="#5A574C">{`${beamCount} ${beamOrientation}`}</text>
+                <text x={labelX} y={labelMidY + 6} textAnchor="start" fontSize="9" fill="#5A574C">{`beam${beamCount>1?"s":""}`}</text>
+              </>
+            );
+          })()}
+          {bridgeId === "closed" && (
+            <text x={10} y={bridgeTopY + bridgeHeight * 0.62} textAnchor="start" fontSize="9" fill="#5A574C">closed bridge</text>
+          )}
         </g>
       )}
     </svg>
@@ -4121,84 +4134,74 @@ function LanyardConfigurator() {
           deliberately the most prominent); the buttcap attachment differs
           for detachable vs fixed. */}
       <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, marginBottom: 12, padding: 12, display: "flex", justifyContent: "center" }}>
-        <svg viewBox="0 0 160 218" width="170" style={{ display: "block" }}>
+        <svg viewBox="0 0 240 220" width="230" style={{ display: "block" }}>
           <defs>
             <linearGradient id="cfgBand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2E7D46"/><stop offset="100%" stopColor="#1A5C2A"/></linearGradient>
           </defs>
           {(() => {
-            const cx = 80;
-            const bw = isRound ? 6 : 15;      // strand width: round thin, flat wide
-            // Grip stub
-            const gripRows = [];
-            for (let i = 0; i < 5; i++) gripRows.push(<line key={i} x1={cx - 16} y1={18 + i * 9} x2={cx + 16} y2={22 + i * 9} stroke="#2A2620" strokeWidth="0.7" opacity="0.4"/>);
-            // Attachment start point
+            const cx = 62;                    // artwork centered on the LEFT
+            const bw = isRound ? 6 : 15;
             const startY = attachId === "detachable" ? 82 : 76;
             const openTop = 152;
-            const ly = startY + 42; // lock position on the strand
+            const ly = startY + 42;
+            const labelX = 150;               // all labels start here, in the right column
+            const leaderColor = "#B5AE9C";
+            const gripRows = [];
+            for (let i = 0; i < 5; i++) gripRows.push(<line key={i} x1={cx - 16} y1={18 + i * 9} x2={cx + 16} y2={22 + i * 9} stroke="#2A2620" strokeWidth="0.7" opacity="0.4"/>);
+
+            // The lock's label text and the y of the element it points to
+            const lockLabel = lockId === "cam" ? "cam lock" : lockId === "ratchet" ? "ratchet dial" : lockId === "slider" ? "sliding cord" : lockId === "braided" ? "braided roll-up" : "elastic self-tension";
+
+            // A right-column label with a leader line back to a point on the artwork
+            const Label = ({ y, toX, toY, text, bold }: any) => (
+              <>
+                <path d={`M ${toX} ${toY} L ${labelX - 4} ${y - 3}`} fill="none" stroke={leaderColor} strokeWidth="0.8"/>
+                <text x={labelX} y={y} fontFamily="'JetBrains Mono', monospace" fontSize="8" fill={bold ? "#1A5C2A" : "#4A4540"} fontWeight={bold ? 700 : 400}>{text}</text>
+              </>
+            );
+
             return (
               <>
+                {/* ---- ARTWORK (left) ---- */}
                 {/* grip + buttcap */}
                 <rect x={cx - 16} y={10} width={32} height={54} rx={7} fill="#E8E2D6" stroke="#2A2620" strokeWidth="1.6"/>
                 {gripRows}
                 <rect x={cx - 18} y={62} width={36} height={8} rx={3} fill="#2A2620"/>
-                <text x={cx} y={9} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#8A7B5C">grip</text>
 
                 {/* attachment at buttcap */}
                 {attachId === "detachable" ? (
                   <>
                     <rect x={cx - 9} y={70} width={18} height={12} rx={3} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.2"/>
                     <circle cx={cx} cy={76} r={3} fill="#E3DCC8" stroke="#1A5C2A" strokeWidth="1"/>
-                    <text x={cx + 30} y={79} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#4A4540">clip-off</text>
                   </>
                 ) : (
-                  <>
-                    <path d={`M ${cx - 6} 70 L ${cx} 76 L ${cx + 6} 70`} fill="none" stroke="#8A7B5C" strokeWidth="2"/>
-                    <text x={cx + 26} y={76} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#4A4540">fixed-in</text>
-                  </>
+                  <path d={`M ${cx - 6} 70 L ${cx} 76 L ${cx + 6} 70`} fill="none" stroke="#8A7B5C" strokeWidth="2"/>
                 )}
 
-                {/* hanging lanyard loop — two strands into a wrist opening */}
+                {/* hanging lanyard loop */}
                 <path d={`M ${cx - 4} ${startY} C ${cx - 30} ${startY + 30} ${cx - 34} ${openTop - 20} ${cx - 26} ${openTop}`} fill="none" stroke="url(#cfgBand)" strokeWidth={bw} strokeLinecap="round"/>
                 <path d={`M ${cx + 4} ${startY} C ${cx + 30} ${startY + 30} ${cx + 34} ${openTop - 20} ${cx + 26} ${openTop}`} fill="none" stroke="url(#cfgBand)" strokeWidth={bw} strokeLinecap="round"/>
                 <ellipse cx={cx} cy={openTop + 18} rx={30} ry={20} fill="none" stroke="url(#cfgBand)" strokeWidth={bw}/>
-                <text x={cx} y={openTop + 22} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#8A7B5C">wrist</text>
 
-                {/* cord-shape tag */}
-                <text x={cx + 34} y={startY + 20} fontFamily="'JetBrains Mono', monospace" fontSize="7" fill="#1A5C2A">{isRound ? "round" : "flat"}</text>
+                {/* LOCK element (no inline label — labeled in the right column) */}
+                {lockId === "cam" && (<>
+                  <rect x={cx - 40} y={ly - 11} width={32} height={22} rx={5} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.8"/>
+                  <rect x={cx - 32} y={ly - 18} width={15} height={9} rx={2} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1"/>
+                </>)}
+                {lockId === "ratchet" && (<>
+                  <circle cx={cx - 24} cy={ly} r={11} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.6"/>
+                  {Array.from({ length: 8 }).map((_, a) => { const rad = a * Math.PI / 4; return <line key={a} x1={cx - 24 + Math.cos(rad) * 7} y1={ly + Math.sin(rad) * 7} x2={cx - 24 + Math.cos(rad) * 11} y2={ly + Math.sin(rad) * 11} stroke="#7FB894" strokeWidth="1.4"/>; })}
+                </>)}
+                {lockId === "slider" && (<rect x={cx - 36} y={ly - 8} width={22} height={16} rx={8} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1.3"/>)}
+                {lockId === "braided" && (<path d={`M ${cx - 38} ${ly} q 5 -6 10 0 q 5 6 10 0 q 5 -6 10 0`} fill="none" stroke="#1A5C2A" strokeWidth="3.5"/>)}
+                {lockId === "elastic" && (<path d={`M ${cx - 40} ${ly} q 4 -6 8 0 q 4 6 8 0 q 4 -6 8 0 q 4 6 8 0`} fill="none" stroke="#7FB894" strokeWidth="2.8"/>)}
 
-                {/* LOCK element — drawn on the left strand, cam most prominent */}
-                {lockId === "cam" && (
-                  <>
-                    <rect x={cx - 40} y={ly - 11} width={32} height={22} rx={5} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.8"/>
-                    <rect x={cx - 32} y={ly - 18} width={15} height={9} rx={2} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1"/>
-                    <text x={cx - 24} y={ly + 21} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#1A5C2A" fontWeight="700">CAM LOCK</text>
-                  </>
-                )}
-                {lockId === "ratchet" && (
-                  <>
-                    <circle cx={cx - 24} cy={ly} r={11} fill="#3D4A44" stroke="#1A5C2A" strokeWidth="1.6"/>
-                    {Array.from({ length: 8 }).map((_, a) => { const rad = a * Math.PI / 4; return <line key={a} x1={cx - 24 + Math.cos(rad) * 7} y1={ly + Math.sin(rad) * 7} x2={cx - 24 + Math.cos(rad) * 11} y2={ly + Math.sin(rad) * 11} stroke="#7FB894" strokeWidth="1.4"/>; })}
-                    <text x={cx - 24} y={ly + 22} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">DIAL</text>
-                  </>
-                )}
-                {lockId === "slider" && (
-                  <>
-                    <rect x={cx - 36} y={ly - 8} width={22} height={16} rx={8} fill="#7FB894" stroke="#1A5C2A" strokeWidth="1.3"/>
-                    <text x={cx - 25} y={ly + 18} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">SLIDER</text>
-                  </>
-                )}
-                {lockId === "braided" && (
-                  <>
-                    <path d={`M ${cx - 38} ${ly} q 5 -6 10 0 q 5 6 10 0 q 5 -6 10 0`} fill="none" stroke="#1A5C2A" strokeWidth="3.5"/>
-                    <text x={cx - 23} y={ly + 16} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">ROLL-UP</text>
-                  </>
-                )}
-                {lockId === "elastic" && (
-                  <>
-                    <path d={`M ${cx - 40} ${ly} q 4 -6 8 0 q 4 6 8 0 q 4 -6 8 0 q 4 6 8 0`} fill="none" stroke="#7FB894" strokeWidth="2.8"/>
-                    <text x={cx - 24} y={ly + 16} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="6.5" fill="#4A4540">ELASTIC</text>
-                  </>
-                )}
+                {/* ---- LABELS (right column, leader lines to artwork) ---- */}
+                <Label y={40} toX={cx} toY={38} text="grip" />
+                <Label y={72} toX={cx + 4} toY={76} text={attachId === "detachable" ? "clip-off" : "fixed-in"} />
+                <Label y={98} toX={cx + 30} toY={startY + 24} text={isRound ? "round cord" : "flat band"} bold />
+                <Label y={ly + 3} toX={cx - 24} toY={ly} text={lockLabel} bold />
+                <Label y={openTop + 22} toX={cx + 26} toY={openTop + 18} text="wrist" />
               </>
             );
           })()}
