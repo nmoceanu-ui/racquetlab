@@ -2764,10 +2764,20 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
           for (let x = a; x <= b; x += 4) pts.push(`${x},${yf(x).toFixed(1)}`);
           return pts.length ? `M ${pts.join(" L ")}` : "";
         };
+        // Closed band between the top and bottom groove lines, for a light
+        // green fill that reads as the recessed lead-tape zone.
+        const mkBand = (a: number, b: number) => {
+          const top: string[] = [], bot: string[] = [];
+          for (let x = a; x <= b; x += 4) { top.push(`${x},${chTopY(x).toFixed(1)}`); bot.push(`${x},${chBotY(x).toFixed(1)}`); }
+          if (!top.length) return "";
+          return `M ${top.join(" L ")} L ${bot.reverse().join(" L ")} Z`;
+        };
         return (
           <g>
             {ranges.map(([a, b], i) => (
               <g key={i}>
+                {/* light green shaded lead-tape zone */}
+                <path d={mkBand(a, b)} fill="#1A5C2A" opacity="0.09"/>
                 {/* recess shadow bands */}
                 <path d={mkLine(chTopY, a, b)} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
                 <path d={mkLine(chBotY, a, b)} fill="none" stroke="#000" strokeWidth="3.5" opacity="0.06" strokeLinecap="round"/>
@@ -2800,10 +2810,18 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
         <line x1={startX+headLen*0.5} y1={midY-headThick/2-10} x2={startX+headLen*0.5} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
         <line x1={startX+headLen*0.5-6} y1={midY-headThick/2-10} x2={startX+headLen*0.5+6} y2={midY-headThick/2-10} stroke="#2A2620" strokeWidth="1"/>
         <line x1={startX+headLen*0.5-6} y1={midY+headThick/2+10} x2={startX+headLen*0.5+6} y2={midY+headThick/2+10} stroke="#2A2620" strokeWidth="1"/>
-        <text x={startX+headLen*0.5+12} y={midY+4}>{thicknessMm}mm</text>
-        <text x={startX+headLen/2} y={midY+headThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">head</text>
-        <text x={headEndX+throatLen/2} y={midY+throatThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">throat</text>
-        <text x={throatEndX+(handleEndX-throatEndX)/2} y={midY+handleThick/2+(showHollowSection?68:36)} textAnchor="middle" fontSize="10">handle</text>
+        {/* thickness value sits ABOVE the top tick, off the racquet */}
+        <text x={startX+headLen*0.5} y={midY-headThick/2-16} textAnchor="middle">{thicknessMm}mm</text>
+        {/* region labels share ONE baseline below the racquet (based on the
+            widest section + shadow) so the tapering throat/handle never sit
+            on top of their labels */}
+        {(() => { const labelY = midY + headThick/2 + (showHollowSection ? 74 : 44); return (
+          <>
+            <text x={startX+headLen/2} y={labelY} textAnchor="middle" fontSize="10">head</text>
+            <text x={headEndX+throatLen/2} y={labelY} textAnchor="middle" fontSize="10">throat</text>
+            <text x={throatEndX+(handleEndX-throatEndX)/2} y={labelY} textAnchor="middle" fontSize="10">handle</text>
+          </>
+        ); })()}
       </g>
     </svg>
   );
@@ -5435,16 +5453,18 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     if (preset === "clear") { onHolesChange([]); return; }
     if (preset === "head1") { onHolesChange([{ x: 0, y: -0.1 }]); return; }
     if (preset === "center4") {
-      onHolesChange([{ x: -0.12, y: -0.2 }, { x: 0.12, y: -0.2 }, { x: -0.12, y: 0.05 }, { x: 0.12, y: 0.05 }]);
+      // clean diamond, generously spaced (verified non-touching at 13mm holes)
+      onHolesChange([{ x: 0, y: -0.30 }, { x: -0.16, y: -0.12 }, { x: 0.16, y: -0.12 }, { x: 0, y: 0.06 }].filter(p => inFace(p.x, p.y)));
       return;
     }
     if (preset === "center14") {
-      const pts: HolePoint[] = [];
-      for (let i = 0; i < 14; i++) {
-        const ang = (i / 14) * Math.PI * 2;
-        const rad = 0.22 * (0.4 + 0.6 * ((i % 3) / 2));
-        pts.push({ x: rad * Math.cos(ang), y: -0.12 + rad * Math.sin(ang) * 0.85 });
-      }
+      // Concentric rings (center + inner 5 + outer 8), vertically elongated to
+      // follow the sweet-spot zone — reads as an intentional aerodynamic
+      // pattern. Spacing verified non-touching even at the 13mm max diameter.
+      const pts: HolePoint[] = [{ x: 0, y: -0.12 }];
+      const rIn = 0.16, rOut = 0.34;
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; pts.push({ x: rIn * Math.cos(a), y: -0.12 + rIn * Math.sin(a) * 1.25 }); }
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 - Math.PI / 2; pts.push({ x: rOut * Math.cos(a), y: -0.12 + rOut * Math.sin(a) * 1.25 }); }
       onHolesChange(pts.filter(p => inFace(p.x, p.y)));
       return;
     }
