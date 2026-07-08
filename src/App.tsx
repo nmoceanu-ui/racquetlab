@@ -4976,6 +4976,26 @@ function FindRacquetPanel({ onApply, mode }) {
   const bgInsight = backgroundInsight(answers.racquetBackground, answers.racquetBackgroundLevel);
   const styleQs = STYLE_QUESTIONS[answers.level] ?? STYLE_QUESTIONS.intermediate;
 
+  // Depth question is rendered right under the racquet-sport question (not
+  // after the padel questions) and names the sport explicitly, so "that
+  // sport" is never ambiguous.
+  const bgSport = answers.racquetBackground;
+  const sportPhrase =
+    bgSport === "tennis" ? "tennis" :
+    bgSport === "squash" ? "squash" :
+    bgSport === "badminton" ? "badminton or table tennis" :
+    "your strongest racquet sport";
+  const bgLevelQuestion = {
+    id: "racquetBackgroundLevel",
+    label:
+      bgSport === "tennis" ? "Your tennis level" :
+      bgSport === "squash" ? "Your squash level" :
+      bgSport === "badminton" ? "Your badminton level" :
+      "Prior racquet-sport level",
+    question: `How far did you take ${sportPhrase}?`,
+    options: FINDER_BACKGROUND_LEVEL.options,
+  };
+
   // Core questions every player sees. Conditional ids (prior-sport depth,
   // tennis specs) are only required once the branch that shows them is open,
   // so nobody is blocked on a question that never rendered for them.
@@ -5013,9 +5033,12 @@ function FindRacquetPanel({ onApply, mode }) {
       )}
 
       <QDivider label="Background" />
-      {FINDER_SECTION_1.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {/* Racquet-sport question first, then everything about that prior sport
+          (depth, transition insight, tennis specs) grouped directly beneath
+          it — so the padel level/frequency questions don't split them up. */}
+      <QRow q={FINDER_SECTION_1[0]} value={answers[FINDER_SECTION_1[0].id] ?? null} onChange={setAnswer} />
       {needsBgLevel && (
-        <QRow q={FINDER_BACKGROUND_LEVEL} value={answers.racquetBackgroundLevel ?? null} onChange={setAnswer} />
+        <QRow q={bgLevelQuestion} value={answers.racquetBackgroundLevel ?? null} onChange={setAnswer} />
       )}
       {bgInsight && (
         <div style={{ padding: "12px 14px", background: "rgba(26,92,42,0.06)", borderLeft: "3px solid #1A5C2A", borderRadius: 8, margin: "2px 0 18px" }}>
@@ -5024,6 +5047,7 @@ function FindRacquetPanel({ onApply, mode }) {
         </div>
       )}
       {showTennisSpecs && FINDER_TENNIS_SPECS.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {FINDER_SECTION_1.slice(1).map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
       <QDivider label="Body & physical history" />
       {FINDER_SECTION_2.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
