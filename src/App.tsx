@@ -1501,9 +1501,17 @@ function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: strin
   // Pre-filter by budget tier if specified
   const candidates = budgetTier && budgetTier !== "any"
     ? MARKET_RACQUETS.filter(r => {
-        if (budgetTier === "budget") return r.priceTier === "budget";
+        // Player budget tiers: entry (<$150), mid ($150-250), competitive
+        // ($250-400), luxury ($400+). The market DB carries three price tiers
+        // (budget/mid/premium), so the two top player tiers both open up the
+        // full premium shelf.
+        if (budgetTier === "entry") return r.priceTier === "budget";
         if (budgetTier === "mid") return r.priceTier === "budget" || r.priceTier === "mid";
-        if (budgetTier === "premium") return true; // premium players see everything
+        if (budgetTier === "competitive") return true;
+        if (budgetTier === "luxury") return true;
+        // legacy ids kept as a safety net
+        if (budgetTier === "budget") return r.priceTier === "budget";
+        if (budgetTier === "premium") return true;
         return true;
       })
     : MARKET_RACQUETS;
@@ -1595,16 +1603,17 @@ function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: strin
 function recommendSpec(answers) {
   const {
     level,
-    // Section 1 — background
-    racquetBackground, frequency,
+    // Section 1 — background (depth matters more than which sport)
+    racquetBackground, racquetBackgroundLevel, frequency,
+    tennisRacquetType, tennisBalance, tennisWeightAdd,
     // Section 2 — body & physical history
-    handSize, injuryHistory, availablePower,
-    // Section 3 — play style & goals
-    netInstinct, goal, spinInterest,
+    handMeasure, gripShapePref, injuryHistory, availablePower,
+    // Section 3 — play style & goals + spin split
+    netInstinct, goal, spinUsage, defenseTexture,
     // Section 4 — feel fork
     feelPreference,
     // Section 5 — constraints
-    sessionLength, budgetTier,
+    handTime, budgetTier,
     // Advanced-only (Section A-D)
     courtPosition, pointStyle, biggestWeapon,
     hasModifications, modPlacement, feelSensitivity, techFeel,
@@ -1648,7 +1657,11 @@ function recommendSpec(answers) {
   // armCare captures players who proactively prioritize arm comfort even
   // without an active injury (e.g. Varlion ElbowCare or Royal Padel players).
   // This is distinct from injuryHistory which handles reactive/diagnosed cases.
-  const needsArmCare = injuryHistory === "ongoing" || injuryHistory === "mild" || armCare === "priority";
+  // Injury: none / past (resolved) / ongoing. Ongoing (or a proactive
+  // arm-care priority) gets the full comfort build; a past-but-resolved
+  // history gets a lighter touch — they're susceptible but not currently
+  // symptomatic, so we protect without giving up performance.
+  const needsArmCare = injuryHistory === "ongoing" || injuryHistory === "past" || armCare === "priority";
   if (injuryHistory === "ongoing" || armCare === "priority") {
     coreId = level === "beginner" ? "eva-soft" : "eva-soft";
     frameId = frameId === "carbon-frame" ? "hybrid-frame" : frameId;
@@ -1656,17 +1669,52 @@ function recommendSpec(answers) {
     weightG = Math.min(weightG, armCare === "priority" ? 365 : 358);
     balanceCm = Math.min(balanceCm, armCare === "priority" ? 25.6 : 25.2);
     if (shapeId === "diamond") shapeId = "teardrop";
-  } else if (injuryHistory === "mild") {
+  } else if (injuryHistory === "past") {
     gripId = gripId === "pu-grip" ? "eva-grip" : gripId;
     weightG = Math.min(weightG, 365);
   }
 
-  // --- Section 1: racquet-sport background ---
-  if (racquetBackground === "tennis" && shapeId === "diamond") {
-    shapeId = "teardrop";
+  // --- Section 1: racquet-sport background — DEPTH-weighted ---
+  // The level of prior experience matters more than which sport. A high-level
+  // tennis/multi-sport player has real racquet identity and can supply their
+  // own power, so we NUDGE (not jump) toward a more defined, control-capable
+  // spec; squash/badminton backgrounds reward a lighter, more maneuverable
+  // frame that suits fast wrists and reflexes.
+  const priorHigh = racquetBackgroundLevel === "high";
+  const priorSerious = racquetBackgroundLevel === "high" || racquetBackgroundLevel === "club";
+
+  if (racquetBackground === "tennis" && shapeId === "diamond") shapeId = "teardrop";
+  if (racquetBackground === "squash" && shapeId === "round" && derivedStyle !== "control") shapeId = "teardrop";
+
+  if ((racquetBackground === "tennis" || racquetBackground === "multiple") && priorHigh) {
+    // strong racquet identity + power generation → can handle a firmer face and supply their own pace
+    if (faceId === "fiberglass") faceId = "carbon-12k";
+    if (coreId === "eva-soft" && !needsArmCare) coreId = "eva-medium";
   }
-  if (racquetBackground === "squash" && shapeId === "round" && derivedStyle !== "control") {
-    shapeId = "teardrop";
+  if ((racquetBackground === "squash" || racquetBackground === "badminton") && priorSerious) {
+    // fast wrists / reflexes → reward maneuverability
+    balanceCm = Math.min(balanceCm, 25.7);
+    if (!needsArmCare) weightG = Math.min(weightG, 366);
+  }
+
+  // Tennis-frame correlation — what they liked in tennis maps onto padel.
+  if (tennisRacquetType === "control") {
+    // players' frame, supplied own power → comfortable with a control-biased padel spec + firmer face
+    balanceCm = Math.min(balanceCm, 25.8);
+    if (faceId === "fiberglass") faceId = "carbon-12k";
+  } else if (tennisRacquetType === "power") {
+    // relied on the frame for pace → wants power help in padel too
+    if (!needsArmCare) balanceCm = Math.max(balanceCm, 26.0);
+    if (shapeId === "round" && !needsArmCare && derivedStyle !== "control") shapeId = "teardrop";
+  }
+  if (tennisBalance === "head-heavy" && !needsArmCare) {
+    balanceCm = Math.max(balanceCm, 26.2);
+  } else if (tennisBalance === "head-light") {
+    balanceCm = Math.min(balanceCm, 25.6);
+  }
+  if (tennisWeightAdd === "yes" && !needsArmCare) {
+    // a customizer who liked a substantial, tuned racquet → slightly more mass/stability
+    weightG = Math.max(weightG, level === "beginner" ? 362 : 368);
   }
 
   // --- Frequency ---
@@ -1676,9 +1724,19 @@ function recommendSpec(answers) {
   }
 
   // --- Section 2: body & physical history ---
-  if (handSize === "small") gripCircMm = 36;
-  else if (handSize === "large") gripCircMm = 40;
+  // Hand measurement (ring-finger-tip to mid-palm crease) → grip circumference.
+  // Padel grips run small; overgrips add ~2mm each, so we size the base grip
+  // at or just under the hand's natural fit and let the player build up.
+  if (handMeasure === "s") gripCircMm = 36;
+  else if (handMeasure === "m") gripCircMm = 38;
+  else if (handMeasure === "l") gripCircMm = 39;
+  else if (handMeasure === "xl") gripCircMm = 40;
   else gripCircMm = 38;
+
+  // Grip-shape preference → handle cross-section.
+  if (gripShapePref === "round") gripShapeId = "grip-round";
+  else if (gripShapePref === "angular") gripShapeId = "octagonal";
+  // "no-pref" leaves the octagonal default.
 
   if (availablePower === "limited") {
     balanceCm = Math.max(balanceCm, 26.0);
@@ -1701,23 +1759,33 @@ function recommendSpec(answers) {
     shapeId = "teardrop";
   }
 
-  if (spinInterest === "high") {
-    surfaceId = "3d-print";
-  } else if (spinInterest === "some" && surfaceId === "smooth") {
-    surfaceId = "rough";
-  }
-
-  // --- Section 4: feel fork ---
-  if (feelPreference === "smooth") {
-    surfaceId = surfaceId === "3d-print" ? "rough" : "smooth";
-  } else if (feelPreference === "grippy") {
-    surfaceId = surfaceId === "smooth" ? "rough" : surfaceId;
-  }
+  // --- Surface texture — weight spin usage AND defensive-feel preference ---
+  // Spin USAGE and desired TEXTURE are separate: a spin-heavy player can
+  // still want a smoother, more predictable face for close-in defense,
+  // because heavy texture hurts blocking hard balls off the bounce. We
+  // combine both (plus the feel-fork nudge) into one score so a spin-heavy
+  // defender lands on medium texture rather than maximum bite.
+  let textureScore = 0;
+  if (spinUsage === "heavy") textureScore += 2;
+  else if (spinUsage === "some") textureScore += 1;
+  if (defenseTexture === "grip-bite") textureScore += 2;
+  else if (defenseTexture === "neutral") textureScore += 1;
+  // "clean-block" adds 0 — it pulls the surface down relative to spin usage.
+  if (feelPreference === "grippy") textureScore += 1;
+  else if (feelPreference === "smooth") textureScore -= 1;
+  surfaceId = textureScore <= 1 ? "smooth" : textureScore >= 4 ? "3d-print" : "rough";
 
   // --- Section 5: constraints ---
-  if (sessionLength === "long") {
-    gripId = gripId === "pu-grip" ? "eva-grip" : gripId;
-    weightG = Math.min(weightG, 366);
+  // Racquet-in-hand "dead time" (coaching, feeding, long drilling) is a
+  // better predictor of wanting a lighter, easier, more maneuverable racquet
+  // than raw session length is — a coach holding a racquet for hours values
+  // low fatigue far more than someone playing two hard matches.
+  if (handTime === "lots") {
+    weightG = Math.min(weightG, 362);
+    balanceCm = Math.min(balanceCm, 25.8);
+    if (gripId === "pu-grip") gripId = "eva-grip";
+  } else if (handTime === "some") {
+    weightG = Math.min(weightG, 368);
   }
 
   // --- Budget tier — filter matches by priceTier in matchRacquets ---
@@ -2934,7 +3002,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, len
   const lerpHalf = (yFrac) => outerThroatHalf + (innerNeckHalf - outerThroatHalf) * yFrac;
   const boundaries = [-1, ...strutOffsets.map(s=>s/innerNeckHalf), 1];
   return (
-    <svg viewBox="0 0 460 640" width="100%" height="100%" style={{display:"block"}}>
+    <svg viewBox="0 -22 460 662" width="100%" height="100%" style={{display:"block"}}>
       <defs><clipPath id="headClip"><path d={outline}/></clipPath></defs>
       <path d={outline} fill={tint} stroke={frameRimStyle.color} strokeWidth={frameRimStyle.width} strokeLinejoin="round"/>
       {faceVisual.coverage > 0 ? (
@@ -4487,25 +4555,117 @@ const FINDER_SECTION_1 = [
   },
 ];
 
+// Conditional — only shown when a prior racquet sport is selected. The
+// DEPTH of prior experience matters far more than which sport: touching a
+// tennis racquet as a kid and competing at a high level produce completely
+// different padel starting points (racquet identity, volley hands, ability
+// to supply your own power). This drives both the spec nudge and the
+// transition-insight text below.
+const FINDER_BACKGROUND_LEVEL = {
+  id: "racquetBackgroundLevel",
+  label: "How far you took it",
+  question: "How far did you take that sport?",
+  options: [
+    { id: "recreational", label: "Recreational — casually, socially, or as a kid" },
+    { id: "club", label: "Club level — regular competitive matches, real technique" },
+    { id: "high", label: "High level — ranked, college, semi-pro or professional" },
+  ],
+};
+
+// Conditional — only shown for a serious (club/high) tennis or multi-sport
+// background. What kind of tennis frame someone settled on, how they
+// balanced it, and whether they customized it are strong tells for the
+// padel racquet they'll actually like.
+const FINDER_TENNIS_SPECS = [
+  {
+    id: "tennisRacquetType",
+    label: "Your tennis frame",
+    question: "What kind of tennis racquet did you settle on?",
+    options: [
+      { id: "power", label: "Power frame — lighter, bigger head, stiffer; it generated pace for me" },
+      { id: "control", label: "Control / players' frame — heavier, thinner beam; I supplied the power" },
+      { id: "not-sure", label: "Not sure / don't remember" },
+    ],
+  },
+  {
+    id: "tennisBalance",
+    label: "Tennis balance",
+    question: "How did that racquet balance in the hand?",
+    options: [
+      { id: "head-heavy", label: "Head-heavy — weight out toward the tip" },
+      { id: "even", label: "Even / neutral" },
+      { id: "head-light", label: "Head-light — weight back in the handle" },
+      { id: "not-sure", label: "Not sure" },
+    ],
+  },
+  {
+    id: "tennisWeightAdd",
+    label: "Customizing",
+    question: "Did you tune it with lead tape or added weight?",
+    options: [
+      { id: "yes", label: "Yes — I adjusted the weight/balance myself" },
+      { id: "no", label: "No — I played it stock" },
+    ],
+  },
+];
+
+// Transition insight — a short, honest read on the kind of padel player a
+// given racquet-sport background tends to become, and the main adjustment
+// to expect. Shown once both the sport and its depth are answered.
+function backgroundInsight(bg: string, lvl: string): string {
+  if (!bg || bg === "none" || !lvl) return "";
+  if (lvl === "recreational") {
+    return "A recreational racquet-sport background gives you a head start on hand-eye and contact, but padel timing, the walls, and net play are their own skill. We'll keep your spec forgiving so the transition stays fun while your technique settles — you can move to a more demanding build as it clicks.";
+  }
+  const serious = lvl === "high" ? "high-level" : "club-level";
+  switch (bg) {
+    case "tennis":
+      return lvl === "high"
+        ? "Coming from high-level tennis, your volley hands, court sense, and feel for a racquet's identity transfer straight across — expect to be dangerous at the net faster than most. Your one real adjustment is the shorter lever and the walls: trade the long, wristy tennis swing for compact padel timing and let a control-biased frame place the ball while you supply your own power. Players with your background often become sharp, aggressive net finishers."
+        : "Club-level tennis gives you genuine stroke mechanics and a reliable volley to build on, so you'll climb faster than a true beginner. The work is swapping the long tennis backswing for compact padel timing and learning the bandeja and the walls. A versatile teardrop lets you carry over your drive while that develops.";
+    case "squash":
+      return `Your ${serious} squash background means fast wrists, quick reflexes, and excellent close-quarters hands — a real weapon at the net. The trap is the very wristy, slicing swing and standing too square; a slightly head-light, maneuverable frame rewards your reflexes while you lengthen your padel strokes and learn to use the glass.`;
+    case "badminton":
+      return `Your ${serious} badminton/table-tennis background means explosive wrist snap and superb overhead and reflex timing — your smash, vibora, and quick hands at the net can become weapons fast. The adjustment is the much heavier implement and flatter contact, so a lighter, maneuverable build protects your arm while you adapt the wrist load.`;
+    case "multiple":
+      return lvl === "high"
+        ? "A high level across multiple racquet sports means excellent transferable feel and a strong sense of racquet identity — you'll adapt quickly and can handle a more defined spec than your padel time alone would suggest. Expect to become a versatile, all-court player; the main watch-out is importing habits (grip, swing length) from whichever sport dominated."
+        : "A club-level background across multiple racquet sports gives you broad, transferable feel and adaptability — you'll pick padel up quickly and settle into an all-court game. The main watch-out is importing swing habits from your strongest sport.";
+    default:
+      return "Your prior racquet-sport experience gives you transferable feel that will speed up your padel learning curve.";
+  }
+}
+
 const FINDER_SECTION_2 = [
   {
-    id: "handSize",
-    label: "Hand reference",
-    question: "Pick the description closest to your hand.",
+    id: "handMeasure",
+    label: "Hand measurement",
+    question: "Measure from the tip of your ring finger down to the middle horizontal crease of your open palm (the standard grip-sizing method). Which range fits?",
     options: [
-      { id: "small", label: "Small / narrow hand" },
-      { id: "medium", label: "Medium" },
-      { id: "large", label: "Large hand" },
+      { id: "s", label: "Under 10.0 cm — smaller hand" },
+      { id: "m", label: "10.0–10.7 cm" },
+      { id: "l", label: "10.7–11.4 cm" },
+      { id: "xl", label: "Over 11.4 cm — larger hand" },
+    ],
+  },
+  {
+    id: "gripShapePref",
+    label: "Grip shape",
+    question: "How do you like the handle itself to feel?",
+    options: [
+      { id: "round", label: "Rounder — lets my hand rotate freely for wristy shots and fast grip changes" },
+      { id: "angular", label: "More angular/octagonal — clear bevels help me index my grip and lock the face" },
+      { id: "no-pref", label: "No strong preference" },
     ],
   },
   {
     id: "injuryHistory",
-    label: "Injury history",
-    question: "Any current or recurring elbow, wrist, or shoulder discomfort?",
+    label: "Arm history",
+    question: "Any history of elbow, wrist, or shoulder trouble?",
     options: [
-      { id: "none", label: "No" },
-      { id: "mild", label: "Mild, occasional" },
-      { id: "ongoing", label: "Yes, ongoing or diagnosed" },
+      { id: "none", label: "No — no history" },
+      { id: "past", label: "Past, now resolved — I've had it, but it's fixed" },
+      { id: "ongoing", label: "Ongoing or recurring" },
     ],
   },
   {
@@ -4530,36 +4690,107 @@ const FINDER_SECTION_2 = [
   },
 ];
 
-const FINDER_SECTION_3 = [
+// Play-style questions adapt to level so nobody is answering a question
+// worded for a different tier of player. Option ids stay identical across
+// all three variants (block/redirect/winner, consistency/power/defense/
+// versatility) so the recommendation mapping is unchanged — only the
+// framing sharpens as the player's level rises.
+const STYLE_QUESTIONS: Record<string, { id: string; label: string; question: string; options: { id: string; label: string }[] }[]> = {
+  beginner: [
+    {
+      id: "netInstinct",
+      label: "At the net",
+      question: "A ball comes at you fast at the net. What do you naturally do?",
+      options: [
+        { id: "block", label: "Put my racquet in front and block it back safely" },
+        { id: "redirect", label: "Try to punch it back with some pace" },
+        { id: "winner", label: "Take a full swing and go for the winner" },
+      ],
+    },
+    {
+      id: "goal",
+      label: "Right now",
+      question: "What would help your game the most right now?",
+      options: [
+        { id: "consistency", label: "Keeping the ball in play — fewer mistakes" },
+        { id: "power", label: "Hitting harder, especially on overheads" },
+        { id: "defense", label: "Handling fast balls without feeling rushed" },
+        { id: "versatility", label: "A bit of everything — I'm still finding my game" },
+      ],
+    },
+  ],
+  intermediate: [
+    {
+      id: "netInstinct",
+      label: "Forced volley",
+      question: "Fast ball, slightly off-center at the net. Your honest first instinct:",
+      options: [
+        { id: "block", label: "Block it back and reset the point" },
+        { id: "redirect", label: "Redirect it with pace into a gap" },
+        { id: "winner", label: "Go big for the winner" },
+      ],
+    },
+    {
+      id: "goal",
+      label: "Improving",
+      question: "What are you mainly working on right now?",
+      options: [
+        { id: "consistency", label: "Consistency — cutting unforced errors" },
+        { id: "power", label: "Power on smashes and overheads" },
+        { id: "defense", label: "Defending and neutralizing at the net" },
+        { id: "versatility", label: "All-round versatility" },
+      ],
+    },
+  ],
+  advanced: [
+    {
+      id: "netInstinct",
+      label: "Under pressure",
+      question: "Hard, slightly off-center ball at the net, no time to set up. Your default response:",
+      options: [
+        { id: "block", label: "Absorb and block — reset to a neutral rally" },
+        { id: "redirect", label: "Counter with a controlled, placed drive" },
+        { id: "winner", label: "Attack it — I back myself to finish" },
+      ],
+    },
+    {
+      id: "goal",
+      label: "Raising your ceiling",
+      question: "Where are you mainly trying to raise your ceiling?",
+      options: [
+        { id: "consistency", label: "Error-free consistency under pressure" },
+        { id: "power", label: "Finishing power — smash and vibora output" },
+        { id: "defense", label: "Defense and counter off hard balls" },
+        { id: "versatility", label: "Tactical versatility across situations" },
+      ],
+    },
+  ],
+};
+
+// Spin is split into two distinct questions because HOW MUCH spin you use
+// and HOW MUCH TEXTURE you want the face to give you are different things.
+// A strong player can be spin-heavy yet want a smoother, more predictable
+// face for close-in defense — too much bite hurts blocking hard balls off
+// the bounce. The mapping weights both signals into a single texture score.
+const FINDER_SPIN = [
   {
-    id: "netInstinct",
-    label: "Forced scenario",
-    question: "A ball comes fast and slightly off-center at the net. Your instinct is to...",
+    id: "spinUsage",
+    label: "Spin in your game",
+    question: "How much does spin (topspin, slice, kick) actually feature in how you play?",
     options: [
-      { id: "block", label: "Block it back safely" },
-      { id: "redirect", label: "Redirect it with pace" },
-      { id: "winner", label: "Take a big swing for the winner" },
+      { id: "flat", label: "Mostly flat — I don't shape the ball much" },
+      { id: "some", label: "Some — I use spin situationally" },
+      { id: "heavy", label: "A lot — spin is a core part of my game" },
     ],
   },
   {
-    id: "goal",
-    label: "Goals",
-    question: "What are you mainly trying to improve right now?",
+    id: "defenseTexture",
+    label: "Defending hard balls",
+    question: "Defending hard shots close to the net or off the bounce — which face do you want under your hand?",
     options: [
-      { id: "consistency", label: "Consistency / fewer errors" },
-      { id: "power", label: "Power on smashes / overheads" },
-      { id: "defense", label: "Defense at the net" },
-      { id: "versatility", label: "Overall versatility" },
-    ],
-  },
-  {
-    id: "spinInterest",
-    label: "Spin interest",
-    question: "Do you actively try to add spin (slice, topspin), or mostly hit flat?",
-    options: [
-      { id: "flat", label: "Mostly flat" },
-      { id: "some", label: "Sometimes" },
-      { id: "high", label: "Yes, spin is a big part of my game" },
+      { id: "clean-block", label: "Smoother — clean, predictable blocks; heavy texture gets in my way on defense" },
+      { id: "neutral", label: "Balanced — some bite, but still controllable when I'm rushed" },
+      { id: "grip-bite", label: "Grippy — I want the face to bite even when I'm defending" },
     ],
   },
 ];
@@ -4578,23 +4809,24 @@ const FINDER_FEEL_FORK = {
 
 const FINDER_SECTION_5 = [
   {
-    id: "sessionLength",
-    label: "Session length",
-    question: "How long are your typical sessions?",
+    id: "handTime",
+    label: "Racquet in hand",
+    question: "Outside of hard competitive play, how much time do you spend with a racquet in your hand — coaching, feeding balls, long drills or warm-ups?",
     options: [
-      { id: "short", label: "Under an hour" },
-      { id: "medium", label: "1-2 hours" },
-      { id: "long", label: "2+ hours or multiple matches" },
+      { id: "little", label: "Little — I mostly just play my matches" },
+      { id: "some", label: "Some — regular drilling and warm-ups" },
+      { id: "lots", label: "A lot — I coach, feed, or hold a racquet for hours at a time" },
     ],
   },
   {
     id: "budgetTier",
     label: "Budget",
-    question: "What's your approximate budget for a racket?",
+    question: "What's your budget for a racket?",
     options: [
-      { id: "budget", label: "Under $120 — value matters most" },
-      { id: "mid", label: "$120-$250 — good mid-range" },
-      { id: "premium", label: "$250+ — I want the best spec for my game" },
+      { id: "entry", label: "Under $150 — entry level" },
+      { id: "mid", label: "$150–250 — mid level, can still be competitive" },
+      { id: "competitive", label: "$250–400 — competitive performance" },
+      { id: "luxury", label: "$400+ — luxury / special edition" },
     ],
   },
 ];
@@ -4696,6 +4928,33 @@ const TECH_FEEL_FOLLOWUPS = {
   // "uncompared" intentionally has no entry — no follow-up is shown.
 };
 
+// Hoisted OUT of FindRacquetPanel on purpose. When these were defined
+// inline inside the component, every answer created brand-new component
+// identities, so React unmounted and remounted the entire question list on
+// each selection — which reset the scroll position (the "quiz jumps to the
+// top every time I answer" bug) and could drop focus. Defined at module
+// scope they keep a stable identity, so answering only updates the one row.
+type FinderQ = { id: string; label: string; question: string; options: { id: string; label: string }[] };
+
+function QRow({ q, value, onChange }: { q: FinderQ; value: string | null; onChange: (id: string, v: string) => void }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>{q.label}</div>
+      <p style={{ fontSize: 13, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>{q.question}</p>
+      <ToggleGroup options={q.options} value={value} onChange={v => onChange(q.id, v)} />
+    </div>
+  );
+}
+
+function QDivider({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
+    </div>
+  );
+}
+
 function FindRacquetPanel({ onApply, mode }) {
   // Single answers map, keyed by question id, instead of one useState
   // per question — this is what makes the section list data-driven.
@@ -4709,32 +4968,29 @@ function FindRacquetPanel({ onApply, mode }) {
 
   const isAdvanced = answers.level === "advanced";
 
-  // Core questions required before the button activates — kept to the
-  // questions every player sees, so beginners aren't blocked on
-  // advanced-only fields that never render for them.
-  const requiredIds = ["racquetBackground", "level", "frequency", "handSize", "injuryHistory", "armCare", "availablePower", "netInstinct", "goal", "spinInterest", "feelPreference", "sessionLength", "budgetTier"];
-  const canApply = requiredIds.every(id => answers[id]);
+  // Prior racquet-sport depth drives extra questions + insight.
+  const needsBgLevel = !!answers.racquetBackground && answers.racquetBackground !== "none";
+  const showTennisSpecs =
+    (answers.racquetBackground === "tennis" || answers.racquetBackground === "multiple") &&
+    (answers.racquetBackgroundLevel === "club" || answers.racquetBackgroundLevel === "high");
+  const bgInsight = backgroundInsight(answers.racquetBackground, answers.racquetBackgroundLevel);
+  const styleQs = STYLE_QUESTIONS[answers.level] ?? STYLE_QUESTIONS.intermediate;
+
+  // Core questions every player sees. Conditional ids (prior-sport depth,
+  // tennis specs) are only required once the branch that shows them is open,
+  // so nobody is blocked on a question that never rendered for them.
+  const requiredIds = ["racquetBackground", "level", "frequency", "handMeasure", "gripShapePref", "injuryHistory", "armCare", "availablePower", "netInstinct", "goal", "spinUsage", "defenseTexture", "feelPreference", "handTime", "budgetTier"];
+  const conditionalIds = [
+    ...(needsBgLevel ? ["racquetBackgroundLevel"] : []),
+    ...(showTennisSpecs ? ["tennisRacquetType", "tennisBalance", "tennisWeightAdd"] : []),
+  ];
+  const canApply = [...requiredIds, ...conditionalIds].every(id => answers[id]);
 
   const handleApply = () => {
     if (!canApply) return;
     onApply(answers);
     setApplied(true);
   };
-
-  const QRow = ({ q }: { q: { id: string; label: string; question: string; options: { id: string; label: string }[] } }) => (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>{q.label}</div>
-      <p style={{ fontSize: 13, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>{q.question}</p>
-      <ToggleGroup options={q.options} value={answers[q.id] ?? null} onChange={v => setAnswer(q.id, v)} />
-    </div>
-  );
-
-  const SectionDivider = ({ label }: { label: string }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
-      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
-      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
-    </div>
-  );
 
   // Follow-up text shown beneath the feel-fork question only when the
   // player picks "unsure" — gives them a felt-physics anchor before
@@ -4756,39 +5012,50 @@ function FindRacquetPanel({ onApply, mode }) {
         </div>
       )}
 
-      <SectionDivider label="Background" />
-      {FINDER_SECTION_1.map(q => <QRow key={q.id} q={q} />)}
+      <QDivider label="Background" />
+      {FINDER_SECTION_1.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {needsBgLevel && (
+        <QRow q={FINDER_BACKGROUND_LEVEL} value={answers.racquetBackgroundLevel ?? null} onChange={setAnswer} />
+      )}
+      {bgInsight && (
+        <div style={{ padding: "12px 14px", background: "rgba(26,92,42,0.06)", borderLeft: "3px solid #1A5C2A", borderRadius: 8, margin: "2px 0 18px" }}>
+          <div style={{ fontSize: 10.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 5 }}>Your transition to padel</div>
+          <p style={{ fontSize: 12.5, color: "#4A4540", lineHeight: 1.55, fontFamily: "Inter, sans-serif", margin: 0 }}>{bgInsight}</p>
+        </div>
+      )}
+      {showTennisSpecs && FINDER_TENNIS_SPECS.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
-      <SectionDivider label="Body & physical history" />
-      {FINDER_SECTION_2.map(q => <QRow key={q.id} q={q} />)}
+      <QDivider label="Body & physical history" />
+      {FINDER_SECTION_2.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
-      <SectionDivider label="Play style & goals" />
-      {FINDER_SECTION_3.map(q => <QRow key={q.id} q={q} />)}
+      <QDivider label="Play style & goals" />
+      {styleQs.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {FINDER_SPIN.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
-      <SectionDivider label="The feel fork" />
-      <QRow q={FINDER_FEEL_FORK} />
+      <QDivider label="The feel fork" />
+      <QRow q={FINDER_FEEL_FORK} value={answers.feelPreference ?? null} onChange={setAnswer} />
       {answers.feelPreference === "unsure" && (
         <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
           {feelUnsureFollowup}
         </p>
       )}
 
-      <SectionDivider label="Practical constraints" />
-      {FINDER_SECTION_5.map(q => <QRow key={q.id} q={q} />)}
+      <QDivider label="Practical constraints" />
+      {FINDER_SECTION_5.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
       {isAdvanced && (
         <>
-          <SectionDivider label="Role & tactical fit (advanced)" />
-          {FINDER_SECTION_A.map(q => <QRow key={q.id} q={q} />)}
+          <QDivider label="Role & tactical fit (advanced)" />
+          {FINDER_SECTION_A.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
-          <SectionDivider label="Fine-tuning (advanced)" />
-          {FINDER_SECTION_B.map(q => <QRow key={q.id} q={q} />)}
+          <QDivider label="Fine-tuning (advanced)" />
+          {FINDER_SECTION_B.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
           {answers.hasModifications === "added-weight" && (
-            <QRow q={FINDER_MOD_PLACEMENT} />
+            <QRow q={FINDER_MOD_PLACEMENT} value={answers.modPlacement ?? null} onChange={setAnswer} />
           )}
 
-          <SectionDivider label="Brand technology (advanced)" />
-          <QRow q={FINDER_SECTION_D} />
+          <QDivider label="Brand technology (advanced)" />
+          <QRow q={FINDER_SECTION_D} value={answers.techFeel ?? null} onChange={setAnswer} />
           {answers.techFeel && TECH_FEEL_FOLLOWUPS[answers.techFeel] && (
             <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
               {TECH_FEEL_FOLLOWUPS[answers.techFeel]}
