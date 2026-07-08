@@ -6170,12 +6170,12 @@ export default function App() {
             <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Swingweight</div>
               <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.swingweightKgCm2.toFixed(1)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>kg·cm²</span></div>
-              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt — depends on WHERE mass sits, not just how much there is. A heavier but head-light build can score lower here than a lighter, head-heavy one. Same units and pivot convention used for tennis swingweight; there's no meaningful way to express this in grams, since it isn't a mass measurement.</div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Moment of inertia about a pivot 10cm from the butt — how hard the racquet is to swing, set by WHERE mass sits, not just how much. A heavier head-light build swings lighter here than a lighter head-heavy one. Lower = faster hands at the net and quicker defensive blocks (padel's reaction game); higher = more plow-through and stability on the smash. It's a distribution, not a mass, so there's no meaningful gram equivalent.</div>
             </div>
             <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Twistweight</div>
               <div style={{ fontSize:20, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B" }}>{geometryPhysics.twistweightKgCm2.toFixed(2)} <span style={{fontSize:12, color:"#7A7268", fontWeight:600}}>kg·cm²</span></div>
-              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Polar moment about the long axis. Higher = more resistant to twisting on off-center hits.</div>
+              <div style={{ fontSize:10.5, color:"#7A7268", marginTop:3, fontFamily:"Inter, sans-serif" }}>Polar moment about the long axis. Higher = holds its line on off-centre contact — the mishits off the back glass and stretched defensive lobs that define padel. Raise it by widening the mid-section or moving mass out to the frame perimeter.</div>
             </div>
             <div style={{ background:"rgba(0,0,0,0.035)", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Polar Inertia (SI)</div>
@@ -6189,7 +6189,7 @@ export default function App() {
             </div>
           </div>
           <p style={{ fontSize:10.5, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
-            Reference: published tennis-racket research places swingweight at roughly 270–310 kg·cm² and twistweight at roughly 12–15 kg·cm² for tournament frames. Padel values run meaningfully lower, consistent with a shorter (≤45.5cm vs. ~68–70cm) and narrower solid-faced design.
+            Reference: across the market moulds in this database, padel swingweight runs roughly 115–150 kg·cm² and twistweight roughly 6–10 kg·cm² — head-light control rounds at the low end, head-heavy power diamonds at the high end. To design easier-handling and softer-feeling than the shelf, target the lower swingweight band and pair it with a soft core; for more raw power, raise swingweight with tip mass or a higher balance point without letting twistweight fall.
           </p>
         </div>
       )}
@@ -6198,7 +6198,7 @@ export default function App() {
         <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(255,180,0,0.15)", borderRadius:12, marginBottom:16 }}>
           <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#D97706", marginBottom:4 }}>Relative Material Index (RPS)</p>
           <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
-            Not a lab measurement — no padel equivalent to tennis's RA deflection-test scale exists yet. This is a transparent, internally-consistent 0–100 relative index, weighted from real, sourced composite-engineering relationships (core hardness and frame material dominate; carbon tow size is deliberately a small secondary factor, not the headline number).
+            Not a lab measurement — padel has no standardised stiffness scale, so this is a transparent, internally-consistent 0–100 index built from real composite-engineering relationships for padel construction (core hardness and frame material dominate; carbon tow size is deliberately a small secondary factor, not the headline number). Read it as a design dial: lower Stiffness with higher Damping = a softer, more arm-friendly racquet than the market average; higher Impact Stiffness and Rebound = more power.
           </p>
           <ScoreBar label="RPS — Stiffness Index" val={materialPhysics.rpsIndex / 20} max={5} />
           <ScoreBar label="Damping Index" val={materialPhysics.dampingIndex / 20} max={5} />
@@ -6329,7 +6329,7 @@ export default function App() {
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>FOR<span style={{color:"#1A5C2A"}}>JA</span></div>
+              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>MANU<span style={{color:"#1A5C2A"}}>FIBRE</span></div>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
             </div>
           </div>
