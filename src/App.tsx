@@ -11,6 +11,7 @@ import {
 import { saveBuild, loadBuild } from "./lib/builds";
 import { supabaseConfigured } from "./lib/supabase";
 import { analytics } from "./lib/analytics";
+// Factory brief tracks: best-performance / best-value / market-gap / innovation
 
 // ---------------------------------------------------------------------------
 // MATERIAL DATABASE
