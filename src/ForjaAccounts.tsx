@@ -172,6 +172,12 @@ function ForjaAccountsInner() {
     }
   }, [user]);
 
+  const groups = useMemo(() => {
+    const g = projects.map((p) => ({ project: p, items: builds.filter((b) => b.project_id === p.id) }));
+    const personal = builds.filter((b) => !b.project_id);
+    return { g, personal };
+  }, [projects, builds]);
+
   if (!supabaseConfigured || !ready) return null;
 
   const openLogin = () => {
@@ -324,12 +330,6 @@ function ForjaAccountsInner() {
       showToast("Added to your library");
     } else showToast(r.error || "Couldn't add build");
   };
-
-  const groups = useMemo(() => {
-    const g = projects.map((p) => ({ project: p, items: builds.filter((b) => b.project_id === p.id) }));
-    const personal = builds.filter((b) => !b.project_id);
-    return { g, personal };
-  }, [projects, builds]);
 
   const pColor = (b: LibraryBuild) => {
     const p = projects.find((x) => x.id === b.project_id);
