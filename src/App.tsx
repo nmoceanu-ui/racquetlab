@@ -4975,32 +4975,22 @@ function FactoryBriefPanel({ onApply }) {
             <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
               Pick the racquet whose shell you're working within. Shape, width, and thickness lock automatically from this selection — the brief then focuses on what you're changing inside that shell.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {MARKET_RACQUETS.map((r) => {
-                const isSelected = existingMoldRacquetId === r.id;
-                return (
-                  <button key={r.id} onClick={() => {
-                    setExistingMoldRacquetId(r.id);
-                    setExistingShapeId(r.shapeId);
-                    setApplied(false);
-                  }} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "10px 12px", borderRadius: 8, cursor: "pointer", textAlign: "left",
-                    WebkitTapHighlightColor: "transparent",
-                    border: `1px solid ${isSelected ? "rgba(26,92,42,0.45)" : "rgba(0,0,0,0.05)"}`,
-                    background: isSelected ? "rgba(174,251,0,0.07)" : "rgba(0,0,0,0.015)",
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: isSelected ? "#1A5C2A" : "#18181B", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{r.brand} {r.model}</div>
-                      <div style={{ fontSize: 11, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                        {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm
-                      </div>
-                    </div>
-                    {isSelected && <CheckCircle2 size={15} color="#1A5C2A" />}
-                  </button>
-                );
-              })}
-            </div>
+            <select
+              value={existingMoldRacquetId ?? ""}
+              onChange={(e) => {
+                const id = e.target.value;
+                const rr = MARKET_RACQUETS.find((x) => x.id === id);
+                setExistingMoldRacquetId(id || null);
+                if (rr) setExistingShapeId(rr.shapeId);
+                setApplied(false);
+              }}
+              style={{ width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13.5, cursor: "pointer" }}
+            >
+              <option value="">Select a racquet mold…</option>
+              {MARKET_RACQUETS.map((r) => (
+                <option key={r.id} value={r.id}>{r.brand} {r.model} — {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm</option>
+              ))}
+            </select>
             {existingMoldRacquetId && (() => {
               const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
               return (
@@ -5145,63 +5135,46 @@ function FactoryBriefPanel({ onApply }) {
         Pick up to 3 racquets from the market database, then tag which qualities you want to take from them — not a clone, specific features.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {MARKET_RACQUETS.map((r) => {
-          const ref = references.find((x) => x.racquetId === r.id);
-          const isSelected = !!ref;
+        <select
+          value=""
+          disabled={references.length >= 3}
+          onChange={(e) => { const id = e.target.value; if (id) toggleReference(id); e.target.value = ""; }}
+          style={{ width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13.5, cursor: references.length >= 3 ? "not-allowed" : "pointer" }}
+        >
+          <option value="">{references.length >= 3 ? "Maximum of 3 references selected" : "+ Add a racquet to reference…"}</option>
+          {MARKET_RACQUETS.filter((r) => !references.find((x) => x.racquetId === r.id)).map((r) => (
+            <option key={r.id} value={r.id}>{r.brand} {r.model} — {r.shapeId} · {r.weightG}g</option>
+          ))}
+        </select>
+        {references.map((ref) => {
+          const r = MARKET_RACQUETS.find((x) => x.id === ref.racquetId);
+          if (!r) return null;
           return (
-            <div key={r.id} style={{ border: `1px solid ${isSelected ? "rgba(26,92,42,0.4)" : "rgba(0,0,0,0.05)"}`, borderRadius: 8, background: isSelected ? "#F2F8F3" : "rgba(0,0,0,0.015)", padding: "10px 12px" }}>
-              <button
-                onClick={() => toggleReference(r.id)}
-                disabled={!isSelected && references.length >= 3}
-                style={{
-                  width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: "none", border: "none", cursor: !isSelected && references.length >= 3 ? "not-allowed" : "pointer",
-                  padding: 0, WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                <span style={{ fontSize: 13, color: isSelected ? "#1A5C2A" : "#4A4540", fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left" }}>{r.brand} {r.model}</span>
-                {isSelected ? <CheckCircle2 size={15} color="#1A5C2A" /> : <span style={{ width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)" }} />}
-              </button>
-              {isSelected && (
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.045)" }}>
-                  <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Take:</div>
-                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    {QUALITY_OPTIONS.map((q) => {
-                      const active = ref!.draws.includes(q.id);
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => toggleDraw(r.id, q.id)}
-                          style={{
-                            padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                            border: `1px solid ${active ? "#1A5C2A" : "rgba(0,0,0,0.07)"}`,
-                            background: active ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)",
-                            color: active ? "#1A5C2A" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                          }}
-                        >{q.label}</button>
-                      );
-                    })}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 10, marginBottom: 6 }}>Leave:</div>
-                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    {QUALITY_OPTIONS.map((q) => {
-                      const active = ref!.avoid.includes(q.id);
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => toggleAvoid(r.id, q.id)}
-                          style={{
-                            padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                            border: `1px solid ${active ? "#991B1B" : "rgba(0,0,0,0.07)"}`,
-                            background: active ? "rgba(255,80,80,0.12)" : "rgba(0,0,0,0.035)",
-                            color: active ? "#991B1B" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                          }}
-                        >{q.label}</button>
-                      );
-                    })}
-                  </div>
+            <div key={r.id} style={{ border: "1px solid rgba(26,92,42,0.4)", borderRadius: 8, background: "#F2F8F3", padding: "10px 12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: "#1A5C2A", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{r.brand} {r.model}</span>
+                <button onClick={() => toggleReference(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7268", fontSize: 11.5, fontFamily: "Inter, sans-serif", WebkitTapHighlightColor: "transparent" }}>Remove</button>
+              </div>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.045)" }}>
+                <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Take:</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {QUALITY_OPTIONS.map((q) => {
+                    const active = ref.draws.includes(q.id);
+                    return (
+                      <button key={q.id} onClick={() => toggleDraw(r.id, q.id)} style={{ padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif", border: `1px solid ${active ? "#1A5C2A" : "rgba(0,0,0,0.07)"}`, background: active ? "rgba(26,92,42,0.15)" : "rgba(0,0,0,0.035)", color: active ? "#1A5C2A" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>{q.label}</button>
+                    );
+                  })}
                 </div>
-              )}
+                <div style={{ fontSize: 10, color: "#7A7268", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 10, marginBottom: 6 }}>Leave:</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {QUALITY_OPTIONS.map((q) => {
+                    const active = ref.avoid.includes(q.id);
+                    return (
+                      <button key={q.id} onClick={() => toggleAvoid(r.id, q.id)} style={{ padding: "5px 9px", borderRadius: 6, fontSize: 11.5, fontWeight: 600, fontFamily: "Inter, sans-serif", border: `1px solid ${active ? "#991B1B" : "rgba(0,0,0,0.07)"}`, background: active ? "rgba(255,80,80,0.12)" : "rgba(0,0,0,0.035)", color: active ? "#991B1B" : "#4A4540", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>{q.label}</button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           );
         })}
@@ -6150,7 +6123,7 @@ export default function App() {
                   <span style={{ fontSize:11, color:"#4A4540", fontFamily:"Inter, sans-serif" }}>{label}</span>
                   <div style={{ display:"flex", alignItems:"center", gap:4 }}>
                     <div style={{ flex:1, height:3, background:"#D4CCB8", borderRadius:2, overflow:"hidden" }}>
-                      <div style={{ width:`${(base/5)*100}%`, height:"100%", background:"#C0B8A4" }}/>
+                      <div style={{ width:`${(base/5)*100}%`, height:"100%", background:"#8A8474" }}/>
                     </div>
                     <span style={{ fontSize:10, fontFamily:"'JetBrains Mono', monospace", color:"#7A7268", minWidth:24, textAlign:"right" }}>{base.toFixed(1)}</span>
                   </div>
