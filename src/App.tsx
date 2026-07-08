@@ -1822,7 +1822,7 @@ interface FactoryBriefInput {
 }
 
 interface FactoryBriefAlternative {
-  trackId: "material-first" | "structural-innovation" | "damping-chain";
+  trackId: "best-performance" | "best-value" | "market-gap" | "innovation";
   trackLabel: string;
   philosophy: string; // one-sentence design philosophy summary
   spec: FactoryBriefResult["spec"];
@@ -2270,83 +2270,107 @@ function computeFactoryBriefWithAlternatives(input: FactoryBriefInput): FactoryB
 
   const TRACK_OVERRIDES: Record<string, Record<string, TrackOverride>> = {
     control: {
-      "material-first": {
-        trackLabel: "Material-first",
-        philosophy: "Tune every material variable toward dwell time — hybrid-core's two-zone density, 18K face per-panel flex, basalt frame for vibration character distinct from carbon.",
-        overrides: { coreId: "hybrid-core", faceId: "carbon-18k", frameId: "basalt-frame" },
-        extraRationale: "Material-first track: every material independently maximized for dwell. Hybrid-core soft throat zone for touch, 18K flat-weave for per-panel flex, basalt frame for thermal stability.",
+      "best-performance": {
+        trackLabel: "Best Performance",
+        philosophy: "Every material chosen for maximum dwell and precision, cost secondary — hybrid soft-throat core, 18K flat-weave face for per-panel flex, basalt frame for a damped, planted feel.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-18k", frameId: "basalt-frame", surfaceId: "smooth" },
+        extraRationale: "Best Performance track: the highest-touch proven build. Hybrid core softens the throat, 18K weave flexes per panel, basalt frame adds a distinct damped character — premium materials, proven construction.",
       },
-      "structural-innovation": {
-        trackLabel: "Structural Innovation",
-        philosophy: "Control through structural precision — hollow tubular frame (tennis-derived load distribution, essentially absent from padel), minimal holes for more continuous and consistent face feedback.",
+      "best-value": {
+        trackLabel: "Best Value",
+        philosophy: "The controllable feel at the lowest build cost — medium EVA and a fibreglass face are naturally soft and forgiving, delivering the best margin at retail.",
+        overrides: { coreId: "eva-medium", faceId: "fiberglass", frameId: "fiberglass-frame", surfaceId: "smooth" },
+        extraRationale: "Best Value track: fibreglass face and medium EVA give a soft, easy-to-place feel at the lowest OEM cost — the margin play for a control line that has to make money on the shelf.",
+      },
+      "market-gap": {
+        trackLabel: "Market Gap",
+        philosophy: "A gap on the shelf: control-first feel with real spin. A soft PE core gives dwell while a textured face adds bite — most control moulds sacrifice spin entirely.",
+        overrides: { coreId: "foam-pe", faceId: "carbon-12k", frameId: "hybrid-frame", surfaceId: "rough" },
+        extraRationale: "Market Gap track: soft, controllable dwell paired with a spin-generating surface — an underserved combination, since control racquets almost always run smooth faces.",
+      },
+      "innovation": {
+        trackLabel: "Innovation",
+        philosophy: "Control through structure, not softness — a hollow-tubular frame (essentially absent from padel) distributes load around the perimeter for a continuous, consistent face.",
         overrides: { coreId: "eva-medium", faceId: "carbon-12k", frameId: "hollow-tubular-frame", bridgeId: "open", beamOrientation: "vertical" },
-        extraRationale: "Structural Innovation track: hollow tubular frame standard in tennis for 40 years, essentially absent from padel. Distributes load around the perimeter rather than through a solid cross-section. Minimal holes (Head Extreme One principle) give a more continuous face. Control from structural precision, not material softness.",
-      },
-      "damping-chain": {
-        trackLabel: "Damping Chain",
-        philosophy: "Engineer every vibration interface in the shot path — foam-PE core, honeycomb-reinforced frame, dampener-integrated grip, closed bridge for total torsional consistency.",
-        overrides: { coreId: "foam-pe", faceId: "carbon-18k", frameId: "honeycomb-reinforced-frame", bridgeId: "closed", gripId: "dampener-integrated-grip" },
-        extraRationale: "Damping Chain track: every interface in the contact chain selected to absorb rather than transmit. Foam-PE core (most elastic), honeycomb-reinforced frame (structural damping from 1970s tennis patents), embedded dampener in handle, closed bridge for zero torsional variables on off-center hits.",
+        extraRationale: "Innovation track: an experimental hollow-tubular frame gives control from structural precision rather than material give — a genuine R&D bet on a construction padel hasn't adopted.",
       },
     },
     power: {
-      "material-first": {
-        trackLabel: "Material-first",
-        philosophy: "Maximum energy transfer through material stiffness — hard EVA core, stiffest carbon face available, full carbon frame, 3D-print surface for aggressive ball contact.",
-        overrides: { coreId: "eva-hard", frameId: "carbon-frame", surfaceId: "3d-print" },
-        extraRationale: "Material-first track: straightforward maximum-stiffness approach. Hard core for instant energy return, 3D-print surface for spin loading on smashes.",
+      "best-performance": {
+        trackLabel: "Best Performance",
+        philosophy: "Maximum energy return with the best proven materials — hard EVA, unidirectional carbon face for peak stiffness, full carbon frame, 3D-texture for smash bite.",
+        overrides: { coreId: "eva-hard", faceId: "carbon-ud", frameId: "carbon-frame", surfaceId: "3d-print" },
+        extraRationale: "Best Performance track: unidirectional carbon is the stiffest face architecture and hard EVA returns energy instantly — the no-compromise smash build in proven materials.",
       },
-      "structural-innovation": {
-        trackLabel: "Structural Innovation",
-        philosophy: "Power through structural geometry — hollow tubular frame concentrates load at the perimeter (higher effective stiffness per gram than solid carbon), XL honeycomb surface for aggressive ball grip.",
+      "best-value": {
+        trackLabel: "Best Value",
+        philosophy: "Explosive power at the best price — hard EVA and standard 3K carbon deliver the stiff response at a retail-friendly cost.",
+        overrides: { coreId: "eva-hard", faceId: "carbon-3k", frameId: "carbon-frame", surfaceId: "rough" },
+        extraRationale: "Best Value track: 3K carbon is the most cost-effective carbon face and hard EVA supplies the punch — strong margin on a power line without dropping to fibreglass.",
+      },
+      "market-gap": {
+        trackLabel: "Market Gap",
+        philosophy: "The gap the market misses: smash power without punishing the arm. An auxetic frame returns energy structurally and a hybrid core keeps touch — power that doesn't wreck the elbow.",
+        overrides: { coreId: "hybrid-core", faceId: "graphene", frameId: "auxetic-frame", surfaceId: "3d-print" },
+        extraRationale: "Market Gap track: power almost always means a harsh hard-core diamond. Structural energy return (auxetic) plus a dual-density core delivers the power ceiling with far more comfort — a real positioning gap.",
+      },
+      "innovation": {
+        trackLabel: "Innovation",
+        philosophy: "Power from structural efficiency — a hollow-tubular frame is the stiffest geometry per gram; XL-honeycomb texture grips the ball at raised cell edges.",
         overrides: { coreId: "eva-hard", faceId: "carbon-3k", frameId: "hollow-tubular-frame", surfaceId: "xl-honeycomb" },
-        extraRationale: "Structural Innovation track: hollow tubular frame (stiffest available geometry per gram — standard in tennis, rare in padel). XL honeycomb texture for ball contact at raised cell edges rather than continuous grit. Power from structural efficiency.",
-      },
-      "damping-chain": {
-        trackLabel: "Auxetic Rebound",
-        philosophy: "Power through frame geometry that returns energy — auxetic carbon frame widens on impact rather than compressing, returning more energy to the ball through frame behavior rather than just material hardness.",
-        overrides: { coreId: "eva-hard", faceId: "carbon-3k", frameId: "auxetic-frame" },
-        extraRationale: "Auxetic Rebound track: auxetic frame (negative Poisson's ratio — widens on impact) returns energy to the ball through frame geometry. Head's Auxetic 2.0 uses this principle. Paired with hard core for a two-lever power approach: material stiffness AND structural energy return.",
+        extraRationale: "Innovation track: an experimental hollow-tubular frame concentrates stiffness at the perimeter for more power per gram than solid construction — an unproven-in-padel R&D bet.",
       },
     },
     comfort: {
-      "material-first": {
-        trackLabel: "Material-first",
-        philosophy: "Soften every contact point independently — foam-PE core (more elastic than any EVA grade), anti-shock grip, hybrid frame, smooth surface.",
-        overrides: { coreId: "foam-pe", gripId: "anti-shock-grip", frameId: "hybrid-frame", surfaceId: "smooth" },
-        extraRationale: "Material-first track: each material component independently chosen for comfort contribution. Foam-PE is softer and more elastic than EVA, providing stronger vibration absorption at the source.",
+      "best-performance": {
+        trackLabel: "Best Performance",
+        philosophy: "The most arm-friendly build in premium materials — PE core (most elastic), flex-weave 18K face, hybrid frame, and an engineered handle damper.",
+        overrides: { coreId: "foam-pe", faceId: "carbon-18k", frameId: "hybrid-frame", gripId: "dampener-integrated-grip", surfaceId: "smooth" },
+        extraRationale: "Best Performance track: every contact point tuned to absorb — PE core at the source, flex-weave face, tuned handle mass at the hand. The premium arm-care build.",
       },
-      "structural-innovation": {
-        trackLabel: "Structural Innovation",
-        philosophy: "Comfort through structural choices — round grip cross-section reduces grip tension and forearm fatigue, single open beam is lightest possible construction for swing fatigue reduction over long sessions.",
-        overrides: { coreId: "eva-soft", gripId: "anti-shock-grip", gripShapeId: "grip-round", frameId: "honeycomb-reinforced-frame", bridgeId: "open", beamOrientation: "vertical" },
-        extraRationale: "Structural Innovation track: comfort at the structural level. Round grip cross-section (common in squash, rare in padel) reduces the grip tension that causes forearm fatigue. Single-beam open bridge = lightest possible construction, reducing swing-cumulative fatigue over long sessions.",
+      "best-value": {
+        trackLabel: "Best Value",
+        philosophy: "Comfort at the lowest cost — soft EVA and a fibreglass face are inherently forgiving and cheap; an anti-shock grip adds damping without premium spend.",
+        overrides: { coreId: "eva-soft", faceId: "fiberglass", frameId: "fiberglass-frame", gripId: "anti-shock-grip", surfaceId: "smooth" },
+        extraRationale: "Best Value track: fibreglass and soft EVA are naturally low-harshness and low-cost; the anti-shock grip covers the rest — arm-friendly with real retail margin.",
       },
-      "damping-chain": {
-        trackLabel: "Damping Chain",
-        philosophy: "Maximum vibration management from core to hand — dampener-integrated handle (analogous to Babolat Cortex in tennis), closed bridge, foam-PE core, honeycomb frame.",
-        overrides: { coreId: "foam-pe", gripId: "dampener-integrated-grip", frameId: "honeycomb-reinforced-frame", bridgeId: "closed" },
-        extraRationale: "Damping Chain track: the complete arm-protection build. Every interface engineered for absorption: foam-PE core, honeycomb frame, embedded handle dampener, closed bridge eliminating torsional feedback. The professional elbow-protection spec.",
+      "market-gap": {
+        trackLabel: "Market Gap",
+        philosophy: "A gap on the shelf: a genuinely comfortable attacking racquet. Most arm-friendly moulds are low-power rounds — a soft PE core and auxetic frame in a diamond keeps comfort while still finishing points.",
+        overrides: { shapeId: "diamond", coreId: "foam-pe", faceId: "carbon-12k", frameId: "auxetic-frame" },
+        extraRationale: "Market Gap track: comfort and attack rarely coexist. A soft core with structural (auxetic) energy return in a diamond shape serves players who want arm care without giving up power.",
+      },
+      "innovation": {
+        trackLabel: "Innovation",
+        philosophy: "Arm protection engineered at every interface — a honeycomb-reinforced frame damps structurally, a tuned handle mass absorbs the rest, a closed bridge removes torsional feedback.",
+        overrides: { coreId: "foam-pe", faceId: "carbon-18k", frameId: "honeycomb-reinforced-frame", gripId: "dampener-integrated-grip", bridgeId: "closed" },
+        extraRationale: "Innovation track: an experimental honeycomb-reinforced frame adds structural damping beyond what any foam can — the R&D elbow-care build.",
       },
     },
     balanced: {
-      "material-first": {
-        trackLabel: "Material-first",
-        philosophy: "Hybrid-core as the foundational choice — soft near the throat for defense and touch, firmer toward the hitting zone for attacking shots. The only core designed for within-session versatility.",
-        overrides: { coreId: "hybrid-core", faceId: "carbon-12k" },
-        extraRationale: "Material-first track: hybrid dual-density core as the primary philosophy. Soft at the throat (defensive shots, touch volleys), firmer toward the tip (overhead smashes, attacking shots). No other core in the data model is built for this kind of positional versatility.",
+      "best-performance": {
+        trackLabel: "Best Performance",
+        philosophy: "All-round performance in the best proven materials — a dual-density core for touch-and-attack and an auxetic frame that responds evenly across the whole face.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-12k", frameId: "auxetic-frame" },
+        extraRationale: "Best Performance track: hybrid core covers defence and attack; the auxetic frame gives an even response across the hitting zone — the premium all-rounder.",
       },
-      "structural-innovation": {
-        trackLabel: "Structural Innovation",
-        philosophy: "Wide-body diamond shape as the geometric approach to balance — retains power ceiling but broader frame increases twistweight and widens the effective sweet spot without requiring soft materials.",
+      "best-value": {
+        trackLabel: "Best Value",
+        philosophy: "A balanced all-rounder at the best cost — medium EVA and 3K carbon cover every shot with strong retail margin.",
+        overrides: { coreId: "eva-medium", faceId: "carbon-3k", frameId: "carbon-frame", surfaceId: "rough" },
+        extraRationale: "Best Value track: medium EVA and 3K carbon are the cost-efficient all-court combination — a versatile line that makes margin.",
+      },
+      "market-gap": {
+        trackLabel: "Market Gap",
+        philosophy: "The gap your brief flagged: a wide-body diamond. Broader than a standard diamond raises twistweight and widens the sweet spot while keeping the power ceiling — balance through geometry.",
         overrides: { shapeId: "diamond-wide", coreId: "hybrid-core", faceId: "carbon-12k" },
-        extraRationale: "Structural Innovation track: wide-body diamond is a genuine market gap (your own brief document identified this). Broader than standard diamond = higher twistweight = more forgiving on off-center contact, while retaining the shape's power ceiling. Balance achieved through geometry, not material compromise.",
+        extraRationale: "Market Gap track: a wide-body diamond is a genuine hole in the market — the forgiveness of a round with the power of a diamond, achieved through shape rather than soft materials.",
       },
-      "damping-chain": {
-        trackLabel: "Auxetic Balance",
-        philosophy: "Auxetic frame distributes ball impact across the whole hitting zone rather than at a point — structurally balanced response rather than a material-averaged compromise.",
-        overrides: { coreId: "hybrid-core", frameId: "auxetic-frame", faceId: "carbon-12k" },
-        extraRationale: "Auxetic Balance track: auxetic frame widens on impact across the full hitting area, distributing ball energy more evenly than a standard frame. This is structural balance — the frame responds uniformly regardless of where contact occurs. Head uses Auxetic 2.0 but hasn't applied it to a balanced-priority brief.",
+      "innovation": {
+        trackLabel: "Innovation",
+        philosophy: "A structural bet on all-round consistency — a hollow-tubular frame (new to padel) gives a light, continuous, evenly-responding face across every shot type.",
+        overrides: { coreId: "hybrid-core", faceId: "carbon-12k", frameId: "hollow-tubular-frame", bridgeId: "open" },
+        extraRationale: "Innovation track: an experimental hollow-tubular frame delivers a light, uniform response for a do-everything racquet — an R&D construction absent from padel.",
       },
     },
   };
@@ -4823,7 +4847,7 @@ function FactoryBriefPanel({ onApply }) {
   const [targetVolume, setTargetVolume] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[]; alternatives: FactoryBriefAlternative[] } | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<string>("material-first");
+  const [selectedTrack, setSelectedTrack] = useState<string>("best-performance");
 
   const LEVEL_OPTIONS = [
     { id: "beginner", label: "Beginner" },
