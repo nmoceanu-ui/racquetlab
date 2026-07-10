@@ -1593,11 +1593,21 @@ function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: strin
       if (balanceDist <= 0.3) reasons.push(`balance point (${r.balanceCm}cm) closely matches your target`);
     }
 
-    const pct = Math.round((score / maxScore) * 100);
-    return { racquet: r, matchPct: pct, reasons };
+    const rawPct = (score / maxScore) * 100;
+    const pct = Math.round(rawPct);
+    return { racquet: r, matchPct: pct, rawPct, reasons };
   });
 
-  return scored.sort((a, b) => b.matchPct - a.matchPct).slice(0, limit);
+  // Sort by the RAW (unrounded) score so fine weight/balance differences
+  // actually decide the order. Rounding to an integer % BEFORE sorting
+  // collapsed close scores into ties, which were then broken by catalog
+  // order — and the catalog is grouped by brand, so recommendations skewed
+  // toward whichever brand happened to be listed first. Any genuinely exact
+  // ties are broken brand-neutrally via a stable id hash, not array position.
+  const idHash = (s: string) => { let x = 0; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0; return x; };
+  return scored
+    .sort((a, b) => b.rawPct - a.rawPct || idHash(a.racquet.id) - idHash(b.racquet.id))
+    .slice(0, limit);
 }
 
 function recommendSpec(answers) {
