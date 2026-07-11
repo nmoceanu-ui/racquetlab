@@ -2641,21 +2641,36 @@ function explainBalance(cm, shapeId) {
   const redirectWord = cm >= 26.8 ? "significantly slower" : cm >= 26.0 ? "somewhat slower" : cm >= 25.0 ? "close to neutral" : cm >= 24.3 ? "faster" : "fastest";
   return `${cm.toFixed(1)}cm shifts the visualized sweet spot ${shiftDirection} versus this shape's default. Smash and overhead leverage is ${leverageWord} at this balance point; redirecting the frame on defense is ${redirectWord} relative to the mid-point of this slider. Balance point is the single strongest lever in this tool for moving the sweet spot's location on the face — shape sets where it starts, balance moves it from there.`;
 }
+// Map the internal 35–42 handle-thickness scale onto familiar grip SIZES —
+// padel L0–L3, each shown with the tennis-fraction equivalent players
+// recognise (measured ring-finger-tip to mid-palm crease). Padel handles run
+// small and are fine-tuned with overgrips (~one size up per wrap), so the
+// label carries an overgrip hint rather than a millimetre reading.
+function gripSizeLabel(mm: number): { size: string; tennis: string; label: string } {
+  const bands = [
+    { max: 36.5, size: "L0", tennis: '4⅛"' },
+    { max: 38.5, size: "L1", tennis: '4¼"' },
+    { max: 40.0, size: "L2", tennis: '4⅜"' },
+    { max: 999, size: "L3", tennis: '4½"' },
+  ];
+  const b = bands.find((x) => mm < x.max) ?? bands[bands.length - 1];
+  return { size: b.size, tennis: b.tennis, label: `${b.size} · ${b.tennis}` };
+}
+
 function explainGripCirc(mm) {
-  // Grip circumference has no physical link to the face's sweet spot —
-  // it's a handle-mechanics dimension, not a face-geometry one, so unlike
-  // width/thickness/weight/balance this one is correctly absent from
-  // computeSweetSpotAndStability. Scoped honestly here to what it actually
-  // affects: hand mechanics, not sweet spot size or location.
-  const relCirc = (mm - 35) / 7; // 0 at 35mm min, 1 at 42mm max
+  // Grip size affects handle mechanics only — not the face's sweet spot — so
+  // it's correctly absent from computeSweetSpotAndStability. Framed here as a
+  // familiar grip size with overgrip guidance, not a raw millimetre value.
+  const { size, tennis } = gripSizeLabel(mm);
+  const relCirc = (mm - 35) / 7; // 0 at the small end, 1 at the large end
   const stabilityWord = relCirc >= 0.7 ? "at its most stable" : relCirc >= 0.4 ? "reasonably stable" : relCirc >= 0.15 ? "a working middle ground" : "at its most mobile";
   const snapWord = relCirc >= 0.7 ? "most restricted" : relCirc >= 0.4 ? "somewhat restricted" : relCirc >= 0.15 ? "close to neutral" : "least restricted";
   const gripForceNote = mm <= 37
-    ? "A narrower circumference also reduces the grip force needed to hold the handle securely — more surface contact per unit of squeeze — which is a genuine factor in reducing forearm fatigue over a long session."
+    ? "A smaller size needs less squeeze to hold securely — more contact per unit of grip force — which genuinely reduces forearm fatigue over a long session. Add an overgrip if you want it a touch thicker."
     : mm >= 40
-    ? "The wider circumference requires more grip force from a given hand size to hold securely, which can be a real factor in cumulative forearm fatigue for players without a correspondingly large grip span."
-    : "This mid-range circumference is close to what most factory grips ship at before overgrip — a reasonable default before optimizing toward either stability or reduced grip force.";
-  return `${mm}mm grip: hand stability on powerful shots is ${stabilityWord} at this circumference; wrist snap for spin and reflex volleys is ${snapWord} versus the mid-point of this slider. ${gripForceNote} This dimension affects handle mechanics only — it has no physical link to the sweet spot's size or location on the face.`;
+    ? "A larger size demands more grip force to hold securely, a real factor in cumulative forearm fatigue unless your hand span matches it. Most players size down and build up with overgrips instead."
+    : "This is close to what most padel handles ship at before overgrip — a sensible default, and each overgrip adds roughly one size.";
+  return `Grip size ${size} (≈ ${tennis} in tennis terms): hand stability on powerful shots is ${stabilityWord}; wrist snap for spin and reflex volleys is ${snapWord} versus the middle of the range. ${gripForceNote} Grip size affects how the handle sits in your hand — it has no link to the sweet spot's size or location on the face.`;
 }
 function sweetSpotPosLabel(shapeId, balanceCm) {
   const sw = shapeId === "round" ? "low / centered" : shapeId === "diamond" ? "high, near the tip" : shapeId === "diamond-wide" ? "high, wider than standard diamond" : "mid-face";
@@ -3829,12 +3844,12 @@ function SelectField({ value, onChange, options, groupExperimental }: { value: a
   );
 }
 
-function SliderField({ label, value, onChange, min, max, step = 1, suffix, explanation }) {
+function SliderField({ label, value, onChange, min, max, step = 1, suffix, explanation, valueLabel }: any) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
         <span style={{ fontSize: 13, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>{label}</span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#1A5C2A", fontWeight: 600 }}>{value}{suffix}</span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#1A5C2A", fontWeight: 600 }}>{valueLabel ?? `${value}${suffix ?? ""}`}</span>
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
@@ -6305,7 +6320,7 @@ export default function App() {
         <SliderField label="Thickness" value={thicknessMm} onChange={setThicknessMm} min={28} max={38} suffix=" mm" explanation={explainThickness(thicknessMm)}/>
         <SliderField label="Weight" value={weightG} onChange={setWeightG} min={350} max={380} suffix=" g" explanation={explainWeight(weightG)}/>
         <SliderField label="Balance Point" value={balanceCm} onChange={setBalanceCm} min={24} max={27} step={0.1} suffix=" cm" explanation={explainBalance(balanceCm, shapeId)}/>
-        <SliderField label="Grip Circumference" value={gripCircMm} onChange={setGripCircMm} min={35} max={42} suffix=" mm" explanation={explainGripCirc(gripCircMm)}/>
+        <SliderField label="Grip Size" value={gripCircMm} onChange={setGripCircMm} min={35} max={42} valueLabel={gripSizeLabel(gripCircMm).label} explanation={explainGripCirc(gripCircMm)}/>
         {mode === "manufacturer" && (
           <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginTop:4 }}>
             Length max 455mm, head width max 260mm, thickness max 38mm per FIP January 2026 rules. 2.5% manufacturing tolerance on thickness only.
@@ -6659,7 +6674,7 @@ export default function App() {
             ["Surface", surface.label],
             ["Bridge", bridgeId === "open" ? `${bridge.label} — ${beamCount} ${beamOrientation} beam${beamCount>1?"s":""}` : bridge.label],
             ["Grip", `${grip.label}`],
-            ["Grip Circ.", `${gripCircMm}mm`],
+            ["Grip Size", gripSizeLabel(gripCircMm).label],
             ["Holes", holes.length === 0 ? "None (solid face)" : `${holes.length} holes — ${holeDiameterMm}mm diameter`],
           ].map(([k,v]) => (
             <div key={k} style={{ display:"flex", justifyContent:"space-between", borderBottom:"1px solid rgba(0,0,0,0.04)", padding:"2px 0", gap:8 }}>
