@@ -4306,6 +4306,64 @@ const LANYARD_ATTACH = [
   { id: "fixed", label: "Fixed-in", sweat: 0, comfort: 0, security: 1, durability: 0, note: "Anchored inside the buttcap — simpler, one less failure point, but can't be removed to wash or replace." },
 ];
 
+// Wrist-Link concept — a washable wristband with a secure, repeatable quick-
+// connect to the lanyard. Magnet for alignment, mechanical latch for holding a
+// slipping racquet, guarded button to release. Concept/education panel.
+function WristLinkConcept() {
+  const MECHS = [
+    { id: "maglatch", name: "Magnetic-align + spring latch", rec: true,
+      how: "The two halves self-align and seat with a magnetic snap; at the moment they seat, a spring-loaded steel pawl drops into a groove and mechanically locks. The magnet only aligns — it carries no load. A guarded button retracts the pawl to release.",
+      hold: "Holds a flying racquet: the pawl and cord carry the shock, never the magnet.",
+      con: "Most parts; needs a recessed or two-step button so it can't release mid-rally." },
+    { id: "bayonet", name: "Bayonet twist-lock",
+      how: "Push and quarter-turn to lock, like a camera lens or a medical Luer lock. Fully mechanical, one deliberate twist to release.",
+      hold: "Very secure and cheap to make reliable.",
+      con: "No inherent breakaway; a little slower to connect one-handed." },
+    { id: "buckle", name: "Micro side-release buckle",
+      how: "A miniaturised, ultralight version of a backpack buckle.",
+      hold: "Strong and instantly familiar to anyone.",
+      con: "The least elegant option; no magnetic assist." },
+    { id: "balldetent", name: "Ball-detent quick-connect",
+      how: "Push together (magnet aligns), ball bearings snap into a groove; press a sleeve to retract them and release. Industrial quick-connect logic.",
+      hold: "Very high load capacity in a compact housing.",
+      con: "Machined parts — the costliest to produce." },
+  ];
+  const [sel, setSel] = useState("maglatch");
+  const m = MECHS.find(x => x.id === sel)!;
+  const notes = [
+    ["Load path, not static weight", "A ~365g racquet slipping mid-swing can spike to a few hundred newtons. The latch (hardened stainless/titanium) and a Dyneema/UHMWPE cord carry that with margin; the neodymium magnet is spec'd only to hold the connector seated at rest."],
+    ["Shock absorber", "A short elastic/bungee section in the lanyard spreads the dead-stop over 10–15cm so it doesn't wrench the wrist or fatigue the latch — like a climbing lanyard's energy absorber."],
+    ["Guarded release", "The button is recessed or two-action (slide-then-press / press-and-hold) so it can't pop open mid-rally. Optionally a redundant secondary catch."],
+    ["Washability split", "The band detaches fully from all hardware, so the terry/silicone band goes in the wash while the coupling stays on the cord — the whole point of the concept."],
+    ["Swivel joint", "A small bearing at the coupling lets the lanyard rotate freely through the wrist pronation/supination of viboras and hook smashes without winding up."],
+  ];
+  const box = { padding: "14px 16px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, marginTop: 14 };
+  return (
+    <div style={box}>
+      <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 6 }}>⚗ Wrist-Link — washable band + secure quick-connect</div>
+      <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>
+        The lanyard is the sweaty, hard-to-clean part. Wrist-Link keeps a small permanent coupling on the racquet-side cord and makes the wrist interface a cheap, washable, swappable band. The catch: it must hold a racquet that slips out mid-swing — so the connection is magnetic for alignment, but a mechanical latch does the holding.
+      </p>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+        {MECHS.map(x => (
+          <button key={x.id} onClick={() => setSel(x.id)} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${sel === x.id ? "#1A5C2A" : "#D4CCB8"}`, background: sel === x.id ? "#1A5C2A" : "#fff", color: sel === x.id ? "#fff" : "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>{x.name}{x.rec ? " ★" : ""}</button>
+        ))}
+      </div>
+      <div style={{ padding: "10px 12px", background: "rgba(26,92,42,0.06)", borderRadius: 8, marginBottom: 12 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 700, color: "#18181B", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>{m.name}{m.rec ? " — recommended" : ""}</p>
+        <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>{m.how}</p>
+        <p style={{ fontSize: 11.5, color: "#1A5C2A", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}><b>Holds:</b> {m.hold} <span style={{ color: "#991B1B" }}><b>Trade-off:</b> {m.con}</span></p>
+      </div>
+      {notes.map(([t, d]) => (
+        <div key={t} style={{ marginBottom: 8 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "#1A5C2A", fontFamily: "Inter, sans-serif" }}>{t}. </span>
+          <span style={{ fontSize: 11.5, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>{d}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LanyardConfigurator() {
   const [materialId, setMaterialId] = useState("polyester-wick");
   const [shapeId, setShapeId] = useState("flat");
@@ -5836,6 +5894,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   holeDiameterMm: number; onDiameterChange: (d: number) => void;
 }) {
   const svgRef = React.useRef<SVGSVGElement>(null);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [designNote, setDesignNote] = useState<string>("");
   const [clickMode, setClickMode] = useState<"add" | "remove">("add");
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [lastBlockedMsg, setLastBlockedMsg] = useState<string | null>(null);
@@ -5951,6 +6011,75 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       onHolesChange(generateLegacyHoleGrid("high", "even", shape));
       return;
     }
+    if (preset === "monogram") {
+      const cols = [-0.28, -0.14, 0, 0.14, 0.28];
+      const rows = [-0.34, -0.20, -0.06, 0.08, 0.22];
+      const pat = [[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1]];
+      const pts: HolePoint[] = [];
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (pat[r][c]) pts.push({ x: cols[c], y: rows[r] });
+      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      return;
+    }
+    if (preset === "heart") {
+      const raw: HolePoint[] = [];
+      for (let i = 0; i < 40; i++) {
+        const t = (i / 40) * Math.PI * 2;
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+        raw.push({ x: (hx / 17) * 0.42, y: -(hy / 17) * 0.42 - 0.02 });
+      }
+      const kept: HolePoint[] = [];
+      for (const p of raw) if (inFace(p.x, p.y) && kept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= 0.12)) kept.push(p);
+      onHolesChange(kept);
+      return;
+    }
+    if (preset === "star") {
+      const pts: HolePoint[] = [{ x: 0, y: -0.08 }];
+      for (let i = 0; i < 10; i++) {
+        const ang = (i / 10) * Math.PI * 2 - Math.PI / 2;
+        const rr = i % 2 === 0 ? 0.42 : 0.18;
+        pts.push({ x: rr * Math.cos(ang), y: -0.08 + rr * Math.sin(ang) });
+      }
+      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      return;
+    }
+  };
+
+  // Turn an uploaded image into a hole pattern: sample the dark pixels onto a
+  // grid, thin them to a manufacturable minimum spacing, clip to the face, and
+  // cap the count. Runs entirely in the browser — nothing is uploaded.
+  const importImageAsHoles = (file: File) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const N = 44;
+      const c = document.createElement("canvas"); c.width = N; c.height = N;
+      const ctx = c.getContext("2d"); if (!ctx) return;
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, N, N);
+      const scale = Math.min(N / img.width, N / img.height) * 0.92;
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (N - w) / 2, (N - h) / 2, w, h);
+      const data = ctx.getImageData(0, 0, N, N).data;
+      const cells: HolePoint[] = [];
+      for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
+        const i = (iy * N + ix) * 4;
+        const al = data[i + 3], lum = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        if (al > 128 && lum < 145) cells.push({ x: ((ix / (N - 1)) * 2 - 1) * 0.78, y: ((iy / (N - 1)) * 2 - 1) * 0.78 - 0.04 });
+      }
+      const minD = 0.115;
+      const kept: HolePoint[] = [];
+      for (const p of cells) {
+        if (!inFace(p.x, p.y)) continue;
+        if (kept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= minD)) kept.push(p);
+        if (kept.length >= 70) break;
+      }
+      if (kept.length < 4) { setDesignNote("Couldn't read a bold enough shape — try a simple, high-contrast black-on-white image."); return; }
+      setDesignNote(`Imported ${kept.length} holes from your image. Bold, simple shapes read best; fine detail is simplified to keep the face manufacturable.`);
+      onHolesChange(kept);
+    };
+    img.onerror = () => setDesignNote("Couldn't load that image file.");
+    img.src = url;
   };
 
   const { cx, cy, a, b } = faceGeom();
@@ -6074,6 +6203,28 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
             <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: "#fff", color: "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
           ))}
         </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Perforation designs</p>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {[["monogram", "M monogram"], ["heart", "Heart"], ["star", "Star"]].map(([id, label]) => (
+            <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #1A5C2A", background: "#EAF3EC", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>{label}</button>
+          ))}
+          <button onClick={() => fileRef.current?.click()} style={{ padding: "5px 10px", borderRadius: 6, border: "1px dashed #1A5C2A", background: "#fff", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>Upload image…</button>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) importImageAsHoles(f); if (e.target) e.target.value = ""; }} />
+        </div>
+        <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, marginTop: 6, fontFamily: "Inter, sans-serif" }}>
+          Turn a design into the actual hole pattern — the scores above update to show how it plays. Bold shapes (a heart, a monogram) read cleanly; intricate logos get simplified to stay manufacturable.
+        </p>
+        {designNote && <p style={{ fontSize: 11, color: "#1A5C2A", lineHeight: 1.5, marginTop: 4, fontFamily: "Inter, sans-serif" }}>{designNote}</p>}
+        {(() => {
+          let minC = Infinity;
+          for (let i = 0; i < holes.length; i++) for (let j = i + 1; j < holes.length; j++) { const d = Math.hypot(holes[i].x - holes[j].x, holes[i].y - holes[j].y); if (d < minC) minC = d; }
+          const ligMm = holes.length > 1 ? (minC - holeDiameterMm / 255) * 255 : Infinity;
+          if (holes.length > 1 && ligMm < 2) return <p style={{ fontSize: 11, color: "#991B1B", lineHeight: 1.5, marginTop: 4, fontFamily: "Inter, sans-serif" }}>⚠ Manufacturability: tightest gap is ~{Math.max(0, ligMm).toFixed(1)}mm of carbon between holes — thin the design or reduce the hole diameter for a safely producible face.</p>;
+          return null;
+        })()}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 14 }}>
@@ -6529,6 +6680,7 @@ export default function App() {
           exploration section, available in both modes. */}
       <AccordionSection id="lanyard" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/></svg>} label="Lanyard Concept" isOpen={openSections.has("lanyard")} onToggle={() => toggle("lanyard")} badge="⚗">
         <LanyardConfigurator/>
+        <WristLinkConcept/>
       </AccordionSection>
 
       {mode === "manufacturer" && fto_flagged && (
