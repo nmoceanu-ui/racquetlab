@@ -737,6 +737,40 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   return out;
 }
 
+// Reverse of the finder quiz: read a build's SCORES back into the plain
+// language the questionnaire speaks — the style it suits, the shots it
+// favours, and the honest trade-offs. Pure and fast, so it updates live as
+// the user edits any spec. Not a search/solver (that's matchRacquets); this
+// just narrates the current scores the way a coach would.
+function describePlaystyle(scores: any) {
+  const { power = 0, control = 0, comfort = 0, sweetSpot = 0, stability = 0, spin = 0 } = scores || {};
+  const tilt = power - control; // + = attack-biased, - = control-biased
+
+  let headline: string;
+  if (sweetSpot >= 3.9 && comfort >= 3.3 && power < 3.6 && Math.abs(tilt) < 0.6)
+    headline = "Forgiving all-courter — a develop-your-game build";
+  else if (tilt >= 0.7) headline = "Aggressive attacker — built to finish points";
+  else if (tilt <= -0.7) headline = "Control-first — placement and defense over raw power";
+  else headline = "Balanced all-courter — no strong bias either way";
+
+  const favors: string[] = [];
+  if (tilt >= 0.4 || power >= 3.6) favors.push("smashes and overhead put-aways");
+  if (spin >= 3.6) favors.push("a spin game — topspin lobs, brushed viboras and kick");
+  if (tilt <= -0.3 || control >= 3.6) favors.push("placement, lobs and delicate touch");
+  if (stability >= 3.6) favors.push("firm defense on hard, off-centre balls off the glass");
+  if (sweetSpot >= 3.9 && favors.length < 2) favors.push("consistent contact while you groove your shots");
+  if (favors.length === 0) favors.push("a steady, do-a-bit-of-everything game");
+
+  const watch: string[] = [];
+  if (power >= 3.6 && control <= 3.2) watch.push("quick defensive redirects and soft touch get harder as power climbs");
+  if (control >= 3.7 && power <= 3.0) watch.push("less free put-away power on the smash");
+  if (stability < 2.7) watch.push("off-centre mishits and hard returns will twist the face");
+  if (comfort < 2.7) watch.push("it can feel harsh on the arm over long sessions");
+  if (sweetSpot < 2.7) watch.push("it's less forgiving when your timing is slightly off");
+
+  return { headline, favors: favors.slice(0, 3), watch: watch.slice(0, 2) };
+}
+
 // ---------------------------------------------------------------------------
 // SMART FINDER RECOMMENDATION ENGINE
 // Consumes the full expanded answer set (background, body, style/goals,
@@ -6535,6 +6569,27 @@ export default function App() {
           Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
         </p>
       </div>
+
+      {(() => {
+        const read = describePlaystyle(scores);
+        return (
+          <div style={{ padding:"16px", background:"linear-gradient(135deg, #EAF3EC, rgba(0,212,240,0.05))", border:"1px solid rgba(26,92,42,0.22)", borderRadius:12, marginBottom:16 }}>
+            <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#1A5C2A", marginBottom:6 }}>What this build says about your game</p>
+            <p style={{ fontSize:14.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:"#18181B", margin:"0 0 8px" }}>{read.headline}</p>
+            <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.55, fontFamily:"Inter, sans-serif", margin:"0 0 6px" }}>
+              <span style={{ fontWeight:700, color:"#1A5C2A" }}>Leans toward:</span> {read.favors.join("; ")}.
+            </p>
+            {read.watch.length > 0 && (
+              <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.55, fontFamily:"Inter, sans-serif", margin:0 }}>
+                <span style={{ fontWeight:700, color:"#991B1B" }}>Trade-offs:</span> {read.watch.join("; ")}.
+              </p>
+            )}
+            <p style={{ fontSize:10.5, color:"#9A9284", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>
+              Updates live as you edit the build — the finder quiz run in reverse.
+            </p>
+          </div>
+        );
+      })()}
 
       {mode === "manufacturer" && (
         <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(26,92,42,0.15)", borderRadius:12, marginBottom:16 }}>
