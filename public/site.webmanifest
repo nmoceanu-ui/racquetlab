@@ -1,0 +1,13 @@
+{
+  "name": "Manufibre",
+  "short_name": "Manufibre",
+  "description": "Design and compare padel racquet specs, or get a personalized recommendation from the Smart Finder.",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ],
+  "theme_color": "#E31B23",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/"
+}
