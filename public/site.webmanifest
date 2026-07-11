@@ -2,9 +2,11 @@
   "name": "PalaLab",
   "short_name": "PalaLab",
   "description": "Design and compare padel racquet specs, or get a personalized recommendation from the Smart Finder.",
+  "id": "/",
   "icons": [
-    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
-    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
   ],
   "theme_color": "#E31B23",
   "background_color": "#ffffff",
