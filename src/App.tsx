@@ -2722,6 +2722,15 @@ function gripSizeLabel(mm: number): { size: string; tennis: string; label: strin
   return { size: b.size, tennis: b.tennis, label: `${b.size} · ${b.tennis}` };
 }
 
+// Hand measurement (ring-finger-tip to mid-palm crease, in cm) → the internal
+// grip scale, matching the quiz's handMeasure buckets exactly.
+function handCmToGripMm(cm: number): number {
+  if (cm < 10.0) return 36;
+  if (cm < 10.7) return 38;
+  if (cm < 11.4) return 39;
+  return 40;
+}
+
 function explainGripCirc(mm) {
   // Grip size affects handle mechanics only — not the face's sweet spot — so
   // it's correctly absent from computeSweetSpotAndStability. Framed here as a
@@ -4305,6 +4314,84 @@ const LANYARD_ATTACH = [
   { id: "detachable", label: "Detachable / swappable", sweat: 1, comfort: 0, security: 0, durability: 1, note: "Pop it off to wash or swap when sweaty — like Wilson Zipcord / Babolat Smart Buttcap / NOX SmartStrap. Best for hygiene and customization; keep the coupling clear of their patents." },
   { id: "fixed", label: "Fixed-in", sweat: 0, comfort: 0, security: 1, durability: 0, note: "Anchored inside the buttcap — simpler, one less failure point, but can't be removed to wash or replace." },
 ];
+
+// Hand-measurement tool (experimental): photograph your hand next to a
+// standard 85.6mm card, tap the card's two ends for scale, then tap your
+// ring-finger tip and mid-palm crease. Pure geometry from the known card
+// width — no ML — so it's reliable when the photo is a straight-down shot.
+function HandMeasureTool({ onGrip }: { onGrip: (mm: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
+  const [result, setResult] = useState<string>("");
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const CARD_MM = 85.6;
+
+  const reset = () => { setPts([]); setResult(""); };
+  const onFile = (f: File) => {
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => { setDims({ w: img.width, h: img.height }); setImgUrl(url); setPts([]); setResult(""); };
+    img.onerror = () => setResult("Couldn't load that image.");
+    img.src = url;
+  };
+  const onSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (pts.length >= 4 || !dims) return;
+    const svg = svgRef.current; if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * dims.w;
+    const y = ((e.clientY - rect.top) / rect.height) * dims.h;
+    const next = [...pts, { x, y }];
+    setPts(next);
+    if (next.length === 4) {
+      const dist = (a: any, b: any) => Math.hypot(a.x - b.x, a.y - b.y);
+      const cardPx = dist(next[0], next[1]);
+      const handPx = dist(next[2], next[3]);
+      if (cardPx < 5) { setResult("Card points too close together — reset and tap the two ends of the card."); return; }
+      const handCm = (handPx * (CARD_MM / cardPx)) / 10;
+      const gripMm = handCmToGripMm(handCm);
+      setResult(`Hand measure ≈ ${handCm.toFixed(1)} cm → grip size ${gripSizeLabel(gripMm).label}. Applied to the build.`);
+      onGrip(gripMm);
+    }
+  };
+  const stepText = pts.length < 2
+    ? "Step 1 — tap the two short (85.6mm) ends of the card."
+    : pts.length < 4
+    ? "Step 2 — tap your ring-finger tip, then the middle crease of your palm."
+    : "Done.";
+  const btn = { padding: "5px 10px", borderRadius: 6, border: "1px solid #1A5C2A", background: "#EAF3EC", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 };
+  return (
+    <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#1A5C2A" }}>⚗ Measure grip from a photo (experimental)</span>
+        <button onClick={() => setOpen(o => !o)} style={{ flexShrink: 0, padding: "5px 10px", borderRadius: 6, border: "none", background: open ? "rgba(0,0,0,0.06)" : "#1A5C2A", color: open ? "#4A4540" : "#fff", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase" }}>{open ? "Close" : "Open"}</button>
+      </div>
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontSize: 11.5, color: "#7A7268", lineHeight: 1.5, margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
+            Lay a standard bank/ID card (85.6mm wide) flat next to your open hand and take a straight-down photo. Upload it, tap the card's two ends for scale, then tap your ring-finger tip and the middle crease of your palm.
+          </p>
+          <button onClick={() => fileRef.current?.click()} style={btn}>Choose photo…</button>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); if (e.target) e.target.value = ""; }} />
+          {imgUrl && dims && (
+            <div style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 11.5, color: "#4A4540", fontWeight: 600, margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>{stepText} {pts.length > 0 && <button onClick={reset} style={{ background: "none", border: "none", color: "#7A7268", fontSize: 11, textDecoration: "underline", cursor: "pointer" }}>reset</button>}</p>
+              <svg ref={svgRef} viewBox={`0 0 ${dims.w} ${dims.h}`} onClick={onSvgClick} style={{ width: "100%", border: "1px solid #D4CCB8", borderRadius: 8, cursor: "crosshair", display: "block" }}>
+                <image href={imgUrl} x={0} y={0} width={dims.w} height={dims.h} />
+                {pts.length >= 2 && <line x1={pts[0].x} y1={pts[0].y} x2={pts[1].x} y2={pts[1].y} stroke="#00A3FF" strokeWidth={Math.max(2, dims.w / 300)} />}
+                {pts.length >= 4 && <line x1={pts[2].x} y1={pts[2].y} x2={pts[3].x} y2={pts[3].y} stroke="#1A5C2A" strokeWidth={Math.max(2, dims.w / 300)} />}
+                {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={Math.max(4, dims.w / 110)} fill={i < 2 ? "#00A3FF" : "#1A5C2A"} stroke="#fff" strokeWidth={Math.max(1, dims.w / 500)} />)}
+              </svg>
+            </div>
+          )}
+          {result && <p style={{ fontSize: 12.5, color: "#1A5C2A", fontWeight: 600, marginTop: 8, fontFamily: "Inter, sans-serif" }}>{result}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Wrist-Link concept — a washable wristband with a secure, repeatable quick-
 // connect to the lanyard. Magnet for alignment, mechanical latch for holding a
@@ -6568,6 +6655,7 @@ export default function App() {
         <SliderField label="Weight" value={weightG} onChange={setWeightG} min={350} max={380} suffix=" g" explanation={explainWeight(weightG)}/>
         <SliderField label="Balance Point" value={balanceCm} onChange={setBalanceCm} min={24} max={27} step={0.1} suffix=" cm" explanation={explainBalance(balanceCm, shapeId)}/>
         <SliderField label="Grip Size" value={gripCircMm} onChange={setGripCircMm} min={35} max={42} valueLabel={gripSizeLabel(gripCircMm).label} explanation={explainGripCirc(gripCircMm)}/>
+        <HandMeasureTool onGrip={setGripCircMm}/>
         {mode === "manufacturer" && (
           <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginTop:4 }}>
             Length max 455mm, head width max 260mm, thickness max 38mm per FIP January 2026 rules. 2.5% manufacturing tolerance on thickness only.
