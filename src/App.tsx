@@ -7162,7 +7162,7 @@ export default function App() {
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>MANU<span style={{color:"#1A5C2A"}}>FIBRE</span></div>
+              <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>PALA<span style={{color:"#1A5C2A"}}>LAB</span></div>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
             </div>
           </div>
