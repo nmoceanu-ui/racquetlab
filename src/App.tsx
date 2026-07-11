@@ -4938,6 +4938,22 @@ const TECH_FEEL_FOLLOWUPS = {
   // "uncompared" intentionally has no entry — no follow-up is shown.
 };
 
+// Lightweight localStorage persistence so questionnaire progress survives
+// tab switches, Player/Factory mode changes, and full reloads. Every write
+// and read is wrapped so it degrades gracefully where storage is blocked
+// (Safari private mode, etc.) — the app just behaves as it did before.
+const FINDER_KEY = "manufibre_finder_progress_v1";
+const FACTORY_KEY = "manufibre_factory_progress_v1";
+function loadProgress<T>(key: string, fallback: T): T {
+  try { const s = localStorage.getItem(key); return s ? { ...fallback, ...JSON.parse(s) } : fallback; } catch { return fallback; }
+}
+function saveProgress(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable — ignore */ }
+}
+function clearProgress(key: string) {
+  try { localStorage.removeItem(key); } catch { /* ignore */ }
+}
+
 // Hoisted OUT of FindRacquetPanel on purpose. When these were defined
 // inline inside the component, every answer created brand-new component
 // identities, so React unmounted and remounted the entire question list on
@@ -4968,13 +4984,18 @@ function QDivider({ label }: { label: string }) {
 function FindRacquetPanel({ onApply, mode }) {
   // Single answers map, keyed by question id, instead of one useState
   // per question — this is what makes the section list data-driven.
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(() => loadProgress<Record<string, string>>(FINDER_KEY, {}));
   const [applied, setApplied] = useState(false);
+
+  // Persist answers so progress survives tab changes, mode switches, reloads.
+  useEffect(() => { saveProgress(FINDER_KEY, answers); }, [answers]);
 
   const setAnswer = (id: string, value: string) => {
     setAnswers(prev => ({ ...prev, [id]: value }));
     setApplied(false);
   };
+
+  const handleReset = () => { setAnswers({}); setApplied(false); clearProgress(FINDER_KEY); };
 
   const isAdvanced = answers.level === "advanced";
 
@@ -5039,6 +5060,13 @@ function FindRacquetPanel({ onApply, mode }) {
           <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
             A deeper set of questions across a few short sections — covering background, body, goals, and feel — so the recommendation actually fits you, not just a category. Advanced players get a few extra questions for finer tuning.
           </p>
+        </div>
+      )}
+
+      {Object.keys(answers).length > 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: "#9A9284", fontFamily: "Inter, sans-serif" }}>Answers save automatically as you go</span>
+          <button onClick={handleReset} style={{ background: "none", border: "none", color: "#7A7268", fontSize: 11.5, fontFamily: "Inter, sans-serif", cursor: "pointer", textDecoration: "underline", padding: 4 }}>Start over</button>
         </div>
       )}
 
@@ -5130,26 +5158,41 @@ function FindRacquetPanel({ onApply, mode }) {
 }
 
 function FactoryBriefPanel({ onApply }) {
-  const [level, setLevel] = useState<string | null>(null);
-  const [priceTier, setPriceTier] = useState<string | null>(null);
-  const [targetRetailPrice, setTargetRetailPrice] = useState("");
-  const [needGap, setNeedGap] = useState("");
-  const [explicitShape, setExplicitShape] = useState<string | null>(null);
-  const [explicitBridge, setExplicitBridge] = useState<string | null>(null);
-  const [explicitBeamOrientation, setExplicitBeamOrientation] = useState<string | null>(null);
-  const [explicitSurface, setExplicitSurface] = useState<string | null>(null);
-  const [references, setReferences] = useState<{ racquetId: string; draws: string[]; avoid: string[] }[]>([]);
-  const [priority, setPriority] = useState<string | null>(null);
-  const [materialCommitment, setMaterialCommitment] = useState("");
-  const [durabilityExpectation, setDurabilityExpectation] = useState<string | null>(null);
-  const [tooling, setTooling] = useState<string | null>(null);
-  const [existingShapeId, setExistingShapeId] = useState<string | null>(null);
-  const [existingMoldRacquetId, setExistingMoldRacquetId] = useState<string | null>(null);
-  const [whatToFix, setWhatToFix] = useState("");
-  const [targetVolume, setTargetVolume] = useState<string | null>(null);
+  const SAVED: any = loadProgress(FACTORY_KEY, {});
+  const [level, setLevel] = useState<string | null>(SAVED.level ?? null);
+  const [priceTier, setPriceTier] = useState<string | null>(SAVED.priceTier ?? null);
+  const [targetRetailPrice, setTargetRetailPrice] = useState(SAVED.targetRetailPrice ?? "");
+  const [needGap, setNeedGap] = useState(SAVED.needGap ?? "");
+  const [explicitShape, setExplicitShape] = useState<string | null>(SAVED.explicitShape ?? null);
+  const [explicitBridge, setExplicitBridge] = useState<string | null>(SAVED.explicitBridge ?? null);
+  const [explicitBeamOrientation, setExplicitBeamOrientation] = useState<string | null>(SAVED.explicitBeamOrientation ?? null);
+  const [explicitSurface, setExplicitSurface] = useState<string | null>(SAVED.explicitSurface ?? null);
+  const [references, setReferences] = useState<{ racquetId: string; draws: string[]; avoid: string[] }[]>(SAVED.references ?? []);
+  const [priority, setPriority] = useState<string | null>(SAVED.priority ?? null);
+  const [materialCommitment, setMaterialCommitment] = useState(SAVED.materialCommitment ?? "");
+  const [durabilityExpectation, setDurabilityExpectation] = useState<string | null>(SAVED.durabilityExpectation ?? null);
+  const [tooling, setTooling] = useState<string | null>(SAVED.tooling ?? null);
+  const [existingShapeId, setExistingShapeId] = useState<string | null>(SAVED.existingShapeId ?? null);
+  const [existingMoldRacquetId, setExistingMoldRacquetId] = useState<string | null>(SAVED.existingMoldRacquetId ?? null);
+  const [whatToFix, setWhatToFix] = useState(SAVED.whatToFix ?? "");
+  const [targetVolume, setTargetVolume] = useState<string | null>(SAVED.targetVolume ?? null);
   const [applied, setApplied] = useState(false);
   const [lastResult, setLastResult] = useState<{ spec: any; rationale: string[]; alternatives: FactoryBriefAlternative[] } | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<string>("best-performance");
+  const [selectedTrack, setSelectedTrack] = useState<string>(SAVED.selectedTrack ?? "best-performance");
+
+  // Persist brief inputs so progress survives tab changes, mode switches, reloads.
+  useEffect(() => {
+    saveProgress(FACTORY_KEY, { level, priceTier, targetRetailPrice, needGap, explicitShape, explicitBridge, explicitBeamOrientation, explicitSurface, references, priority, materialCommitment, durabilityExpectation, tooling, existingShapeId, existingMoldRacquetId, whatToFix, targetVolume, selectedTrack });
+  }, [level, priceTier, targetRetailPrice, needGap, explicitShape, explicitBridge, explicitBeamOrientation, explicitSurface, references, priority, materialCommitment, durabilityExpectation, tooling, existingShapeId, existingMoldRacquetId, whatToFix, targetVolume, selectedTrack]);
+
+  const handleReset = () => {
+    setLevel(null); setPriceTier(null); setTargetRetailPrice(""); setNeedGap(""); setExplicitShape(null);
+    setExplicitBridge(null); setExplicitBeamOrientation(null); setExplicitSurface(null); setReferences([]);
+    setPriority(null); setMaterialCommitment(""); setDurabilityExpectation(null); setTooling(null);
+    setExistingShapeId(null); setExistingMoldRacquetId(null); setWhatToFix(""); setTargetVolume(null);
+    setApplied(false); setLastResult(null); setSelectedTrack("best-performance"); clearProgress(FACTORY_KEY);
+  };
+  const hasFactoryProgress = !!(level || priceTier || priority || tooling || targetVolume || durabilityExpectation || needGap || references.length);
 
   const LEVEL_OPTIONS = [
     { id: "beginner", label: "Beginner" },
@@ -5286,6 +5329,13 @@ function FactoryBriefPanel({ onApply }) {
           A product brief, not a player quiz — start from positioning, name the competitive set you're benchmarking against, pick one forced priority, then lock in real-world constraints. Durability is handled as a constraint underneath whatever priority you pick, not a competing goal.
         </p>
       </div>
+
+      {hasFactoryProgress && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: "#9A9284", fontFamily: "Inter, sans-serif" }}>Brief saves automatically as you go</span>
+          <button onClick={handleReset} style={{ background: "none", border: "none", color: "#7A7268", fontSize: 11.5, fontFamily: "Inter, sans-serif", cursor: "pointer", textDecoration: "underline", padding: 4 }}>Start over</button>
+        </div>
+      )}
 
       <SectionDivider label="Production Reality" step={1} />
       <div style={{ marginBottom: 18 }}>
