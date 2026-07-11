@@ -1,6 +1,6 @@
 {
-  "name": "Manufibre",
-  "short_name": "Manufibre",
+  "name": "PalaLab",
+  "short_name": "PalaLab",
   "description": "Design and compare padel racquet specs, or get a personalized recommendation from the Smart Finder.",
   "icons": [
     { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
