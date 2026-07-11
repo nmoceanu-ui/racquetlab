@@ -3,7 +3,7 @@
 // cache-first for the hashed Vite /assets bundles and icons. Cross-origin
 // requests (Google Fonts, Supabase) are left untouched so live features work
 // online and fail gracefully offline.
-const CACHE = "palalab-v1";
+const CACHE = "palalab-v2";
 const ASSETS = [
   "/", "/index.html", "/site.webmanifest",
   "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
