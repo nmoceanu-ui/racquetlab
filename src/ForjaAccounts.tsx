@@ -89,6 +89,15 @@ const CSS = `
 .fa-banner .t2{font-size:12px;color:#7A7268;margin-top:2px;}
 .fa-banner .add{background:#1A5C2A;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;}
 .fa-toast{pointer-events:none;position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:#18181B;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+
+/* Mobile: lift the floating account controls above the fixed bottom tab bar
+   (the bottom nav shows only below 768px — same breakpoint the app uses). */
+@media (max-width: 767px){
+  .fa-btn, .fa-avatar{ bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .fa-menu{ bottom: calc(148px + env(safe-area-inset-bottom)); }
+  .fa-banner{ bottom: calc(86px + env(safe-area-inset-bottom)); }
+  .fa-toast{ bottom: calc(150px + env(safe-area-inset-bottom)); }
+}
 `;
 
 function initials(email: string): string {
