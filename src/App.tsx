@@ -5416,6 +5416,23 @@ function FindRacquetPanel({ onApply, mode }) {
   );
 }
 
+// Hoisted OUT of FactoryBriefPanel for the same reason QRow/QDivider were:
+// an inline component gets a new identity every render, remounting the whole
+// brief and snapping scroll to the top on each answer. Module scope = stable.
+function SectionDivider({ label, step }: { label: string; step: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
+      <span style={{
+        width: 20, height: 20, borderRadius: "50%", background: "rgba(26,92,42,0.15)", border: "1px solid rgba(26,92,42,0.4)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#1A5C2A",
+        fontFamily: "'JetBrains Mono', monospace", flexShrink: 0,
+      }}>{step}</span>
+      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
+    </div>
+  );
+}
+
 function FactoryBriefPanel({ onApply }) {
   const SAVED: any = loadProgress(FACTORY_KEY, {});
   const [level, setLevel] = useState<string | null>(SAVED.level ?? null);
@@ -5565,17 +5582,6 @@ function FactoryBriefPanel({ onApply }) {
     }
   };
 
-  const SectionDivider = ({ label, step }: { label: string; step: number }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "22px 0 14px" }}>
-      <span style={{
-        width: 20, height: 20, borderRadius: "50%", background: "rgba(26,92,42,0.15)", border: "1px solid rgba(26,92,42,0.4)",
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#1A5C2A",
-        fontFamily: "'JetBrains Mono', monospace", flexShrink: 0,
-      }}>{step}</span>
-      <span style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C2A", whiteSpace: "nowrap" }}>{label}</span>
-      <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
-    </div>
-  );
 
   return (
     <div>
@@ -6526,7 +6532,7 @@ export default function App() {
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holes.length > 0 || coreId === "hybrid-core";
 
   // --- Reverse solver (drag target scores -> materials) ---
-  const [rsOpen, setRsOpen] = useState(false);
+  const [rsOpen, setRsOpen] = useState(true);
   const [rsLib, setRsLib] = useState<any[] | null>(null);
   const [rsScores, setRsScores] = useState<any>(null); // achieved scores shown on the sliders
   const [rsSolved, setRsSolved] = useState<any>(null); // solved spec
@@ -6553,8 +6559,18 @@ export default function App() {
     if (!rsSolved) return;
     setShapeId(rsSolved.shapeId); setCoreId(rsSolved.coreId); setFaceId(rsSolved.faceId);
     setFrameId(rsSolved.frameId); setSurfaceId(rsSolved.surfaceId);
-    setRsOpen(false);
+    setRsSolved(null);
   };
+
+  // Keep the reverse-solver open & seeded with the current build by default;
+  // re-sync when the build changes, but never clobber a target the user is
+  // mid-drag on (rsSolved holds that pending preview).
+  useEffect(() => {
+    if (!rsOpen || rsSolved) return;
+    setRsLib(buildReverseLibrary({ grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }));
+    setRsScores({ ...scores });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rsOpen, rsSolved, scores, gripId, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
 
   // Track when matched racquets actually become visible (Scores tab, or
   // desktop layout where Scores content is always reachable), not on
@@ -6867,6 +6883,58 @@ export default function App() {
   const scoresContent = (
     <div style={{ padding:"0 16px" }}>
 
+      {/* Reverse solver — drag a target score, the engine solves the materials */}
+      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.08)", borderRadius:12, marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#1A5C2A", margin:0 }}>Reverse-solve — drag a target, get the materials</p>
+          <button onClick={rsOpen ? () => setRsOpen(false) : openReverseSolve} style={{ flexShrink:0, padding:"6px 12px", borderRadius:8, border:"none", background: rsOpen ? "rgba(0,0,0,0.06)" : "#1A5C2A", color: rsOpen ? "#4A4540" : "#fff", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:12.5, letterSpacing:"0.05em", textTransform:"uppercase", cursor:"pointer" }}>{rsOpen ? "Close" : "Start"}</button>
+        </div>
+        {rsOpen && rsScores && (
+          <div style={{ marginTop:12 }}>
+            <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, margin:"0 0 10px", fontFamily:"Inter, sans-serif" }}>
+              Drag any bar to a target. The engine finds the closest real material build and snaps the other bars to what's physically achievable — holding your current weight, balance and thickness.
+            </p>
+            <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+              {[{v:true,label:"Within budget & shape"},{v:false,label:"Ideal (any material)"}].map(o=>(
+                <button key={String(o.v)} onClick={()=>setRsConstrained(o.v)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #D4CCB8", background: rsConstrained===o.v ? "#1A5C2A":"#fff", color: rsConstrained===o.v?"#fff":"#4A4540", fontSize:11, cursor:"pointer", fontFamily:"Inter, sans-serif" }}>{o.label}</button>
+              ))}
+            </div>
+            {RS_LABELS.map(({key,label}) => (
+              <div key={key} style={{ marginBottom:10 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11.5, fontFamily:"Inter, sans-serif", color:"#4A4540", marginBottom:2 }}>
+                  <span>{label}</span><span style={{ fontFamily:"'JetBrains Mono', monospace", color:"#1A5C2A", fontWeight:600 }}>{(rsScores[key]??0).toFixed(1)}</span>
+                </div>
+                <input type="range" min={0} max={5} step={0.1} value={rsScores[key]??0} onChange={e=>rsSlide(key, parseFloat(e.target.value))} style={{ width:"100%", accentColor:"#1A5C2A", height:4, cursor:"pointer" }}/>
+              </div>
+            ))}
+            {rsNote && <p style={{ fontSize:11.5, color:"#991B1B", lineHeight:1.5, margin:"4px 0 0", fontFamily:"Inter, sans-serif" }}>{rsNote}</p>}
+            {rsSolved && (() => {
+              const rows: any[] = [
+                ["Shape", shapeId, rsSolved.shapeId, SHAPES],
+                ["Core", coreId, rsSolved.coreId, CORE_MATERIALS],
+                ["Face", faceId, rsSolved.faceId, FACE_MATERIALS],
+                ["Frame", frameId, rsSolved.frameId, FRAME_MATERIALS],
+                ["Surface", surfaceId, rsSolved.surfaceId, SURFACE_TEXTURES],
+              ].filter(([_l,cur,next]) => cur !== next);
+              return (
+                <div style={{ marginTop:12, padding:"10px 12px", background:"rgba(26,92,42,0.06)", borderRadius:8 }}>
+                  <p style={{ fontSize:10.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, letterSpacing:"0.06em", textTransform:"uppercase", color:"#1A5C2A", margin:"0 0 6px" }}>Proposed materials</p>
+                  {rows.length === 0
+                    ? <p style={{ fontSize:12, color:"#7A7268", margin:0, fontFamily:"Inter, sans-serif" }}>Your current build is already the closest match to this target.</p>
+                    : rows.map(([lab,cur,next,cat]:any) => (
+                      <div key={lab} style={{ fontSize:12, color:"#4A4540", fontFamily:"Inter, sans-serif", lineHeight:1.7 }}>
+                        <b>{lab}:</b> {cat.find((m:any)=>m.id===cur)?.label ?? cur} → <b style={{color:"#1A5C2A"}}>{cat.find((m:any)=>m.id===next)?.label ?? next}</b>
+                      </div>
+                    ))}
+                  {rows.length>0 && <button onClick={rsApply} style={{ marginTop:10, padding:"8px 14px", borderRadius:8, border:"none", background:"#1A5C2A", color:"#fff", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:13, letterSpacing:"0.05em", textTransform:"uppercase", cursor:"pointer" }}>Apply to build</button>}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+
+
       {/* Existing mold baseline comparison — when factory brief found an exact match */}
       {mode === "manufacturer" && (() => {
         // Find the closest market racquet to show as baseline
@@ -6965,57 +7033,6 @@ export default function App() {
           </div>
         );
       })()}
-
-      {/* Reverse solver — drag a target score, the engine solves the materials */}
-      <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.08)", borderRadius:12, marginBottom:16 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
-          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#1A5C2A", margin:0 }}>Reverse-solve — drag a target, get the materials</p>
-          <button onClick={rsOpen ? () => setRsOpen(false) : openReverseSolve} style={{ flexShrink:0, padding:"6px 12px", borderRadius:8, border:"none", background: rsOpen ? "rgba(0,0,0,0.06)" : "#1A5C2A", color: rsOpen ? "#4A4540" : "#fff", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:12.5, letterSpacing:"0.05em", textTransform:"uppercase", cursor:"pointer" }}>{rsOpen ? "Close" : "Start"}</button>
-        </div>
-        {rsOpen && rsScores && (
-          <div style={{ marginTop:12 }}>
-            <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, margin:"0 0 10px", fontFamily:"Inter, sans-serif" }}>
-              Drag any bar to a target. The engine finds the closest real material build and snaps the other bars to what's physically achievable — holding your current weight, balance and thickness.
-            </p>
-            <div style={{ display:"flex", gap:6, marginBottom:14 }}>
-              {[{v:true,label:"Within budget & shape"},{v:false,label:"Ideal (any material)"}].map(o=>(
-                <button key={String(o.v)} onClick={()=>setRsConstrained(o.v)} style={{ padding:"5px 10px", borderRadius:6, border:"1px solid #D4CCB8", background: rsConstrained===o.v ? "#1A5C2A":"#fff", color: rsConstrained===o.v?"#fff":"#4A4540", fontSize:11, cursor:"pointer", fontFamily:"Inter, sans-serif" }}>{o.label}</button>
-              ))}
-            </div>
-            {RS_LABELS.map(({key,label}) => (
-              <div key={key} style={{ marginBottom:10 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:11.5, fontFamily:"Inter, sans-serif", color:"#4A4540", marginBottom:2 }}>
-                  <span>{label}</span><span style={{ fontFamily:"'JetBrains Mono', monospace", color:"#1A5C2A", fontWeight:600 }}>{(rsScores[key]??0).toFixed(1)}</span>
-                </div>
-                <input type="range" min={0} max={5} step={0.1} value={rsScores[key]??0} onChange={e=>rsSlide(key, parseFloat(e.target.value))} style={{ width:"100%", accentColor:"#1A5C2A", height:4, cursor:"pointer" }}/>
-              </div>
-            ))}
-            {rsNote && <p style={{ fontSize:11.5, color:"#991B1B", lineHeight:1.5, margin:"4px 0 0", fontFamily:"Inter, sans-serif" }}>{rsNote}</p>}
-            {rsSolved && (() => {
-              const rows: any[] = [
-                ["Shape", shapeId, rsSolved.shapeId, SHAPES],
-                ["Core", coreId, rsSolved.coreId, CORE_MATERIALS],
-                ["Face", faceId, rsSolved.faceId, FACE_MATERIALS],
-                ["Frame", frameId, rsSolved.frameId, FRAME_MATERIALS],
-                ["Surface", surfaceId, rsSolved.surfaceId, SURFACE_TEXTURES],
-              ].filter(([_l,cur,next]) => cur !== next);
-              return (
-                <div style={{ marginTop:12, padding:"10px 12px", background:"rgba(26,92,42,0.06)", borderRadius:8 }}>
-                  <p style={{ fontSize:10.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, letterSpacing:"0.06em", textTransform:"uppercase", color:"#1A5C2A", margin:"0 0 6px" }}>Proposed materials</p>
-                  {rows.length === 0
-                    ? <p style={{ fontSize:12, color:"#7A7268", margin:0, fontFamily:"Inter, sans-serif" }}>Your current build is already the closest match to this target.</p>
-                    : rows.map(([lab,cur,next,cat]:any) => (
-                      <div key={lab} style={{ fontSize:12, color:"#4A4540", fontFamily:"Inter, sans-serif", lineHeight:1.7 }}>
-                        <b>{lab}:</b> {cat.find((m:any)=>m.id===cur)?.label ?? cur} → <b style={{color:"#1A5C2A"}}>{cat.find((m:any)=>m.id===next)?.label ?? next}</b>
-                      </div>
-                    ))}
-                  {rows.length>0 && <button onClick={rsApply} style={{ marginTop:10, padding:"8px 14px", borderRadius:8, border:"none", background:"#1A5C2A", color:"#fff", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:13, letterSpacing:"0.05em", textTransform:"uppercase", cursor:"pointer" }}>Apply to build</button>}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-      </div>
 
       {mode === "manufacturer" && (
         <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(26,92,42,0.15)", borderRadius:12, marginBottom:16 }}>
