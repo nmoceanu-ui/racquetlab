@@ -5986,6 +5986,9 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   const [clickMode, setClickMode] = useState<"add" | "remove">("add");
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [lastBlockedMsg, setLastBlockedMsg] = useState<string | null>(null);
+  const [designScale, setDesignScale] = useState(1);
+  const [lastPreset, setLastPreset] = useState<string | null>(null);
+  const lastImageFileRef = React.useRef<File | null>(null);
   const VB = 280; // svg viewBox size
   // Grid spacing derived the same way the legacy-bucket converter derives
   // it — a "standard" density pitch (~14mm) is a sensible default snap
@@ -6063,6 +6066,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   };
 
   const applyPreset = (preset: string) => {
+    const S = designScale;
+    setLastPreset(["monogram", "heart", "star"].includes(preset) ? preset : null);
     if (preset === "clear") { onHolesChange([]); return; }
     if (preset === "head1") { onHolesChange([{ x: 0, y: -0.1 }]); return; }
     if (preset === "center4") {
@@ -6099,8 +6104,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       return;
     }
     if (preset === "monogram") {
-      const cols = [-0.28, -0.14, 0, 0.14, 0.28];
-      const rows = [-0.34, -0.20, -0.06, 0.08, 0.22];
+      const cols = [-0.28, -0.14, 0, 0.14, 0.28].map(c => c * S);
+      const rows = [-0.34, -0.20, -0.06, 0.08, 0.22].map(r => (r + 0.06) * S - 0.06);
       const pat = [[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1]];
       const pts: HolePoint[] = [];
       for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (pat[r][c]) pts.push({ x: cols[c], y: rows[r] });
@@ -6113,10 +6118,10 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
         const t = (i / 40) * Math.PI * 2;
         const hx = 16 * Math.pow(Math.sin(t), 3);
         const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-        raw.push({ x: (hx / 17) * 0.42, y: -(hy / 17) * 0.42 - 0.02 });
+        raw.push({ x: (hx / 17) * 0.42 * S, y: -(hy / 17) * 0.42 * S - 0.02 });
       }
       const kept: HolePoint[] = [];
-      for (const p of raw) if (inFace(p.x, p.y) && kept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= 0.12)) kept.push(p);
+      for (const p of raw) if (inFace(p.x, p.y) && kept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= 0.12 * S)) kept.push(p);
       onHolesChange(kept);
       return;
     }
@@ -6124,7 +6129,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       const pts: HolePoint[] = [{ x: 0, y: -0.08 }];
       for (let i = 0; i < 10; i++) {
         const ang = (i / 10) * Math.PI * 2 - Math.PI / 2;
-        const rr = i % 2 === 0 ? 0.42 : 0.18;
+        const rr = (i % 2 === 0 ? 0.42 : 0.18) * S;
         pts.push({ x: rr * Math.cos(ang), y: -0.08 + rr * Math.sin(ang) });
       }
       onHolesChange(pts.filter(p => inFace(p.x, p.y)));
@@ -6136,6 +6141,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   // grid, thin them to a manufacturable minimum spacing, clip to the face, and
   // cap the count. Runs entirely in the browser — nothing is uploaded.
   const importImageAsHoles = (file: File) => {
+    lastImageFileRef.current = file;
+    setLastPreset("image");
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -6152,9 +6159,9 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
         const i = (iy * N + ix) * 4;
         const al = data[i + 3], lum = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        if (al > 128 && lum < 145) cells.push({ x: ((ix / (N - 1)) * 2 - 1) * 0.78, y: ((iy / (N - 1)) * 2 - 1) * 0.78 - 0.04 });
+        if (al > 128 && lum < 145) cells.push({ x: ((ix / (N - 1)) * 2 - 1) * 0.78 * designScale, y: ((iy / (N - 1)) * 2 - 1) * 0.78 * designScale - 0.04 });
       }
-      const minD = 0.115;
+      const minD = 0.115 * designScale;
       const kept: HolePoint[] = [];
       for (const p of cells) {
         if (!inFace(p.x, p.y)) continue;
@@ -6168,6 +6175,12 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     img.onerror = () => setDesignNote("Couldn't load that image file.");
     img.src = url;
   };
+
+  useEffect(() => {
+    if (lastPreset === "image") { if (lastImageFileRef.current) importImageAsHoles(lastImageFileRef.current); }
+    else if (lastPreset) applyPreset(lastPreset);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [designScale]);
 
   const { cx, cy, a, b } = faceGeom();
   // Scale factor derived directly from the actual face geometry: 'a' is the
@@ -6300,6 +6313,17 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
           ))}
           <button onClick={() => fileRef.current?.click()} style={{ padding: "5px 10px", borderRadius: 6, border: "1px dashed #1A5C2A", background: "#fff", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>Upload image…</button>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) importImageAsHoles(f); if (e.target) e.target.value = ""; }} />
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>Design size</span>
+            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#1A5C2A", fontWeight: 700 }}>{Math.round(designScale * 100)}%</span>
+          </div>
+          <input type="range" min={0.6} max={1.7} step={0.05} value={designScale} onChange={e => setDesignScale(parseFloat(e.target.value))} style={{ width: "100%", accentColor: "#1A5C2A" }} />
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 10, color: "#7A7268" }}>Smaller</span>
+            <span style={{ fontSize: 10, color: "#7A7268" }}>Larger — pick a design, then drag</span>
+          </div>
         </div>
         <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, marginTop: 6, fontFamily: "Inter, sans-serif" }}>
           Turn a design into the actual hole pattern — the scores above update to show how it plays. Bold shapes (a heart, a monogram) read cleanly; intricate logos get simplified to stay manufacturable.
