@@ -5347,7 +5347,14 @@ function FindRacquetPanel({ onApply, mode }) {
       {FINDER_SECTION_1.slice(1).map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
 
       <QDivider label="Body & physical history" />
-      {FINDER_SECTION_2.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {FINDER_SECTION_2.map(q => (
+        <React.Fragment key={q.id}>
+          <QRow q={q} value={answers[q.id] ?? null} onChange={setAnswer} />
+          {q.id === "handMeasure" && (
+            <HandMeasureTool onGrip={(mm) => setAnswer("handMeasure", mm < 37 ? "s" : mm < 38.75 ? "m" : mm < 39.75 ? "l" : "xl")} />
+          )}
+        </React.Fragment>
+      ))}
 
       <QDivider label="Play style & goals" />
       {styleQs.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
@@ -5995,6 +6002,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   const [designScale, setDesignScale] = useState(1);
   const [lastPreset, setLastPreset] = useState<string | null>(null);
   const lastImageFileRef = React.useRef<File | null>(null);
+  const [monogramText, setMonogramText] = useState("P");
+  const [imgOutline, setImgOutline] = useState(false);
   const VB = 280; // svg viewBox size
   // Grid spacing derived the same way the legacy-bucket converter derives
   // it — a "standard" density pitch (~14mm) is a sensible default snap
@@ -6110,12 +6119,28 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       return;
     }
     if (preset === "monogram") {
-      const cols = [-0.28, -0.14, 0, 0.14, 0.28].map(c => c * S);
-      const rows = [-0.34, -0.20, -0.06, 0.08, 0.22].map(r => (r + 0.06) * S - 0.06);
-      const pat = [[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1]];
-      const pts: HolePoint[] = [];
-      for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (pat[r][c]) pts.push({ x: cols[c], y: rows[r] });
-      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      const txt = ((monogramText || "P").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2)) || "P";
+      const N = 64;
+      const cvs = document.createElement("canvas"); cvs.width = N; cvs.height = N;
+      const mctx = cvs.getContext("2d");
+      if (!mctx) { onHolesChange([]); return; }
+      mctx.fillStyle = "#fff"; mctx.fillRect(0, 0, N, N);
+      mctx.fillStyle = "#000"; mctx.textAlign = "center"; mctx.textBaseline = "middle";
+      const fontPx = txt.length > 1 ? N * 0.60 : N * 0.82;
+      mctx.font = `800 ${fontPx}px 'Barlow Condensed', Arial, sans-serif`;
+      mctx.fillText(txt, N / 2, N / 2 + N * 0.02);
+      const mdata = mctx.getImageData(0, 0, N, N).data;
+      const mspan = 0.5 * S;
+      const mcells: HolePoint[] = [];
+      for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
+        const i = (iy * N + ix) * 4;
+        if (mdata[i + 3] > 128 && (mdata[i] + mdata[i + 1] + mdata[i + 2]) / 3 < 128)
+          mcells.push({ x: ((ix / (N - 1)) * 2 - 1) * mspan, y: ((iy / (N - 1)) * 2 - 1) * mspan });
+      }
+      const mMinD = 0.13 * S;
+      const mkept: HolePoint[] = [];
+      for (const p of mcells) { if (!inFace(p.x, p.y)) continue; if (mkept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= mMinD)) mkept.push(p); if (mkept.length >= 60) break; }
+      onHolesChange(mkept);
       return;
     }
     if (preset === "heart") {
@@ -6161,11 +6186,17 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       const w = img.width * scale, h = img.height * scale;
       ctx.drawImage(img, (N - w) / 2, (N - h) / 2, w, h);
       const data = ctx.getImageData(0, 0, N, N).data;
+      const isDark = (ix: number, iy: number) => {
+        if (ix < 0 || iy < 0 || ix >= N || iy >= N) return false;
+        const j = (iy * N + ix) * 4;
+        return data[j + 3] > 128 && (data[j] + data[j + 1] + data[j + 2]) / 3 < 145;
+      };
       const cells: HolePoint[] = [];
       for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
-        const i = (iy * N + ix) * 4;
-        const al = data[i + 3], lum = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        if (al > 128 && lum < 145) cells.push({ x: ((ix / (N - 1)) * 2 - 1) * 0.78 * designScale, y: ((iy / (N - 1)) * 2 - 1) * 0.78 * designScale - 0.04 });
+        if (!isDark(ix, iy)) continue;
+        // Outline mode: keep only boundary pixels (a dark pixel touching a light one).
+        if (imgOutline && isDark(ix - 1, iy) && isDark(ix + 1, iy) && isDark(ix, iy - 1) && isDark(ix, iy + 1)) continue;
+        cells.push({ x: ((ix / (N - 1)) * 2 - 1) * 0.78 * designScale, y: ((iy / (N - 1)) * 2 - 1) * 0.78 * designScale - 0.04 });
       }
       const minD = 0.115 * designScale;
       const kept: HolePoint[] = [];
@@ -6186,7 +6217,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     if (lastPreset === "image") { if (lastImageFileRef.current) importImageAsHoles(lastImageFileRef.current); }
     else if (lastPreset) applyPreset(lastPreset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designScale]);
+  }, [designScale, monogramText, imgOutline]);
 
   const { cx, cy, a, b } = faceGeom();
   // Scale factor derived directly from the actual face geometry: 'a' is the
@@ -6314,10 +6345,15 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       <div style={{ marginTop: 12 }}>
         <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Perforation designs</p>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-          {[["monogram", "M monogram"], ["heart", "Heart"], ["star", "Star"]].map(([id, label]) => (
+          <input value={monogramText} onChange={e => setMonogramText(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2))} placeholder="AB" maxLength={2} style={{ width: 46, padding: "5px 8px", borderRadius: 6, border: "1px solid #C0B8A4", background: "#fff", color: "#18181B", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: "center", textTransform: "uppercase" }} />
+          <button onClick={() => applyPreset("monogram")} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #1A5C2A", background: "#EAF3EC", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>Monogram</button>
+          {[["heart", "Heart"], ["star", "Star"]].map(([id, label]) => (
             <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #1A5C2A", background: "#EAF3EC", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>{label}</button>
           ))}
           <button onClick={() => fileRef.current?.click()} style={{ padding: "5px 10px", borderRadius: 6, border: "1px dashed #1A5C2A", background: "#fff", color: "#1A5C2A", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>Upload image…</button>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#4A4540", fontFamily: "Inter, sans-serif", cursor: "pointer" }}>
+            <input type="checkbox" checked={imgOutline} onChange={e => setImgOutline(e.target.checked)} style={{ accentColor: "#1A5C2A" }} /> Outline image
+          </label>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) importImageAsHoles(f); if (e.target) e.target.value = ""; }} />
         </div>
         <div style={{ marginTop: 10 }}>
