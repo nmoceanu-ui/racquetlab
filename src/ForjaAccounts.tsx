@@ -405,7 +405,7 @@ function ForjaAccountsInner() {
             <button className="fa-x" onClick={() => setLoginOpen(false)}>×</button>
             {step === "email" ? (
               <>
-                <div className="fa-cap">Forja account</div>
+                <div className="fa-cap">PalaLab account</div>
                 <h2>Sign in or create your profile</h2>
                 <p>Enter your email and we'll send you a 6-digit code. No password to remember.</p>
                 <span className="fa-fl">Email address</span>
@@ -485,7 +485,7 @@ function ForjaAccountsInner() {
         <div className="fa-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPrompt(null); }}>
           <div className="fa-modal">
             <button className="fa-x" onClick={() => setPrompt(null)}>×</button>
-            <div className="fa-cap">Forja</div>
+            <div className="fa-cap">PalaLab</div>
             <h2>{prompt.title}</h2>
             <span className="fa-fl">{prompt.label}</span>
             <input className="fa-in" autoFocus value={promptVal} onChange={(e) => setPromptVal(e.target.value)}
