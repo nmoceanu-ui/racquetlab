@@ -7610,14 +7610,8 @@ export default function App() {
       <header style={{ background:"#FFFFFF", borderBottom:"1.5px solid #D4CCB8", position:"sticky", top:0, zIndex:50 }}>
         <div className="header-row" style={{ maxWidth:1024, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            {/* Racquet icon */}
-            <div style={{ width:32, height:32, borderRadius:8, background:"rgba(26,92,42,0.15)", border:"1px solid rgba(26,92,42,0.35)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <ellipse cx="9" cy="9" rx="7" ry="7" stroke="#1A5C2A" strokeWidth="1.8"/>
-                <path d="M14.5 14.5 L21 21" stroke="#1A5C2A" strokeWidth="2.2" strokeLinecap="round"/>
-                <circle cx="9" cy="9" r="2.5" fill="rgba(26,92,42,0.25)" stroke="#1A5C2A" strokeWidth="1.2" strokeDasharray="2 2"/>
-              </svg>
-            </div>
+            {/* App icon */}
+            <img src="/icon-192.png?v=2" alt="PalaLab" width={32} height={32} style={{ width:32, height:32, borderRadius:8, objectFit:"cover", flexShrink:0, display:"block" }} />
             <div>
               <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>PALA<span style={{color:"#1A5C2A"}}>LAB</span></div>
               <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
