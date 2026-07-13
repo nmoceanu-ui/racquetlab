@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ChevronDown, AlertTriangle, Sparkles, BarChart3,
   Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
-  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2
+  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2, Download
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -4155,6 +4155,85 @@ function BuildGuideStep({ step }) {
 // weight, balance, and swingweight by adding lead tape at different zones.
 // Uses leadTapeEffect() (parallel axis theorem). Works for padel and tennis.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Install (Add to Home Screen) button. Auto-installs on Android/desktop via the
+// beforeinstallprompt event; on iOS (which blocks programmatic install) it shows
+// the Share → Add to Home Screen steps. Hides itself once the app runs installed.
+// ---------------------------------------------------------------------------
+function InstallButton() {
+  const [deferred, setDeferred] = useState<any>(null);
+  const [installed, setInstalled] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  const isStandalone = typeof window !== "undefined" &&
+    ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+      (window.navigator as any).standalone === true);
+  const isIOS = typeof navigator !== "undefined" &&
+    /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+
+  useEffect(() => {
+    const onPrompt = (e: any) => { e.preventDefault(); setDeferred(e); };
+    const onInstalled = () => { setInstalled(true); setDeferred(null); setShowHelp(false); };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  // Already running as an installed app (or just installed) → nothing to show.
+  if (isStandalone || installed) return null;
+  // Show only when we can actually install: a captured prompt, or iOS manual steps.
+  if (!deferred && !isIOS) return null;
+
+  const onClick = async () => {
+    if (deferred) {
+      deferred.prompt();
+      try { await deferred.userChoice; } catch { /* dismissed */ }
+      setDeferred(null);
+    } else {
+      setShowHelp(v => !v);
+    }
+  };
+
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <button onClick={onClick} title="Install PalaLab on your device" style={{
+        display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+        border: "none", background: "#1A5C2A", color: "#F0EBE0",
+        fontSize: 12, fontWeight: 700, cursor: "pointer",
+        fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
+        WebkitTapHighlightColor: "transparent",
+      }}>
+        <Download size={13} />
+        <span className="install-label">Install App</span>
+      </button>
+      {showHelp && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", right: 0, width: 244, zIndex: 60,
+          background: "#FBF8F1", border: "1px solid #D4CCB8", borderRadius: 12, padding: 14,
+          boxShadow: "0 16px 40px rgba(40,30,15,0.22)", fontFamily: "Inter, sans-serif",
+        }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#18181B", marginBottom: 8 }}>Add PalaLab to your home screen</div>
+          <div style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.7 }}>
+            1. Tap the Share icon{" "}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A5C2A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "-2px" }}><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg>{" "}
+            in the Safari toolbar.<br />
+            2. Scroll down and tap <b>Add to Home Screen</b>.<br />
+            3. Tap <b>Add</b> — the PalaLab icon appears on your home screen.
+          </div>
+          <button onClick={() => setShowHelp(false)} style={{
+            marginTop: 10, width: "100%", padding: "8px 0", borderRadius: 8, border: "none",
+            background: "#1A5C2A", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
+          }}>Got it</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Vertical-chain lead-tape diagram (string SVG, injected via dangerouslySetInnerHTML —
 // all values come from controlled zone tables, no user markup).
 function ltDiagram(sport: string, zones: any[], activeId: string, side: string): string {
@@ -7546,6 +7625,8 @@ export default function App() {
           </div>
 
           <div className="header-actions" style={{ display:"flex", alignItems:"center", gap:10 }}>
+          {/* Install app (Add to Home Screen) — hides itself once installed */}
+          <InstallButton />
           {/* Save & Share */}
           <button
             onClick={handleSaveBuild}
@@ -7629,6 +7710,7 @@ export default function App() {
               .desktop-right-tabs { display: none !important; }
               .header-row { flex-wrap: wrap; }
               .header-actions { flex: 1 1 100%; justify-content: space-between; margin-top: 8px; }
+              .install-label { display: none; }
             }
           `}</style>
 
