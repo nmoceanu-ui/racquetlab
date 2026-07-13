@@ -6505,26 +6505,30 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     }
     if (preset === "monogram") {
       const txt = ((monogramText || "P").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2)) || "P";
-      const N = 80;
+      const multi = txt.length > 1;
+      // Two letters need more resolution + letter-spacing so they don't merge into a blob.
+      const N = multi ? 120 : 80;
       const cvs = document.createElement("canvas"); cvs.width = N; cvs.height = N;
       const mctx = cvs.getContext("2d");
       if (!mctx) { onHolesChange([]); return; }
       mctx.fillStyle = "#fff"; mctx.fillRect(0, 0, N, N);
       mctx.fillStyle = "#000"; mctx.textAlign = "center"; mctx.textBaseline = "middle";
-      const fontPx = txt.length > 1 ? N * 0.60 : N * 0.86;
+      if (multi && "letterSpacing" in mctx) (mctx as any).letterSpacing = `${N * 0.075}px`;
+      const fontPx = multi ? N * 0.66 : N * 0.86;
       mctx.font = `800 ${fontPx}px 'Barlow Condensed', Arial, sans-serif`;
       mctx.fillText(txt, N / 2, N / 2 + N * 0.02);
       const mdata = mctx.getImageData(0, 0, N, N).data;
-      const mspan = 0.62 * S;
+      const mspan = (multi ? 0.82 : 0.62) * S;
       const mcells: HolePoint[] = [];
       for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
         const i = (iy * N + ix) * 4;
         if (mdata[i + 3] > 128 && (mdata[i] + mdata[i + 1] + mdata[i + 2]) / 3 < 128)
           mcells.push({ x: ((ix / (N - 1)) * 2 - 1) * mspan, y: ((iy / (N - 1)) * 2 - 1) * mspan });
       }
-      const mMinD = 0.095 * S;
+      const mMinD = (multi ? 0.066 : 0.095) * S;
+      const mCap = multi ? 130 : 80;
       const mkept: HolePoint[] = [];
-      for (const p of mcells) { if (!inFace(p.x, p.y)) continue; if (mkept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= mMinD)) mkept.push(p); if (mkept.length >= 80) break; }
+      for (const p of mcells) { if (!inFace(p.x, p.y)) continue; if (mkept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= mMinD)) mkept.push(p); if (mkept.length >= mCap) break; }
       onHolesChange(mkept);
       return;
     }
