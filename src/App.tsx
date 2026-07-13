@@ -550,21 +550,23 @@ const LEAD_SW_AXIS_CM = 10; // standard swingweight pivot, 10 cm from butt
 // move up as the frame gets longer — extra length is added at the tip), so
 // it uses a smaller fraction that stays low across lengths.
 const PADEL_LEAD_ZONES = [
-  { id: "tip",    label: "Tip — 12 o'clock",      frac: 0.967, hint: "Top of the head. Max swingweight & power, most head-heavy." },
-  { id: "1and11", label: "1 & 11 (top corners)",  frac: 0.945, hint: "Upper corners. Adds power + a little stability, near-tip effect." },
-  { id: "3and9",  label: "3 & 9 (mid-face)",      frac: 0.879, hint: "Sides at the widest point. Boosts twist-stability (off-centre forgiveness)." },
-  { id: "4and7",  label: "4 & 7 (lower face)",    frac: 0.747, hint: "Lower shoulders. Adds mass near the sweet spot with modest swingweight gain." },
-  { id: "throat", label: "Throat",                frac: 0.615, hint: "Just above the handle. Small swingweight change, keeps balance neutral." },
-  { id: "handle", label: "Handle / butt",         frac: 0.264, hint: "Under the grip. Counterweight — makes the racquet more head-light, barely changes swingweight." },
+  { id: "tip",     label: "Tip — 12 o'clock",     frac: 0.967, lat: 0,    pair: false, hint: "Top of the head. Max swingweight & power, most head-heavy." },
+  { id: "1and11",  label: "1 & 11 (top corners)", frac: 0.945, lat: 6.5,  pair: true,  hint: "Upper corners. Adds power + a little stability, near-tip effect." },
+  { id: "3and9",   label: "3 & 9 (mid-face)",     frac: 0.879, lat: 12.5, pair: true,  hint: "Sides at the widest point. THE stability spot — most twist-stability (off-centre forgiveness) per gram." },
+  { id: "4and7",   label: "4 & 7 (lower face)",   frac: 0.747, lat: 9,    pair: true,  hint: "Lower shoulders. Adds mass near the sweet spot with modest swingweight gain." },
+  { id: "throat",  label: "Throat",               frac: 0.615, lat: 0,    pair: false, hint: "Just above the handle. Small swingweight change, keeps balance neutral." },
+  { id: "handle",  label: "Handle",               frac: 0.264, lat: 0,    pair: false, hint: "Under the grip. Counterweight — makes the racquet more head-light, barely changes swingweight." },
+  { id: "buttcap", label: "Butt cap",             frac: 0.045, lat: 0,    pair: false, hint: "Inside the end cap. The deepest counterweight — most head-light, adds static weight at the very bottom, tiny swingweight change." },
 ];
 
 const TENNIS_LEAD_ZONES = [
-  { id: "tip",    label: "Tip — 12 o'clock",      frac: 0.964, hint: "Top of the hoop. Max swingweight & power." },
-  { id: "1and11", label: "1 & 11 (top of hoop)",  frac: 0.920, hint: "Upper hoop. Power + slight stability." },
-  { id: "3and9",  label: "3 & 9 (mid-hoop)",      frac: 0.803, hint: "Widest point. Best twist-stability per gram." },
-  { id: "4and7",  label: "4 & 7 (lower hoop)",    frac: 0.672, hint: "Lower hoop, near the sweet spot." },
-  { id: "throat", label: "Throat",                frac: 0.496, hint: "Above the handle. Modest swingweight change." },
-  { id: "handle", label: "Handle / butt",         frac: 0.175, hint: "Counterweight — more head-light, minimal swingweight change." },
+  { id: "tip",     label: "Tip — 12 o'clock",     frac: 0.964, lat: 0,    pair: false, hint: "Top of the hoop. Max swingweight & power." },
+  { id: "1and11",  label: "1 & 11 (top of hoop)", frac: 0.920, lat: 6,    pair: true,  hint: "Upper hoop. Power + slight stability." },
+  { id: "3and9",   label: "3 & 9 (mid-hoop)",     frac: 0.803, lat: 13.5, pair: true,  hint: "Widest point. Best twist-stability per gram — the classic add." },
+  { id: "4and7",   label: "4 & 7 (lower hoop)",   frac: 0.672, lat: 10,   pair: true,  hint: "Lower hoop, near the sweet spot." },
+  { id: "throat",  label: "Throat",               frac: 0.496, lat: 0,    pair: false, hint: "Above the handle. Modest swingweight change." },
+  { id: "handle",  label: "Handle",               frac: 0.175, lat: 0,    pair: false, hint: "Counterweight — more head-light, minimal swingweight change." },
+  { id: "buttcap", label: "Butt cap",             frac: 0.030, lat: 0,    pair: false, hint: "Inside the end cap. Deepest counterweight — most head-light, tiny swingweight change." },
 ];
 
 // Resolve a zone's actual position (cm from butt) for a given racquet length.
@@ -2609,7 +2611,7 @@ function explainLength(mm) {
     : leverageIndex >= 40
     ? "Leverage sits in the middle of what this slider offers — a genuine compromise point rather than optimizing for either reach or quickness."
     : "Leverage is intentionally traded away here in favor of quickness — reach on serves and overheads is reduced, but the shorter lever arm means less swingweight to decelerate between shots.";
-  return `${mm}mm is ${(relLength * 100).toFixed(0)}% of the FIP 455mm legal maximum. Reach is ${reachWord}; close-range maneuverability in fast net exchanges is ${maneuverWord}. ${leverageNote} Swingweight scales with the square of this distance, not linearly — the last 10mm toward the legal max adds more effective leverage than the first 10mm off the shortest legal length does.`;
+  return `${(mm / 10).toFixed(1)}cm is ${(relLength * 100).toFixed(0)}% of the FIP 45.5cm legal maximum. Reach is ${reachWord}; close-range maneuverability in fast net exchanges is ${maneuverWord}. ${leverageNote} Swingweight scales with the square of this distance, not linearly — the last 1cm toward the legal max adds more effective leverage than the first 1cm off the shortest legal length does.`;
 }
 function explainWidth(mm, shapeId) {
   // Directly mirrors the widthFactor now used in computeSweetSpotAndStability
@@ -3269,7 +3271,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, len
           <line x1={cx+halfWidth} y1={topY-22} x2={cx+halfWidth} y2={topY-10} stroke="#4A4540" strokeWidth="1"/>
           <text x={cx} y={topY-24} textAnchor="middle">face width {widthMm}mm</text>
           <line x1={cx+halfWidth+18} y1={topY} x2={cx+halfWidth+18} y2={handleBottomY} stroke="#4A4540" strokeWidth="1"/>
-          <text x={cx+halfWidth+26} y={(topY+handleBottomY)/2} transform={`rotate(90 ${cx+halfWidth+26} ${(topY+handleBottomY)/2})`} textAnchor="middle">total length {lengthMm}mm</text>
+          <text x={cx+halfWidth+26} y={(topY+handleBottomY)/2} transform={`rotate(90 ${cx+halfWidth+26} ${(topY+handleBottomY)/2})`} textAnchor="middle">total length {(lengthMm / 10).toFixed(1)}cm</text>
           {bridgeId !== "closed" && (() => {
             const labelMidY = bridgeTopY + bridgeHeight * 0.62;
             const labelX = 10; // left canvas margin — guaranteed clear of the face/throat
@@ -4153,133 +4155,211 @@ function BuildGuideStep({ step }) {
 // weight, balance, and swingweight by adding lead tape at different zones.
 // Uses leadTapeEffect() (parallel axis theorem). Works for padel and tennis.
 // ---------------------------------------------------------------------------
-function LeadTapeTool({ defaultWeightG, defaultBalanceMm, defaultLengthMm }: { defaultWeightG?: number; defaultBalanceMm?: number; defaultLengthMm?: number }) {
+// Vertical-chain lead-tape diagram (string SVG, injected via dangerouslySetInnerHTML —
+// all values come from controlled zone tables, no user markup).
+function ltDiagram(sport: string, zones: any[], activeId: string, side: string): string {
+  const cx = 85, top = 18;
+  const yTop = 24, yButt = 286, yOf = (frac: number) => yButt - frac * (yButt - yTop);
+  const halfW = sport === "padel" ? 46 : 40;
+  const latScale = sport === "padel" ? 12.75 : 13.7;
+  const xOf = (latCm: number) => cx + (latCm / latScale) * halfW;
+  let g = "";
+  if (sport === "padel") {
+    g += `<path d="M ${cx} ${top} C ${cx + halfW + 8} ${top + 8} ${cx + halfW + 10} 120 ${cx + 18} 150 L ${cx + 10} 172 L ${cx - 10} 172 L ${cx - 18} 150 C ${cx - halfW - 10} 120 ${cx - halfW - 8} ${top + 8} ${cx} ${top} Z" fill="#EFE9DC" stroke="#8A8268" stroke-width="1.4"/>`;
+  } else {
+    g += `<ellipse cx="${cx}" cy="105" rx="${halfW}" ry="86" fill="#EFE9DC" stroke="#8A8268" stroke-width="1.4"/>`;
+    g += `<path d="M ${cx - 14} 188 L ${cx - 18} 150 M ${cx + 14} 188 L ${cx + 18} 150" fill="none" stroke="#8A8268" stroke-width="1.4"/>`;
+  }
+  g += `<rect x="${cx - 9}" y="188" width="18" height="92" rx="6" fill="#E8E2D6" stroke="#8A8268" stroke-width="1.4"/>`;
+  for (let i = 0; i < 6; i++) g += `<line x1="${cx - 9}" y1="${196 + i * 12}" x2="${cx + 9}" y2="${200 + i * 12}" stroke="#8A8268" stroke-width="0.7" opacity="0.5"/>`;
+  g += `<rect x="${cx - 11}" y="280" width="22" height="7" rx="3" fill="#2A2620"/>`;
+  const az = zones.find(z => z.id === activeId) || zones[0];
+  const ay = yOf(az.frac);
+  const strip = (x: number) => `<rect x="${x - 5}" y="${ay - 8}" width="10" height="16" rx="3" fill="#1A5C2A" stroke="#0c2f16" stroke-width="1"/><line x1="${x - 3}" y1="${ay - 4}" x2="${x + 3}" y2="${ay - 4}" stroke="#7FB894" stroke-width="0.8"/><line x1="${x - 3}" y1="${ay}" x2="${x + 3}" y2="${ay}" stroke="#7FB894" stroke-width="0.8"/><line x1="${x - 3}" y1="${ay + 4}" x2="${x + 3}" y2="${ay + 4}" stroke="#7FB894" stroke-width="0.8"/>`;
+  if (az.pair && side === "both") { g += strip(xOf(az.lat)); g += strip(xOf(-az.lat)); }
+  else if (az.pair && side === "one") { g += strip(xOf(az.lat)); }
+  else { g += strip(cx); }
+  zones.forEach(z => {
+    const y = yOf(z.frac); const on = z.id === activeId;
+    const xs = z.pair ? [xOf(z.lat), xOf(-z.lat)] : [cx];
+    xs.forEach((x, idx) => { const dim = z.pair && on && side === "one" && idx === 1; g += `<circle cx="${x}" cy="${y}" r="${on ? 6 : 4.5}" fill="${on && !dim ? "#1A5C2A" : "#fff"}" stroke="#1A5C2A" stroke-width="1.6" opacity="${dim ? 0.4 : 1}"/>`; });
+  });
+  return g;
+}
+
+function LeadTapeTool({ defaultWeightG, defaultBalanceCm, defaultLengthCm }: { defaultWeightG?: number; defaultBalanceCm?: number; defaultLengthCm?: number }) {
   const [sport, setSport] = useState<"padel" | "tennis">("padel");
   const [massG, setMassG] = useState(defaultWeightG ? String(Math.round(defaultWeightG)) : "360");
-  const [balanceMm, setBalanceMm] = useState(defaultBalanceMm ? String(Math.round(defaultBalanceMm)) : "260");
-  const [lengthMmStr, setLengthMmStr] = useState(defaultLengthMm ? String(Math.round(defaultLengthMm)) : "455");
+  const [balanceCmStr, setBalanceCmStr] = useState(defaultBalanceCm ? String(Math.round(defaultBalanceCm * 10) / 10) : "26.0");
+  const [lengthCmStr, setLengthCmStr] = useState(defaultLengthCm ? String(Math.round(defaultLengthCm * 10) / 10) : "45.5");
   const [swKgcm2, setSwKgcm2] = useState("290");
   const [grams, setGrams] = useState("5");
   const [zoneId, setZoneId] = useState("3and9");
+  const [side, setSide] = useState<"both" | "one">("both");
+  const [mode, setMode] = useState<"add" | "target">("add");
+  const [targetKind, setTargetKind] = useState<"sw" | "bal">("sw");
+  const [targetVal, setTargetVal] = useState("305");
 
-  // When the sport is switched, snap the length to that sport's standard so
-  // the numbers make sense (the user can still override it).
-  const onSportChange = (s: "padel" | "tennis") => {
-    setSport(s);
-    setLengthMmStr(String(Math.round(STANDARD_LENGTH_CM[s] * 10)));
-  };
-
+  const onSportChange = (s: "padel" | "tennis") => { setSport(s); setLengthCmStr(String(STANDARD_LENGTH_CM[s])); };
   const zones = sport === "padel" ? PADEL_LEAD_ZONES : TENNIS_LEAD_ZONES;
-  const lengthCm = (parseFloat(lengthMmStr) || STANDARD_LENGTH_CM[sport] * 10) / 10;
-  const racquet = {
-    massG: parseFloat(massG) || 0,
-    balanceMm: parseFloat(balanceMm) || 0,
-    swKgcm2: parseFloat(swKgcm2) || 0,
-  };
-  const addG = parseFloat(grams) || 0;
   const zone = zones.find(z => z.id === zoneId) || zones[0];
-  const result = leadTapeEffect(racquet, addG, zonePosCm(zone, lengthCm));
+  if (!zone.pair && side === "one") setSide("both");
+  const lengthCm = parseFloat(lengthCmStr) || STANDARD_LENGTH_CM[sport];
+  const racquet = { massG: parseFloat(massG) || 0, balanceMm: (parseFloat(balanceCmStr) || 0) * 10, swKgcm2: parseFloat(swKgcm2) || 0 };
+  const posCm = zonePosCm(zone, lengthCm);
+
+  // grams to use (typed, or solved from a target)
+  let solved: number | null = null;
+  if (mode === "target") {
+    if (targetKind === "sw") solved = leadTapeGramsForTargetSW(racquet, posCm, parseFloat(targetVal) || 0);
+    else {
+      const t = parseFloat(targetVal) || 0, balCm = racquet.balanceMm / 10, denom = t - posCm;
+      solved = Math.abs(denom) < 0.05 ? null : (() => { const gg = racquet.massG * (balCm - t) / denom; return gg > 0 ? Math.round(gg * 2) / 2 : null; })();
+    }
+  }
+  const addG = mode === "add" ? (parseFloat(grams) || 0) : (solved || 0);
+  const result = leadTapeEffect(racquet, addG, posCm);
+  const dTwist = Math.round((addG / 1000) * zone.lat * zone.lat * 100) / 100;
+  const lateralCm = (zone.pair && side === "one" && addG > 0) ? Math.round((addG * zone.lat / result.newMass) * 100) / 100 : 0;
 
   const fmtDelta = (v: number, unit = "") => (v > 0 ? "+" : "") + v + unit;
   const deltaColor = (v: number) => (v > 0 ? "#1A5C2A" : v < 0 ? "#991B1B" : "#7A7268");
-
   const inputStyle = { width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid #D4CCB8", background: "#fff", color: "#18181B", fontSize: 14, fontFamily: "'JetBrains Mono', monospace", boxSizing: "border-box" as const };
   const labelStyle = { fontSize: 11, color: "#4A4540", marginBottom: 4, fontFamily: "Inter, sans-serif", display: "block" };
+  const capStyle = { fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#4A4540", margin: "14px 0 8px" };
+  const chip = (active: boolean) => ({ padding: "6px 9px", borderRadius: 7, border: `1.5px solid ${active ? "#1A5C2A" : "#D4CCB8"}`, background: active ? "#1A5C2A" : "#fff", color: active ? "#fff" : "#4A4540", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" } as const);
 
   return (
     <div>
       <div style={{ padding: "10px 12px", background: "#EAF3EC", border: "1px solid #1A5C2A", borderRadius: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>Lead-tape balancer</div>
+        <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 3 }}>⚙ Lead-Tape Studio</div>
         <p style={{ fontSize: 12, color: "#3A362E", lineHeight: 1.55, margin: 0, fontFamily: "Inter, sans-serif" }}>
-          See exactly what adding lead tape does to your racquet's weight, balance, and swingweight — the same physics pro racquet technicians use. Seat the tape in the head channel so it won't peel off on scrapes.
+          Click a spot on the racquet to place lead and see what it does to weight, balance, swingweight and off-center stability (twistweight) — real physics. Paired spots can go both sides or <b>one side</b> (advanced players load one side for more angle). Or flip to <b>Reach a target</b> and it tells you the grams. Seat the tape in the head channel so it won't peel.
         </p>
       </div>
 
-      <div style={{ padding: "8px 10px", background: "rgba(26,92,42,0.05)", borderRadius: 6, borderLeft: "2px solid #1A5C2A", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-        <svg width="34" height="16" viewBox="0 0 34 16" style={{ flexShrink: 0 }}>
-          <line x1="1" y1="4" x2="33" y2="4" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
-          <line x1="1" y1="12" x2="33" y2="12" stroke="#1A5C2A" strokeWidth="1.1" opacity="0.6" strokeDasharray="2 2"/>
-        </svg>
-        <p style={{ fontSize: 11, color: "#4A4540", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}>
-          The dashed green lines along the head in the <strong>Profile</strong> view mark this recessed channel — where the lead tape sits flush.
-        </p>
-      </div>
-
-      {/* Sport toggle */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         {[["padel", "Padel"], ["tennis", "Tennis"]].map(([id, label]) => (
           <button key={id} onClick={() => onSportChange(id as any)} style={{ flex: 1, padding: "6px 0", borderRadius: 7, border: `1.5px solid ${sport === id ? "#1A5C2A" : "#D4CCB8"}`, background: sport === id ? "#1A5C2A" : "#fff", color: sport === id ? "#fff" : "#4A4540", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
         ))}
       </div>
 
-      {/* Current racquet specs */}
-      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Your racquet now</div>
+      <div style={capStyle}>Your racquet now</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 6 }}>
         <div><label style={labelStyle}>Weight (g)</label><input type="number" inputMode="decimal" value={massG} onChange={e => setMassG(e.target.value)} style={inputStyle}/></div>
-        <div><label style={labelStyle}>Length (mm)</label><input type="number" inputMode="decimal" value={lengthMmStr} onChange={e => setLengthMmStr(e.target.value)} style={inputStyle}/></div>
-        <div><label style={labelStyle}>Balance (mm)</label><input type="number" inputMode="decimal" value={balanceMm} onChange={e => setBalanceMm(e.target.value)} style={inputStyle}/></div>
-        <div><label style={labelStyle}>Swingweight</label><input type="number" inputMode="decimal" value={swKgcm2} onChange={e => setSwKgcm2(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Length (cm)</label><input type="number" inputMode="decimal" step="0.1" value={lengthCmStr} onChange={e => setLengthCmStr(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Balance (cm from butt)</label><input type="number" inputMode="decimal" step="0.1" value={balanceCmStr} onChange={e => setBalanceCmStr(e.target.value)} style={inputStyle}/></div>
+        <div><label style={labelStyle}>Swingweight (kg·cm²)</label><input type="number" inputMode="decimal" value={swKgcm2} onChange={e => setSwKgcm2(e.target.value)} style={inputStyle}/></div>
       </div>
-      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.45, margin: "0 0 14px", fontFamily: "Inter, sans-serif" }}>
-        Zone positions scale with your racquet's length, so the swingweight numbers are correct for your actual frame — not a fixed assumed length.
-      </p>
 
-      {/* Add tape */}
-      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Add lead tape</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8, marginBottom: 6 }}>
-        <div><label style={labelStyle}>Grams</label><input type="number" inputMode="decimal" value={grams} onChange={e => setGrams(e.target.value)} style={inputStyle}/></div>
-        <div><label style={labelStyle}>Zone</label>
-          <select value={zoneId} onChange={e => setZoneId(e.target.value)} style={{ ...inputStyle, fontFamily: "Inter, sans-serif", appearance: "auto", WebkitAppearance: "auto" }}>
-            {zones.map(z => <option key={z.id} value={z.id}>{z.label}</option>)}
-          </select>
+      <div style={{ display: "flex", gap: 6, margin: "12px 0" }}>
+        {[["add", "Add tape"], ["target", "Reach a target"]].map(([id, label]) => (
+          <button key={id} onClick={() => setMode(id as any)} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: `1.5px solid ${mode === id ? "#1A5C2A" : "#D4CCB8"}`, background: mode === id ? "#1A5C2A" : "#fff", color: mode === id ? "#fff" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, padding: 8, flex: "0 0 auto" }} dangerouslySetInnerHTML={{ __html: `<svg width="150" height="264" viewBox="0 0 170 300">${ltDiagram(sport, zones, zoneId, side)}</svg>` }} />
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ ...capStyle, marginTop: 0 }}>Placement</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+            {zones.map(z => <button key={z.id} onClick={() => setZoneId(z.id)} style={chip(zoneId === z.id)}>{z.label}</button>)}
+          </div>
+          {zone.pair && (
+            <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+              {[["both", "Both sides"], ["one", "One side (angle)"]].map(([id, label]) => (
+                <button key={id} onClick={() => setSide(id as any)} style={chip(side === id)}>{label}</button>
+              ))}
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "2px 0 10px", fontFamily: "Inter, sans-serif" }}>{zone.hint}</p>
+          {mode === "add" ? (
+            <div><label style={labelStyle}>Grams of lead (total)</label><input type="number" inputMode="decimal" step="0.5" value={grams} onChange={e => setGrams(e.target.value)} style={inputStyle}/></div>
+          ) : (
+            <div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                {[["sw", "Target swingweight"], ["bal", "Target balance"]].map(([id, label]) => (
+                  <button key={id} onClick={() => { setTargetKind(id as any); setTargetVal(id === "sw" ? "305" : "25.5"); }} style={{ ...chip(targetKind === id), flex: 1 }}>{label}</button>
+                ))}
+              </div>
+              <label style={labelStyle}>{targetKind === "sw" ? "Desired swingweight (kg·cm²)" : "Desired balance (cm)"}</label>
+              <input type="number" inputMode="decimal" step={targetKind === "sw" ? "1" : "0.1"} value={targetVal} onChange={e => setTargetVal(e.target.value)} style={inputStyle}/>
+            </div>
+          )}
         </div>
       </div>
-      <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "0 0 14px", fontFamily: "Inter, sans-serif" }}>{zone.hint}</p>
 
-      {/* Result */}
-      <div style={{ padding: "12px", background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10, marginBottom: 14 }}>
-        <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 10 }}>Result — {addG}g at {zone.label}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+      <div style={{ padding: "12px", background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10, margin: "14px 0" }}>
+        <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 10 }}>
+          {mode === "add"
+            ? `Result — ${addG}g at ${zone.label}${zone.pair ? (side === "one" ? " (one side)" : " (both sides)") : ""}`
+            : (solved == null ? "Can't reach that here — pick another spot" : `Add ${solved}g at ${zone.label} to hit your target`)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
           {[
             { label: "Weight", val: result.newMass + "g", delta: fmtDelta(result.deltaMass, "g") },
-            { label: "Balance", val: result.newBalanceMm + "mm", delta: fmtDelta(result.deltaBalanceMm, "mm") },
+            { label: "Balance", val: (result.newBalanceMm / 10).toFixed(2) + "cm", delta: fmtDelta(Math.round(result.deltaBalanceMm) / 10, "cm") },
             { label: "Swingweight", val: String(result.newSW), delta: fmtDelta(result.deltaSW) },
+            { label: "Twist stability", val: zone.lat > 0 ? "↑" : "—", delta: zone.lat > 0 ? "+" + dTwist : "≈0" },
           ].map(({ label, val, delta }) => (
             <div key={label}>
-              <div style={{ fontSize: 10, color: "#7A7268", marginBottom: 3, fontFamily: "Inter, sans-serif" }}>{label}</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#18181B", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.1 }}>{val}</div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: deltaColor(parseFloat(delta)), fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{delta}</div>
+              <div style={{ fontSize: 9.5, color: "#7A7268", marginBottom: 2, fontFamily: "Inter, sans-serif" }}>{label}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#18181B", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.1 }}>{val}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: deltaColor(parseFloat(delta) || 0), fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{delta}</div>
             </div>
           ))}
         </div>
-        {result.newBalanceMm > racquet.balanceMm ? (
-          <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>More head-heavy: more power and plow-through, slightly harder to swing.</p>
-        ) : result.newBalanceMm < racquet.balanceMm ? (
-          <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>More head-light: quicker to swing and more maneuverable, less free power.</p>
-        ) : null}
+        {zone.pair && side === "one" && addG > 0 && (
+          <div style={{ marginTop: 10, padding: "9px 11px", background: "#FFF7E6", border: "1px solid #F0D9A8", borderRadius: 8, fontSize: 11.5, lineHeight: 1.5, color: "#5A4410" }}>
+            <b style={{ color: "#B45309" }}>One-sided load → +{lateralCm} cm side bias.</b> The racquet is heavier on the loaded (9 o'clock) side, so the face wants to close a touch there — advanced players use this to whip more <b>angle</b> on cross-court, bandeja and víbora. Swingweight and twistweight match the both-sides version; the trade-off is it's no longer symmetric, so it can feel slightly biased on the other wing.
+          </div>
+        )}
+        <p style={{ fontSize: 11, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>
+          {solved == null && mode === "target"
+            ? "A target swingweight below your current value can't be reached by adding lead. Balance targets must sit between the spot and your current balance."
+            : result.deltaBalanceMm > 0 ? "More head-heavy: more power & plow-through, a touch slower to swing."
+            : result.deltaBalanceMm < 0 ? "More head-light: quicker, more maneuverable, less free power."
+            : "Balance held — pure swingweight/mass change."}
+        </p>
       </div>
 
-      {/* All-zones comparison */}
-      <div style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A4540", marginBottom: 8 }}>Same {addG}g at every zone</div>
+      <div style={capStyle}>Same lead at every spot</div>
       <div style={{ border: "1px solid #E3DCC8", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 0.8fr", background: "#1A5C2A", padding: "6px 10px", gap: 6 }}>
-          {["Zone", "Balance", "Swingwt", "ΔSW"].map(h => <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#fff", fontFamily: "Inter, sans-serif" }}>{h}</span>)}
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 0.8fr 0.8fr", background: "#1A5C2A", padding: "6px 10px", gap: 6 }}>
+          {["Spot", "Balance", "Swingwt", "ΔSW", "ΔTwist"].map(h => <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#fff", fontFamily: "Inter, sans-serif" }}>{h}</span>)}
         </div>
         {zones.map((z, i) => {
-          const r = leadTapeEffect(racquet, addG, zonePosCm(z, lengthCm));
+          const g = mode === "add" ? (parseFloat(grams) || 5) : 5;
+          const r = leadTapeEffect(racquet, g, zonePosCm(z, lengthCm));
+          const t = Math.round((g / 1000) * z.lat * z.lat * 100) / 100;
           const active = z.id === zoneId;
           return (
-            <div key={z.id} onClick={() => setZoneId(z.id)} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 0.8fr", padding: "7px 10px", gap: 6, background: active ? "#EAF3EC" : i % 2 ? "#F5F2EB" : "#fff", cursor: "pointer", alignItems: "center" }}>
+            <div key={z.id} onClick={() => setZoneId(z.id)} style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 0.8fr 0.8fr", padding: "7px 10px", gap: 6, background: active ? "#EAF3EC" : i % 2 ? "#F5F2EB" : "#fff", cursor: "pointer", alignItems: "center" }}>
               <span style={{ fontSize: 11, color: "#18181B", fontFamily: "Inter, sans-serif", fontWeight: active ? 600 : 400 }}>{z.label}</span>
-              <span style={{ fontSize: 11, color: "#4A4540", fontFamily: "'JetBrains Mono', monospace" }}>{r.newBalanceMm}</span>
+              <span style={{ fontSize: 11, color: "#4A4540", fontFamily: "'JetBrains Mono', monospace" }}>{(r.newBalanceMm / 10).toFixed(2)}</span>
               <span style={{ fontSize: 11, color: "#4A4540", fontFamily: "'JetBrains Mono', monospace" }}>{r.newSW}</span>
               <span style={{ fontSize: 11, color: deltaColor(r.deltaSW), fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{fmtDelta(r.deltaSW)}</span>
+              <span style={{ fontSize: 11, color: deltaColor(t), fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{z.lat > 0 ? fmtDelta(t) : "≈0"}</span>
             </div>
           );
         })}
       </div>
-      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "10px 0 0", fontFamily: "Inter, sans-serif" }}>
-        Swingweight is measured about the standard 10&nbsp;cm axis (from the butt), in kg·cm² — the same standard used for tennis. Mass at the tip raises swingweight most; mass in the handle barely changes it but shifts balance toward head-light. Physics via the parallel axis theorem, ΔSW = mass × distance².
+
+      <div style={capStyle}>Quick setups</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {[
+          ["More power (tip)", () => { setMode("add"); setZoneId("tip"); setSide("both"); setGrams("6"); }],
+          ["More stability (3 & 9)", () => { setMode("add"); setZoneId("3and9"); setSide("both"); setGrams("6"); }],
+          ["More angle (one side)", () => { setMode("add"); setZoneId("3and9"); setSide("one"); setGrams("4"); }],
+          ["Counterweight (butt cap)", () => { setMode("add"); setZoneId("buttcap"); setSide("both"); setGrams("8"); }],
+          ["Match a swingweight →", () => { setMode("target"); setTargetKind("sw"); setTargetVal("305"); setZoneId("tip"); setSide("both"); }],
+        ].map(([label, fn]: any) => (
+          <button key={label} onClick={fn} style={{ padding: "7px 10px", borderRadius: 20, border: "1px solid #D4CCB8", background: "#fff", color: "#1A5C2A", fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
+        ))}
+      </div>
+
+      <p style={{ fontSize: 10.5, color: "#7A7268", lineHeight: 1.5, margin: "12px 0 0", fontFamily: "Inter, sans-serif" }}>
+        Swingweight is about the standard 10&nbsp;cm axis (from the butt), kg·cm². Physics: parallel-axis ΔSW = mass × distance²; twistweight = mass × lateral² about the long axis; one-sided lead shifts the center of mass laterally, which is what generates the side bias.
       </p>
     </div>
   );
@@ -6922,7 +7002,7 @@ export default function App() {
 
       {/* Dimensions */}
       <AccordionSection id="dims" icon={<Ruler size={15}/>} label="Dimensions" isOpen={openSections.has("dims")} onToggle={() => toggle("dims")}>
-        <SliderField label="Total Length" value={lengthMm} onChange={setLengthMm} min={400} max={455} suffix=" mm" explanation={explainLength(lengthMm)}/>
+        <SliderField label="Total Length" value={lengthMm / 10} onChange={v => setLengthMm(Math.round(v * 10))} min={40} max={45.5} step={0.1} suffix=" cm" explanation={explainLength(lengthMm)}/>
         <SliderField label="Face Width" value={widthMm} onChange={setWidthMm} min={200} max={260} suffix=" mm" explanation={explainWidth(widthMm, shapeId)}/>
         <SliderField label="Thickness" value={thicknessMm} onChange={setThicknessMm} min={28} max={38} suffix=" mm" explanation={explainThickness(thicknessMm)}/>
         <SliderField label="Weight" value={weightG} onChange={setWeightG} min={350} max={380} suffix=" g" explanation={explainWeight(weightG)}/>
@@ -7034,7 +7114,7 @@ export default function App() {
           shown in the Profile view. Prefilled with the current build's
           weight/balance as a starting point. */}
       <AccordionSection id="leadtape" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="9"/></svg>} label="Lead Tape & Balance" isOpen={openSections.has("leadtape")} onToggle={() => toggle("leadtape")}>
-        <LeadTapeTool defaultWeightG={weightG} defaultBalanceMm={balanceCm * 10} defaultLengthMm={lengthMm}/>
+        <LeadTapeTool defaultWeightG={weightG} defaultBalanceCm={balanceCm} defaultLengthCm={lengthMm / 10}/>
       </AccordionSection>
 
       {/* Lanyard concept — wick-and-evaporate detachable wrist strap. Concept
@@ -7325,7 +7405,7 @@ export default function App() {
         <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:12, lineHeight:1.9 }}>
           {[
             ["Shape", shape.label],
-            ["Length / Width", `${lengthMm}mm / ${widthMm}mm`],
+            ["Length / Width", `${(lengthMm / 10).toFixed(1)}cm / ${widthMm}mm`],
             ["Thickness", `${thicknessMm}mm`],
             ["Weight", `${weightG}g`],
             ["Balance", `${balanceCm}cm`],
