@@ -4396,57 +4396,254 @@ function HandMeasureTool({ onGrip }: { onGrip: (mm: number) => void }) {
 // Wrist-Link concept — a washable wristband with a secure, repeatable quick-
 // connect to the lanyard. Magnet for alignment, mechanical latch for holding a
 // slipping racquet, guarded button to release. Concept/education panel.
+// ---------------------------------------------------------------------------
+// Wrist-Link system configurator — the wrist-retention product.
+// In-box wrist lanyard (free) vs the Wrist-Link upgrade (special lanyard that
+// fits any detachable racquet + hooks any band, plus PalaLab's own band with an
+// out-of-the-way receiver the lanyard mates perfectly). The racquet end is a
+// FIXED universal coupling — the innovation lives at the wrist. Scoring:
+// security = weakest link (min) across the couplings; sweat is band-driven;
+// lightweight is penalized for the band/hardware you add. Directional, not lab.
+// ---------------------------------------------------------------------------
+const WL_COUPLING_STRENGTH = 4;
+const WL_PRODUCTS = [
+  { id: "inbox",  label: "In-box wrist lanyard" },
+  { id: "system", label: "Wrist-Link upgrade" },
+];
+const WL_MATERIALS = [
+  { id: "polyester", label: "Wicking polyester", strength: 3, sweatCord: 3, comfortCord: 4, wt: 0, note: "Hydrophobic, quick-dry, holds tension — the all-round technical pick. Fine for the load, but not the strongest link." },
+  { id: "silicone",  label: "Silicone / TPE",    strength: 3, sweatCord: 2, comfortCord: 3, wt: 0, note: "Waterproof, grippy, won't hold odor; stretches under load (which caps its holding strength), ~1–2yr life." },
+  { id: "paracord",  label: "550 paracord",      strength: 5, sweatCord: 1, comfortCord: 2, wt: 1, note: "250kg+ strength, premium feel, round-only; a little heavier and can stay damp on the skin." },
+  { id: "dyneema",   label: "Dyneema core",      strength: 5, sweatCord: 2, comfortCord: 3, wt: 0, note: "UHMWPE — extremely strong for its weight, carries a mid-swing slip with margin. The light-and-strong load-path hero." },
+];
+const WL_SHOCKS = [
+  { id: "none",    label: "None",                  comfort: 0, secBonus: 0, note: "Direct coupling — simplest and lightest." },
+  { id: "elastic", label: "Elastic shock section", comfort: 1, secBonus: 1, note: "A short bungee spreads a mid-swing dead-stop over 10–15cm — lowers the peak load, so the weakest link survives more easily and the wrist is spared." },
+];
+const WL_BANDS = [
+  { id: "pala",    label: "PalaLab Wrist-Link band" },
+  { id: "generic", label: "My own sweatband" },
+];
+const WL_HOOKS = [
+  { id: "cinch",   label: "Cinch loop (girth-hitch)", anyBand: 5, genericGrip: 3, comfort: 1, lp: 2, note: "A tiny loop larks-heads onto any band — zero hardware on the band side. Universal, but bulkier at the wrist and only as secure as the band it cinches." },
+  { id: "gate",    label: "Spring-gate micro-clip",   anyBand: 4, genericGrip: 3, comfort: 0, lp: 3, note: "A carabiner-style gate snaps onto a band loop or the PalaLab dock. Fast and secure; needs a small catch point on a generic band." },
+  { id: "magsnap", label: "Magnetic snap-hook",       anyBand: 3, genericGrip: 2, comfort: 1, lp: 4, note: "Aligns and seats one-handed; a mechanical catch holds. Sleekest with the PalaLab dock; on a generic band it needs a ferrous/loop target, so its grip there is weaker." },
+];
+const WL_RECEIVERS = [
+  { id: "recess", label: "Recessed dock (flush socket)", strength: 4, comfort: 1, lp: 5, note: "A flush socket sits in a stitched pocket — nothing protrudes until the lanyard clicks in. The most 'out of the way'." },
+  { id: "magpkt", label: "Magnetic pocket",              strength: 3, comfort: 2, lp: 4, note: "A thin magnetic pad under the fabric self-aligns the hook; a catch holds. No hard edges against the skin, slightly less positive lock." },
+  { id: "rail",   label: "Edge rail slide-lock",         strength: 5, comfort: 0, lp: 3, note: "A low rail on the band's edge; the hook slides on and locks. The most secure mate, but a firmer feature at the wrist." },
+];
+const WL_BMATERIALS = [
+  { id: "mesh",     label: "Breathable mesh",    sweat: 4, comfort: 4, lp: 1, note: "Open-knit, dries fast, near-weightless." },
+  { id: "terry",    label: "Terry-lined",        sweat: 5, comfort: 5, lp: 0, note: "Max sweat soak, warmer and heavier when wet." },
+  { id: "silicone", label: "Silicone-grip mesh", sweat: 3, comfort: 3, lp: 1, note: "Inner grip strip won't slide down the arm; a touch less breathable." },
+];
+const WL_WIDTHS = [
+  { id: "slim",     label: "Slim (~6 cm)",     sweat: -1, lp: 1,  wtPen: 0 },
+  { id: "standard", label: "Standard (~8 cm)", sweat: 0,  lp: 0,  wtPen: 1 },
+  { id: "wide",     label: "Wide (~10 cm)",    sweat: 1,  lp: -1, wtPen: 2 },
+];
+const WL_SCORES = [
+  { k: "sweat",      label: "Sweat management" },
+  { k: "comfort",    label: "Comfort (disappears)" },
+  { k: "security",   label: "Security (holds a slip)" },
+  { k: "lowProfile", label: "Out-of-the-way (low profile)" },
+  { k: "weight",     label: "Lightweight" },
+];
+const wlGet = (a: any[], id: string) => a.find(x => x.id === id);
+const wlClamp = (v: number) => Math.max(0, Math.min(5, Math.round(v)));
+function wlWristStrength(S: any) {
+  if (S.prod !== "system") return 5;
+  if (S.band === "generic") return Math.min(wlGet(WL_HOOKS, S.hook).genericGrip, 3);
+  return wlGet(WL_RECEIVERS, S.rcv).strength;
+}
+function wlScores(S: any) {
+  const security = wlClamp(Math.min(WL_COUPLING_STRENGTH, wlGet(WL_MATERIALS, S.mat).strength, wlWristStrength(S)) + wlGet(WL_SHOCKS, S.shk).secBonus);
+  let sweat: number;
+  if (S.prod !== "system") sweat = wlClamp(wlGet(WL_MATERIALS, S.mat).sweatCord);
+  else if (S.band === "generic") sweat = 3;
+  else sweat = wlClamp(wlGet(WL_BMATERIALS, S.bmat).sweat + wlGet(WL_WIDTHS, S.wid).sweat);
+  const shkC = wlGet(WL_SHOCKS, S.shk).comfort;
+  let comfort: number;
+  if (S.prod !== "system") comfort = wlClamp(wlGet(WL_MATERIALS, S.mat).comfortCord + shkC);
+  else if (S.band === "generic") comfort = wlClamp(3 + shkC + (wlGet(WL_HOOKS, S.hook).comfort - 1));
+  else comfort = wlClamp(wlGet(WL_BMATERIALS, S.bmat).comfort + shkC);
+  let lowProfile: number;
+  if (S.prod !== "system") lowProfile = wlClamp(3 - (S.mat === "paracord" ? 1 : 0));
+  else if (S.band === "generic") lowProfile = wlClamp(wlGet(WL_HOOKS, S.hook).lp);
+  else lowProfile = wlClamp(wlGet(WL_RECEIVERS, S.rcv).lp + wlGet(WL_WIDTHS, S.wid).lp + wlGet(WL_BMATERIALS, S.bmat).lp - 1);
+  let pen = wlGet(WL_MATERIALS, S.mat).wt;
+  if (S.prod === "system") { pen += 1; if (S.band === "pala") pen += 1 + wlGet(WL_WIDTHS, S.wid).wtPen + (S.bmat === "terry" ? 1 : 0); }
+  const weight = wlClamp(5 - pen);
+  return { sweat, comfort, security, lowProfile, weight };
+}
+const wlAnyBand = (S: any) => S.prod === "system" && wlGet(WL_HOOKS, S.hook).anyBand >= 4;
+const wlIdeal = (S: any) => S.prod === "system" && S.band === "pala";
+
+// Vertical-chain SVG built as a string (all values from controlled option
+// tables — no user input), injected via dangerouslySetInnerHTML.
+function wlArt(S: any): string {
+  const cx = 95;
+  let g = `<defs><linearGradient id="wlcord" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E7D46"/><stop offset="100%" stop-color="#154C22"/></linearGradient></defs>`;
+  const labelX = 190, lead = "#B5AE9C";
+  const L = (y: number, toX: number, toY: number, t: string, b?: boolean) => `<path d="M ${toX} ${toY} L ${labelX - 4} ${y - 3}" fill="none" stroke="${lead}" stroke-width="0.8"/><text x="${labelX}" y="${y}" font-family="'JetBrains Mono', monospace" font-size="8" fill="${b ? "#1A5C2A" : "#4A4540"}" font-weight="${b ? 700 : 400}">${t}</text>`;
+  g += `<rect x="${cx - 16}" y="14" width="32" height="30" rx="7" fill="#E8E2D6" stroke="#2A2620" stroke-width="1.6"/><rect x="${cx - 18}" y="42" width="36" height="7" rx="3" fill="#2A2620"/>`;
+  g += `<rect x="${cx - 8}" y="48" width="16" height="11" rx="3" fill="#3D4A44" stroke="#1A5C2A" stroke-width="1.2"/><circle cx="${cx}" cy="53.5" r="2.4" fill="#7FB894"/>`;
+  const cordTop = 60, cordBot = S.prod === "system" ? 150 : 170;
+  const bw = S.mat === "paracord" ? 7 : 5;
+  if (S.shk === "elastic") {
+    g += `<path d="M ${cx} ${cordTop} L ${cx} ${cordTop + 18}" stroke="url(#wlcord)" stroke-width="${bw}"/>`;
+    let z = ""; for (let i = 0; i < 5; i++) { const yy = cordTop + 18 + i * 8; z += `${i ? "L" : "M"} ${cx - 6} ${yy} L ${cx + 6} ${yy + 4} `; } g += `<path d="${z}" fill="none" stroke="#7FB894" stroke-width="2.6"/>`;
+    g += `<path d="M ${cx} ${cordTop + 58} L ${cx} ${cordBot}" stroke="url(#wlcord)" stroke-width="${bw}"/>`;
+  } else {
+    g += `<path d="M ${cx} ${cordTop} L ${cx} ${cordBot}" stroke="url(#wlcord)" stroke-width="${bw}"/>`;
+  }
+  if (S.prod === "inbox") {
+    g += `<ellipse cx="${cx}" cy="188" rx="34" ry="22" fill="none" stroke="url(#wlcord)" stroke-width="${bw}"/>`;
+    g += `<ellipse cx="${cx}" cy="188" rx="24" ry="14" fill="#F0E6D2" stroke="#D8CBB0" stroke-width="1"/>`;
+    g += L(30, cx, 29, "racquet");
+    g += L(cordBot - 40, cx, 110, S.mat === "paracord" ? "round cord" : "flat band", true);
+    g += L(190, cx + 34, 188, "wrist (no band)", true);
+    if (S.shk === "elastic") g += L(96, cx - 6, cordTop + 30, "shock");
+    return g;
+  }
+  const hookY = 150;
+  g += `<circle cx="${cx}" cy="${hookY}" r="9" fill="#3D4A44" stroke="#1A5C2A" stroke-width="1.6"/>`;
+  if (S.hook === "cinch") { g += `<ellipse cx="${cx}" cy="${hookY}" rx="5" ry="7" fill="none" stroke="#7FB894" stroke-width="2"/>`; }
+  else if (S.hook === "gate") { g += `<path d="M ${cx - 4} ${hookY - 5} a 5 6 0 1 0 0 10" fill="none" stroke="#7FB894" stroke-width="2"/>`; }
+  else { g += `<circle cx="${cx}" cy="${hookY}" r="3" fill="#7FB894"/>`; }
+  const bandTop = 176, bandH = S.band === "pala" ? (S.wid === "slim" ? 46 : S.wid === "wide" ? 74 : 60) : 56;
+  const rx = 52, ry = 13, bandBot = bandTop + bandH;
+  if (S.band === "generic") {
+    g += `<ellipse cx="${cx}" cy="${bandTop}" rx="${rx - 8}" ry="${ry - 3}" fill="#EFEADD" stroke="#C9BFA6" stroke-width="1"/>`;
+    g += `<path d="M ${cx - rx + 8} ${bandTop} L ${cx - rx + 8} ${bandBot} A ${rx - 8} ${ry - 2} 0 0 0 ${cx + rx - 8} ${bandBot} L ${cx + rx - 8} ${bandTop}" fill="#4A4A4A"/>`;
+    g += `<ellipse cx="${cx}" cy="${bandBot}" rx="${rx - 8}" ry="${ry - 2}" fill="#2E2E2E"/>`;
+    for (let i = 0; i < 6; i++) { const xx = cx - 30 + i * 12; g += `<line x1="${xx}" y1="${bandTop + 6}" x2="${xx}" y2="${bandBot - 6}" stroke="#666" stroke-width="1.4" opacity="0.5"/>`; }
+  } else {
+    g += `<ellipse cx="${cx}" cy="${bandTop}" rx="${rx - 8}" ry="${ry - 3}" fill="#F0E6D2" stroke="#D8CBB0" stroke-width="1"/>`;
+    g += `<path d="M ${cx - rx} ${bandTop} L ${cx - rx} ${bandBot} A ${rx} ${ry} 0 0 0 ${cx + rx} ${bandBot} L ${cx + rx} ${bandTop}" fill="url(#wlcord)"/>`;
+    g += `<ellipse cx="${cx}" cy="${bandBot}" rx="${rx}" ry="${ry}" fill="#154C22"/>`;
+    g += `<ellipse cx="${cx}" cy="${bandTop}" rx="${rx}" ry="${ry}" fill="#215F30" stroke="#123f1d" stroke-width="1"/>`;
+    const rows = Math.max(3, Math.round(bandH / 12));
+    for (let r = 0; r < rows; r++) { const yy = bandTop + 9 + r * (bandH - 14) / rows; for (let i = -3; i <= 3; i++) { const xx = cx + i * 12 + (r % 2 ? 6 : 0); if (Math.abs(xx - cx) / rx > 0.9) continue;
+      g += S.bmat === "terry" ? `<circle cx="${xx}" cy="${yy}" r="2" fill="#3E8A54"/>` : S.bmat === "silicone" ? `<circle cx="${xx}" cy="${yy}" r="1.2" fill="#7FB894"/>` : `<circle cx="${xx}" cy="${yy}" r="1.4" fill="#123f1d" opacity="0.5"/>`; } }
+    const ry2 = bandTop + bandH * 0.42;
+    if (S.rcv === "recess") { g += `<ellipse cx="${cx}" cy="${ry2}" rx="11" ry="8" fill="#123f1d" stroke="#0c2f16" stroke-width="1.4"/><ellipse cx="${cx}" cy="${ry2}" rx="5" ry="3.5" fill="#2E7D46"/>`; }
+    else if (S.rcv === "magpkt") { g += `<ellipse cx="${cx}" cy="${ry2}" rx="12" ry="8" fill="#1E5F2E" stroke="#7FB894" stroke-width="1.4" stroke-dasharray="2 2"/>`; }
+    else { g += `<rect x="${cx - 14}" y="${ry2 - 4}" width="28" height="8" rx="4" fill="#123f1d" stroke="#7FB894" stroke-width="1.2"/>`; }
+  }
+  g += L(30, cx, 29, "racquet");
+  g += L(58, cx + 8, 53, "universal coupling", true);
+  g += L(110, cx, 110, S.mat.charAt(0).toUpperCase() + S.mat.slice(1) + " cord", false);
+  if (S.shk === "elastic") g += L(92, cx - 6, cordTop + 34, "shock");
+  g += L(hookY - 14, cx + 9, hookY, "wrist hook", true);
+  g += L(bandTop - 2, cx - rx + 10, bandTop, S.band === "pala" ? "PalaLab band" : "any sweatband", true);
+  if (S.band === "pala") g += L(bandTop + bandH * 0.42, cx + 12, bandTop + bandH * 0.42, "receiver", true);
+  g += L(bandBot + 6, cx, bandBot, "wrist", false);
+  return g;
+}
+
 function WristLinkConcept() {
-  const MECHS = [
-    { id: "maglatch", name: "Magnetic-align + spring latch", rec: true,
-      how: "The two halves self-align and seat with a magnetic snap; at the moment they seat, a spring-loaded steel pawl drops into a groove and mechanically locks. The magnet only aligns — it carries no load. A guarded button retracts the pawl to release.",
-      hold: "Holds a flying racquet: the pawl and cord carry the shock, never the magnet.",
-      con: "Most parts; needs a recessed or two-step button so it can't release mid-rally." },
-    { id: "bayonet", name: "Bayonet twist-lock",
-      how: "Push and quarter-turn to lock, like a camera lens or a medical Luer lock. Fully mechanical, one deliberate twist to release.",
-      hold: "Very secure and cheap to make reliable.",
-      con: "No inherent breakaway; a little slower to connect one-handed." },
-    { id: "buckle", name: "Micro side-release buckle",
-      how: "A miniaturised, ultralight version of a backpack buckle.",
-      hold: "Strong and instantly familiar to anyone.",
-      con: "The least elegant option; no magnetic assist." },
-    { id: "balldetent", name: "Ball-detent quick-connect",
-      how: "Push together (magnet aligns), ball bearings snap into a groove; press a sleeve to retract them and release. Industrial quick-connect logic.",
-      hold: "Very high load capacity in a compact housing.",
-      con: "Machined parts — the costliest to produce." },
-  ];
-  const [sel, setSel] = useState("maglatch");
-  const m = MECHS.find(x => x.id === sel)!;
-  const notes = [
-    ["Load path, not static weight", "A ~365g racquet slipping mid-swing can spike to a few hundred newtons. The latch (hardened stainless/titanium) and a Dyneema/UHMWPE cord carry that with margin; the neodymium magnet is spec'd only to hold the connector seated at rest."],
-    ["Shock absorber", "A short elastic/bungee section in the lanyard spreads the dead-stop over 10–15cm so it doesn't wrench the wrist or fatigue the latch — like a climbing lanyard's energy absorber."],
-    ["Guarded release", "The button is recessed or two-action (slide-then-press / press-and-hold) so it can't pop open mid-rally. Optionally a redundant secondary catch."],
-    ["Washability split", "The band detaches fully from all hardware, so the terry/silicone band goes in the wash while the coupling stays on the cord — the whole point of the concept."],
-    ["Swivel joint", "A small bearing at the coupling lets the lanyard rotate freely through the wrist pronation/supination of viboras and hook smashes without winding up."],
-  ];
+  const [prod, setProd] = useState("system");
+  const [mat, setMat] = useState("dyneema");
+  const [shk, setShk] = useState("elastic");
+  const [band, setBand] = useState("pala");
+  const [hook, setHook] = useState("gate");
+  const [bmat, setBmat] = useState("mesh");
+  const [wid, setWid] = useState("standard");
+  const [rcv, setRcv] = useState("recess");
+  const S = { prod, mat, shk, band, hook, bmat, wid, rcv };
+  const sc: any = wlScores(S);
+  const scoreColor = (v: number) => v >= 4 ? "#1A5C2A" : v >= 3 ? "#7A5C1A" : "#991B1B";
+
+  const Chip = ({ active, onClick, children }: any) => (
+    <button onClick={onClick} style={{ padding: "7px 11px", borderRadius: 8, border: `1.5px solid ${active ? "#1A5C2A" : "#D4CCB8"}`, background: active ? "#1A5C2A" : "#fff", color: active ? "#fff" : "#4A4540", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", marginRight: 6, marginBottom: 6 }}>{children}</button>
+  );
+  const Axis = ({ children, sub }: any) => (
+    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontSize: 11, color: "#4A4540", margin: "14px 0 6px" }}>{children}{sub && <span style={{ color: "#7A7268", fontWeight: 600, textTransform: "none", letterSpacing: 0, fontFamily: "Inter, sans-serif", fontSize: 10.5 }}> {sub}</span>}</div>
+  );
+  const Badge = ({ on, star, children }: any) => (
+    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, padding: "5px 9px", borderRadius: 20, border: `1px solid ${on ? (star ? "#B45309" : "#1A5C2A") : "#D4CCB8"}`, background: on ? (star ? "#FFF7E6" : "#EAF3EC") : "#fff", color: on ? (star ? "#B45309" : "#1A5C2A") : "#7A7268", marginRight: 7 }}>{on ? (star ? "★" : "✓") : "—"} {children}</span>
+  );
+
   const box = { padding: "14px 16px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, marginTop: 14 };
   return (
     <div style={box}>
-      <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 6 }}>⚗ Wrist-Link — washable band + secure quick-connect</div>
+      <div style={{ fontSize: 9.5, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", marginBottom: 6 }}>⚗ Wrist-Link — the wrist-retention system</div>
       <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, fontFamily: "Inter, sans-serif", margin: "0 0 12px" }}>
-        The lanyard is the sweaty, hard-to-clean part. Wrist-Link keeps a small permanent coupling on the racquet-side cord and makes the wrist interface a cheap, washable, swappable band. The catch: it must hold a racquet that slips out mid-swing — so the connection is magnetic for alignment, but a mechanical latch does the holding.
+        Every racquet ships with an optimized <b>in-box wrist lanyard</b>. The <b>Wrist-Link upgrade</b> (sold separately) is two parts: a <b>special lanyard</b> that fits any detachable racquet and hooks onto <i>any</i> wristband, and <b>PalaLab's own lightweight band</b> with an out-of-the-way receiver the lanyard mates perfectly. Spec the system — the visual, compatibility, and scores react live. Directional scoring, not lab-tested.
       </p>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-        {MECHS.map(x => (
-          <button key={x.id} onClick={() => setSel(x.id)} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${sel === x.id ? "#1A5C2A" : "#D4CCB8"}`, background: sel === x.id ? "#1A5C2A" : "#fff", color: sel === x.id ? "#fff" : "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 600 }}>{x.name}{x.rec ? " ★" : ""}</button>
+
+      <Axis>Product</Axis>
+      <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+        {WL_PRODUCTS.map(p => (
+          <button key={p.id} onClick={() => setProd(p.id)} style={{ flex: 1, padding: "9px 10px", borderRadius: 9, border: `1.5px solid ${prod === p.id ? "#1A5C2A" : "#D4CCB8"}`, background: prod === p.id ? "#1A5C2A" : "#fff", color: prod === p.id ? "#fff" : "#4A4540", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 13, cursor: "pointer" }}>{p.label}</button>
         ))}
       </div>
-      <div style={{ padding: "10px 12px", background: "rgba(26,92,42,0.06)", borderRadius: 8, marginBottom: 12 }}>
-        <p style={{ fontSize: 12.5, fontWeight: 700, color: "#18181B", margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>{m.name}{m.rec ? " — recommended" : ""}</p>
-        <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, margin: "0 0 4px", fontFamily: "Inter, sans-serif" }}>{m.how}</p>
-        <p style={{ fontSize: 11.5, color: "#1A5C2A", lineHeight: 1.5, margin: 0, fontFamily: "Inter, sans-serif" }}><b>Holds:</b> {m.hold} <span style={{ color: "#991B1B" }}><b>Trade-off:</b> {m.con}</span></p>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, margin: "10px 0 4px" }}>
+        <Badge on={true}>Fits any detachable racquet</Badge>
+        {prod === "system" && <Badge on={wlAnyBand(S)}>Hooks any sweatband</Badge>}
+        {prod === "system" && <Badge on={wlIdeal(S)} star>Ideal pair (band + lanyard)</Badge>}
       </div>
-      {notes.map(([t, d]) => (
-        <div key={t} style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: "#1A5C2A", fontFamily: "Inter, sans-serif" }}>{t}. </span>
-          <span style={{ fontSize: 11.5, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>{d}</span>
-        </div>
-      ))}
+
+      <div style={{ background: "#fff", border: "1px solid #E3DCC8", borderRadius: 12, margin: "12px 0", padding: 10, display: "flex", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 300 300" width="260">${wlArt(S)}</svg>` }} />
+
+      <div style={{ padding: "11px 13px", background: "#fff", border: "1px dashed #1A5C2A", borderRadius: 10, fontSize: 12.5, lineHeight: 1.6, color: "#3A362E" }}>
+        {prod === "inbox"
+          ? <span><b style={{ color: "#1A5C2A" }}>What you get:</b> the optimized wrist lanyard, <b style={{ color: "#1A5C2A" }}>included free</b> with every racquet. Goes around the wrist the normal way — no separate band.</span>
+          : <span><b style={{ color: "#1A5C2A" }}>What you'd buy (sold separately):</b> the special lanyard{band === "pala" ? " + PalaLab band bundle" : ""} — the lanyard fits <b style={{ color: "#1A5C2A" }}>any detachable racquet</b> and hooks onto {wlAnyBand(S) ? <span><b style={{ color: "#1A5C2A" }}>any sweatband</b>, and mates </span> : null}{band === "pala" ? "the PalaLab Wrist-Link band" : "the wristband you already own"} perfectly.</span>}
+      </div>
+
+      <Axis sub="— fixed: universal coupling, fits any detachable racquet">Racquet end</Axis>
+
+      <Axis sub="— strap material / load path">Lanyard cord</Axis>
+      <div>{WL_MATERIALS.map(m => <Chip key={m.id} active={mat === m.id} onClick={() => setMat(m.id)}>{m.label}</Chip>)}</div>
+      <Axis>Shock absorber</Axis>
+      <div>{WL_SHOCKS.map(x => <Chip key={x.id} active={shk === x.id} onClick={() => setShk(x.id)}>{x.label}</Chip>)}</div>
+
+      {prod === "system" && (
+        <>
+          <Axis sub="— the lanyard hooks either">Which band?</Axis>
+          <div>{WL_BANDS.map(b => <Chip key={b.id} active={band === b.id} onClick={() => setBand(b.id)}>{b.label}</Chip>)}</div>
+
+          <Axis sub="— how the lanyard grabs the band">Wrist-side hook</Axis>
+          <div>{WL_HOOKS.map(h => <Chip key={h.id} active={hook === h.id} onClick={() => setHook(h.id)}>{h.label}</Chip>)}</div>
+
+          {band === "pala" && (
+            <>
+              <Axis>Band material</Axis>
+              <div>{WL_BMATERIALS.map(b => <Chip key={b.id} active={bmat === b.id} onClick={() => setBmat(b.id)}>{b.label}</Chip>)}</div>
+              <Axis>Band width</Axis>
+              <div>{WL_WIDTHS.map(w => <Chip key={w.id} active={wid === w.id} onClick={() => setWid(w.id)}>{w.label}</Chip>)}</div>
+              <Axis sub="— the band's mating mechanism">Out-of-the-way receiver</Axis>
+              <div>{WL_RECEIVERS.map(r => <Chip key={r.id} active={rcv === r.id} onClick={() => setRcv(r.id)}>{r.label}</Chip>)}</div>
+            </>
+          )}
+        </>
+      )}
+
+      <div style={{ marginTop: 10, padding: "10px 12px", background: "rgba(26,92,42,0.06)", borderLeft: "3px solid #1A5C2A", borderRadius: "0 8px 8px 0", fontSize: 12.5, lineHeight: 1.55, color: "#3A362E" }}>
+        {prod === "inbox"
+          ? <span><b style={{ color: "#1A5C2A" }}>{wlGet(WL_MATERIALS, mat).label}:</b> {wlGet(WL_MATERIALS, mat).note}</span>
+          : <span><b style={{ color: "#1A5C2A" }}>{wlGet(WL_HOOKS, hook).label}:</b> {wlGet(WL_HOOKS, hook).note}{band === "pala" && <span><br /><br /><b style={{ color: "#1A5C2A" }}>{wlGet(WL_RECEIVERS, rcv).label}:</b> {wlGet(WL_RECEIVERS, rcv).note}</span>}</span>}
+      </div>
+
+      <div style={{ marginTop: 14, padding: 12, background: "#FBFAF6", border: "1px solid #E3DCC8", borderRadius: 10 }}>
+        <p style={{ fontSize: 12, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#1A5C2A", margin: "0 0 3px" }}>How this build performs</p>
+        <p style={{ fontSize: 10.5, color: "#7A7268", margin: "0 0 12px", fontFamily: "Inter, sans-serif" }}>Security is the <b>weakest link</b> across the couplings; sweat is band-driven; lightweight is penalized for added parts.</p>
+        {WL_SCORES.map(s => {
+          const v = sc[s.k];
+          return (
+            <div key={s.k} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 9 }}>
+              <span style={{ fontSize: 12.5, color: "#4A4540", width: 168, flex: "0 0 auto", fontFamily: "Inter, sans-serif" }}>{s.label}</span>
+              <span style={{ flex: 1, height: 8, background: "#EAE5D7", borderRadius: 5, overflow: "hidden" }}><span style={{ display: "block", width: `${v / 5 * 100}%`, height: "100%", borderRadius: 5, background: scoreColor(v), transition: "width 0.3s ease" }} /></span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 13, width: 16, textAlign: "right", color: scoreColor(v) }}>{v}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
