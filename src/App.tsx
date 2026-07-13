@@ -4158,21 +4158,45 @@ function BuildGuideStep({ step }) {
 // Vertical-chain lead-tape diagram (string SVG, injected via dangerouslySetInnerHTML —
 // all values come from controlled zone tables, no user markup).
 function ltDiagram(sport: string, zones: any[], activeId: string, side: string): string {
-  const cx = 85, top = 18;
+  const cx = 85;
   const yTop = 24, yButt = 286, yOf = (frac: number) => yButt - frac * (yButt - yTop);
-  const halfW = sport === "padel" ? 46 : 40;
-  const latScale = sport === "padel" ? 12.75 : 13.7;
+  const isP = sport === "padel";
+  const hoopTop = 26;
+  const hoopBot = isP ? 152 : 140;
+  const hoopRx = isP ? 52 : 47;
+  const hoopCy = (hoopTop + hoopBot) / 2;
+  const hoopRy = (hoopBot - hoopTop) / 2;
+  const handleTop = 196, handleBot = 279;
+  const halfW = isP ? 49 : 43;
+  const latScale = isP ? 12.75 : 13.7;
   const xOf = (latCm: number) => cx + (latCm / latScale) * halfW;
+
+  const frameFill = "#D2CBBA", frameStroke = "#9A927C", bed = "#F6F3EC";
+  const kb = isP ? 0.66 : 0.52, kt = isP ? 0.60 : 0.50;
+  const egg = `M ${cx} ${hoopTop}`
+    + ` C ${cx + hoopRx * 0.9} ${hoopTop} ${cx + hoopRx} ${hoopCy - hoopRy * kt} ${cx + hoopRx} ${hoopCy}`
+    + ` C ${cx + hoopRx} ${hoopCy + hoopRy * kb} ${cx + hoopRx * 0.72} ${hoopBot} ${cx} ${hoopBot}`
+    + ` C ${cx - hoopRx * 0.72} ${hoopBot} ${cx - hoopRx} ${hoopCy + hoopRy * kb} ${cx - hoopRx} ${hoopCy}`
+    + ` C ${cx - hoopRx} ${hoopCy - hoopRy * kt} ${cx - hoopRx * 0.9} ${hoopTop} ${cx} ${hoopTop} Z`;
+
   let g = "";
-  if (sport === "padel") {
-    g += `<path d="M ${cx} ${top} C ${cx + halfW + 8} ${top + 8} ${cx + halfW + 10} 120 ${cx + 18} 150 L ${cx + 10} 172 L ${cx - 10} 172 L ${cx - 18} 150 C ${cx - halfW - 10} 120 ${cx - halfW - 8} ${top + 8} ${cx} ${top} Z" fill="#EFE9DC" stroke="#8A8268" stroke-width="1.4"/>`;
-  } else {
-    g += `<ellipse cx="${cx}" cy="105" rx="${halfW}" ry="86" fill="#EFE9DC" stroke="#8A8268" stroke-width="1.4"/>`;
-    g += `<path d="M ${cx - 14} 188 L ${cx - 18} 150 M ${cx + 14} 188 L ${cx + 18} 150" fill="none" stroke="#8A8268" stroke-width="1.4"/>`;
-  }
-  g += `<rect x="${cx - 9}" y="188" width="18" height="92" rx="6" fill="#E8E2D6" stroke="#8A8268" stroke-width="1.4"/>`;
-  for (let i = 0; i < 6; i++) g += `<line x1="${cx - 9}" y1="${196 + i * 12}" x2="${cx + 9}" y2="${200 + i * 12}" stroke="#8A8268" stroke-width="0.7" opacity="0.5"/>`;
-  g += `<rect x="${cx - 11}" y="280" width="22" height="7" rx="3" fill="#2A2620"/>`;
+  g += `<ellipse cx="${cx}" cy="${hoopCy + 3}" rx="${hoopRx}" ry="${hoopRy}" fill="#000" opacity="0.05"/>`;
+  const sx = hoopRx * 0.48;
+  g += `<path d="M ${cx - sx} ${hoopBot - 14} Q ${cx - sx * 0.7} ${(hoopBot + handleTop) / 2} ${cx - 8.5} ${handleTop} L ${cx - 2} ${handleTop} Q ${cx - sx * 0.42 + 6} ${(hoopBot + handleTop) / 2} ${cx - sx + 12} ${hoopBot - 12} Z" fill="${frameFill}" stroke="${frameStroke}" stroke-width="1.5"/>`;
+  g += `<path d="M ${cx + sx} ${hoopBot - 14} Q ${cx + sx * 0.7} ${(hoopBot + handleTop) / 2} ${cx + 8.5} ${handleTop} L ${cx + 2} ${handleTop} Q ${cx + sx * 0.42 - 6} ${(hoopBot + handleTop) / 2} ${cx + sx - 12} ${hoopBot - 12} Z" fill="${frameFill}" stroke="${frameStroke}" stroke-width="1.5"/>`;
+  g += `<path d="${egg}" fill="${frameFill}" stroke="${frameStroke}" stroke-width="2"/>`;
+  const inRx = hoopRx - 8, inRy = hoopRy - 8;
+  g += `<clipPath id="ltbed"><ellipse cx="${cx}" cy="${hoopCy}" rx="${inRx}" ry="${inRy}"/></clipPath>`;
+  g += `<ellipse cx="${cx}" cy="${hoopCy}" rx="${inRx}" ry="${inRy}" fill="${bed}" stroke="#C0B79F" stroke-width="1.3"/>`;
+  let sbed = "";
+  for (let x = cx - inRx; x <= cx + inRx; x += 6.5) sbed += `<line x1="${x.toFixed(1)}" y1="${hoopCy - inRy}" x2="${x.toFixed(1)}" y2="${hoopCy + inRy}" stroke="#CBC2AB" stroke-width="0.5"/>`;
+  for (let y = hoopCy - inRy; y <= hoopCy + inRy; y += 6.5) sbed += `<line x1="${cx - inRx}" y1="${y.toFixed(1)}" x2="${cx + inRx}" y2="${y.toFixed(1)}" stroke="#CBC2AB" stroke-width="0.5"/>`;
+  g += `<g clip-path="url(#ltbed)" opacity="0.55">${sbed}</g>`;
+  const tz = zones.find(z => z.id === "throat");
+  if (tz) { const ty = yOf(tz.frac); if (ty > hoopBot - 4) g += `<rect x="${cx - 15}" y="${ty - 7}" width="30" height="14" rx="6" fill="${frameFill}" stroke="${frameStroke}" stroke-width="1.4"/>`; }
+  g += `<rect x="${cx - 9.5}" y="${handleTop - 3}" width="19" height="${handleBot - handleTop + 3}" rx="7" fill="#DED8C9" stroke="${frameStroke}" stroke-width="1.6"/>`;
+  for (let i = 0; i < 7; i++) g += `<line x1="${cx - 9.5}" y1="${handleTop + 6 + i * 11}" x2="${cx + 9.5}" y2="${handleTop + 12 + i * 11}" stroke="${frameStroke}" stroke-width="0.7" opacity="0.45"/>`;
+  g += `<rect x="${cx - 12}" y="${handleBot - 3}" width="24" height="9" rx="3.5" fill="#2A2620"/>`;
   const az = zones.find(z => z.id === activeId) || zones[0];
   const ay = yOf(az.frac);
   const strip = (x: number) => `<rect x="${x - 5}" y="${ay - 8}" width="10" height="16" rx="3" fill="#1A5C2A" stroke="#0c2f16" stroke-width="1"/><line x1="${x - 3}" y1="${ay - 4}" x2="${x + 3}" y2="${ay - 4}" stroke="#7FB894" stroke-width="0.8"/><line x1="${x - 3}" y1="${ay}" x2="${x + 3}" y2="${ay}" stroke="#7FB894" stroke-width="0.8"/><line x1="${x - 3}" y1="${ay + 4}" x2="${x + 3}" y2="${ay + 4}" stroke="#7FB894" stroke-width="0.8"/>`;
