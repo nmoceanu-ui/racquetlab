@@ -4210,10 +4210,14 @@ function InstallButton() {
         <span className="install-label">Install App</span>
       </button>
       {showHelp && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0, width: 244, zIndex: 60,
-          background: "#FBF8F1", border: "1px solid #D4CCB8", borderRadius: 12, padding: 14,
-          boxShadow: "0 16px 40px rgba(40,30,15,0.22)", fontFamily: "Inter, sans-serif",
+        <div onClick={() => setShowHelp(false)} style={{
+          position: "fixed", inset: 0, zIndex: 1000, background: "rgba(40,30,15,0.4)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+        }}>
+        <div onClick={e => e.stopPropagation()} style={{
+          width: "100%", maxWidth: 300,
+          background: "#FBF8F1", border: "1px solid #D4CCB8", borderRadius: 14, padding: 18,
+          boxShadow: "0 24px 60px rgba(40,30,15,0.28)", fontFamily: "Inter, sans-serif",
         }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: "#18181B", marginBottom: 8 }}>Add PalaLab to your home screen</div>
           <div style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.7 }}>
@@ -4228,6 +4232,7 @@ function InstallButton() {
             background: "#1A5C2A", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
             fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
           }}>Got it</button>
+        </div>
         </div>
       )}
     </div>
