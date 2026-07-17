@@ -6506,27 +6506,50 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     if (preset === "monogram") {
       const txt = ((monogramText || "P").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2)) || "P";
       const multi = txt.length > 1;
-      // Two letters need more resolution + letter-spacing so they don't merge into a blob.
-      const N = multi ? 120 : 80;
+      // Rasterize the letter(s), thin to a 1-px skeleton (Zhang-Suen), then place
+      // holes single-file along the centreline — a clean, simple single-stroke
+      // letter (not a filled blob). Users can add more holes by hand to fill.
+      const N = multi ? 140 : 120;
       const cvs = document.createElement("canvas"); cvs.width = N; cvs.height = N;
       const mctx = cvs.getContext("2d");
       if (!mctx) { onHolesChange([]); return; }
       mctx.fillStyle = "#fff"; mctx.fillRect(0, 0, N, N);
       mctx.fillStyle = "#000"; mctx.textAlign = "center"; mctx.textBaseline = "middle";
-      if (multi && "letterSpacing" in mctx) (mctx as any).letterSpacing = `${N * 0.075}px`;
-      const fontPx = multi ? N * 0.66 : N * 0.86;
-      mctx.font = `800 ${fontPx}px 'Barlow Condensed', Arial, sans-serif`;
+      if (multi && "letterSpacing" in mctx) (mctx as any).letterSpacing = `${N * 0.085}px`;
+      const fontPx = multi ? N * 0.62 : N * 0.92;
+      mctx.font = `700 ${fontPx}px 'Barlow Condensed', Arial, sans-serif`;
       mctx.fillText(txt, N / 2, N / 2 + N * 0.02);
       const mdata = mctx.getImageData(0, 0, N, N).data;
-      const mspan = (multi ? 0.82 : 0.62) * S;
+      const gg = new Uint8Array(N * N);
+      for (let i = 0; i < N * N; i++) gg[i] = (mdata[i * 4 + 3] > 128 && (mdata[i * 4] + mdata[i * 4 + 1] + mdata[i * 4 + 2]) / 3 < 128) ? 1 : 0;
+      const at = (x: number, y: number) => gg[y * N + x];
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (let step = 0; step < 2; step++) {
+          const rm: number[] = [];
+          for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) {
+            if (!gg[y * N + x]) continue;
+            const P2 = at(x, y - 1), P3 = at(x + 1, y - 1), P4 = at(x + 1, y), P5 = at(x + 1, y + 1), P6 = at(x, y + 1), P7 = at(x - 1, y + 1), P8 = at(x - 1, y), P9 = at(x - 1, y - 1);
+            const B = P2 + P3 + P4 + P5 + P6 + P7 + P8 + P9;
+            if (B < 2 || B > 6) continue;
+            const seq = [P2, P3, P4, P5, P6, P7, P8, P9, P2];
+            let A = 0; for (let i = 0; i < 8; i++) if (seq[i] === 0 && seq[i + 1] === 1) A++;
+            if (A !== 1) continue;
+            if (step === 0) { if (P2 * P4 * P6 !== 0) continue; if (P4 * P6 * P8 !== 0) continue; }
+            else { if (P2 * P4 * P8 !== 0) continue; if (P2 * P6 * P8 !== 0) continue; }
+            rm.push(y * N + x);
+          }
+          if (rm.length) { changed = true; for (const i of rm) gg[i] = 0; }
+        }
+      }
+      const mspan = (multi ? 0.80 : 0.55) * S;
       const mcells: HolePoint[] = [];
       for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
-        const i = (iy * N + ix) * 4;
-        if (mdata[i + 3] > 128 && (mdata[i] + mdata[i + 1] + mdata[i + 2]) / 3 < 128)
-          mcells.push({ x: ((ix / (N - 1)) * 2 - 1) * mspan, y: ((iy / (N - 1)) * 2 - 1) * mspan });
+        if (gg[iy * N + ix]) mcells.push({ x: ((ix / (N - 1)) * 2 - 1) * mspan, y: ((iy / (N - 1)) * 2 - 1) * mspan });
       }
-      const mMinD = (multi ? 0.066 : 0.095) * S;
-      const mCap = multi ? 130 : 80;
+      const mMinD = (multi ? 0.072 : 0.085) * S;
+      const mCap = multi ? 110 : 80;
       const mkept: HolePoint[] = [];
       for (const p of mcells) { if (!inFace(p.x, p.y)) continue; if (mkept.every(k => Math.hypot(k.x - p.x, k.y - p.y) >= mMinD)) mkept.push(p); if (mkept.length >= mCap) break; }
       onHolesChange(mkept);
