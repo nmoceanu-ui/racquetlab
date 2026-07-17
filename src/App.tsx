@@ -6389,6 +6389,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   const lastImageFileRef = React.useRef<File | null>(null);
   const [monogramText, setMonogramText] = useState("P");
   const [imgOutline, setImgOutline] = useState(false);
+  const [rotDeg, setRotDeg] = useState(0);
+  const prevRotRef = React.useRef(0);
   const VB = 280; // svg viewBox size
   // Grid spacing derived the same way the legacy-bucket converter derives
   // it — a "standard" density pitch (~14mm) is a sensible default snap
@@ -6468,8 +6470,17 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   const applyPreset = (preset: string) => {
     const S = designScale;
     setLastPreset(["monogram", "heart", "star"].includes(preset) ? preset : null);
+    // A fresh pattern starts un-rotated, so reset the rotate slider baseline.
+    setRotDeg(0); prevRotRef.current = 0;
     if (preset === "clear") { onHolesChange([]); return; }
     if (preset === "head1") { onHolesChange([{ x: 0, y: -0.1 }]); return; }
+    if (preset === "vstrip") {
+      // A single column of holes down the centre line of the face.
+      const pts: HolePoint[] = [];
+      for (let y = -0.82; y <= 0.82 + 1e-9; y += 0.11) pts.push({ x: 0, y: Math.round(y * 1000) / 1000 });
+      onHolesChange(pts.filter(p => inFace(p.x, p.y)));
+      return;
+    }
     if (preset === "center4") {
       // clean diamond, generously spaced (verified non-touching at 13mm holes)
       onHolesChange([{ x: 0, y: -0.30 }, { x: -0.16, y: -0.12 }, { x: 0.16, y: -0.12 }, { x: 0, y: 0.06 }].filter(p => inFace(p.x, p.y)));
@@ -6578,6 +6589,30 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       onHolesChange(pts.filter(p => inFace(p.x, p.y)));
       return;
     }
+  };
+
+  // ── Transform the current hole pattern (rotate / flip) about its own centre,
+  // so a letter or preset spins/mirrors in place rather than orbiting the face.
+  const holesCentroid = (pts: HolePoint[]) => {
+    if (!pts.length) return { cx: 0, cy: 0 };
+    let sx = 0, sy = 0; for (const p of pts) { sx += p.x; sy += p.y; }
+    return { cx: sx / pts.length, cy: sy / pts.length };
+  };
+  const rotateHolesBy = (deg: number) => {
+    if (!holes.length || deg % 360 === 0) return;
+    const { cx, cy } = holesCentroid(holes);
+    const r = (deg * Math.PI) / 180, cos = Math.cos(r), sin = Math.sin(r);
+    onHolesChange(holes.map(h => {
+      const dx = h.x - cx, dy = h.y - cy;
+      return { ...h, x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+    }));
+  };
+  const rotate90 = () => { rotateHolesBy(90); const nv = (rotDeg + 90) % 360; prevRotRef.current = nv; setRotDeg(nv); };
+  const onRotSlider = (v: number) => { rotateHolesBy(v - prevRotRef.current); prevRotRef.current = v; setRotDeg(v); };
+  const flipHoles = (axis: "h" | "v") => {
+    if (!holes.length) return;
+    const { cx, cy } = holesCentroid(holes);
+    onHolesChange(holes.map(h => axis === "h" ? { ...h, x: 2 * cx - h.x } : { ...h, y: 2 * cy - h.y }));
   };
 
   // Turn an uploaded image into a hole pattern: sample the dark pixels onto a
@@ -6748,9 +6783,25 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       <div style={{ marginTop: 12 }}>
         <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Quick fill patterns</p>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["standard", "Standard grid"], ["dense", "Dense grid"]].map(([id, label]) => (
+          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["vstrip", "Vertical strip"], ["standard", "Standard grid"], ["dense", "Dense grid"]].map(([id, label]) => (
             <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: "#fff", color: "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
           ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Transform</p>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {[["Rotate 90°", rotate90], ["Flip ⇄", () => flipHoles("h")], ["Flip ⇅", () => flipHoles("v")]].map(([label, fn]) => (
+            <button key={label as string} onClick={fn as () => void} disabled={!holes.length} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: holes.length ? "#fff" : "#F4EFE4", color: holes.length ? "#4A4540" : "#B4AC98", fontSize: 11, cursor: holes.length ? "pointer" : "default", fontFamily: "Inter, sans-serif" }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>Fine rotate</span>
+            <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#1A5C2A", fontWeight: 700 }}>{Math.round(rotDeg)}°</span>
+          </div>
+          <input type="range" min={0} max={360} step={1} value={rotDeg} onChange={e => onRotSlider(parseFloat(e.target.value))} disabled={!holes.length} style={{ width: "100%", accentColor: "#1A5C2A" }} />
         </div>
       </div>
 
