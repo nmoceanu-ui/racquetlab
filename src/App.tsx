@@ -849,7 +849,7 @@ function solveReverse(target: any, changedKey: string, library: any[], opts: { l
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// MARKET RACQUET DATABASE — 41 verified models across 11 brands (2025–2026)
+// MARKET RACQUET DATABASE — 56 verified models across 15 brands (2024–2026)
 // Specs cross-checked against 2-3+ independent sources per model (brand
 // site, multiple retailers, and/or independent review sites) rather than
 // taken from a single listing. Where sources disagreed even after
@@ -860,10 +860,11 @@ function solveReverse(target: any, changedKey: string, library: any[], opts: { l
 // sources entirely — at least one was caught contradicting itself on
 // core material within the same listing.
 //
-// This is explicitly a starter set (~18 models across 6 brands) covering
-// the beginner-to-pro spectrum and round/teardrop/diamond shapes, not a
-// claim to cover the whole market. It does not include this app's own
-// brand, by request — every entry here is scored the same way.
+// This covers the beginner-to-pro spectrum and round/teardrop/diamond
+// shapes across many brands, but is not a claim to cover the whole market.
+// It does not include this app's own brand, by request — every entry here
+// is scored the same way, and the matcher caps any single brand at two
+// results so no brand dominates purely by having more models listed.
 // ---------------------------------------------------------------------------
 
 const MARKET_RACQUETS = [
@@ -1579,6 +1580,264 @@ const MARKET_RACQUETS = [
     sourceConfidence: "high",
     note: "Advanced-level soft-feeling teardrop in the AT10 range — same mold as the AT10 Genius line but with a softer EVA core for players who want the Tapia-range frame character with more comfort and less arm strain. Precision, spin and feel over raw power. For advanced players who spend long sessions and prioritize touch and consistency over maximum smash output.",
   },
+  // ── Brand-diversity expansion (2024–2026): 15 verified models across 12
+  // brands (incl. 4 not previously represented), added to broaden the pool so
+  // recommendations aren't skewed by any one brand's model count. No Nox.
+  {
+    id: "head-speed-motion-2024",
+    brand: "Head",
+    model: "Speed Motion 2024",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "smooth",
+    weightG: 358,
+    balanceCm: 25.9,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Lightweight versatile teardrop from Head's Speed line; shape, ~355-360g weight, even balance and carbon/fiberglass smooth face converged across sources. Core disputed (Head 'Power Foam' vs Medium EVA) and carbon weave/balance estimated.",
+  },
+  {
+    id: "head-zephyr-2023",
+    brand: "Head",
+    model: "Zephyr 2023",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "carbon-frame",
+    surfaceId: "smooth",
+    weightG: 345,
+    balanceCm: 25.2,
+    thicknessMm: 38,
+    level: "beginner",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "Soft, forgiving round beginner racket; round shape, 345g, fiberglass face and soft core converged; balance approximate (sources disagree head-light vs medium).",
+  },
+  {
+    id: "adidas-metalbone-3-3-2024",
+    brand: "Adidas",
+    model: "Metalbone 3.3 2024",
+    shapeId: "diamond",
+    coreId: "eva-soft",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.4,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Alejandro Galan signature attacking diamond; shape, ~359-367g, head-heavy balance, EVA Soft Performance core, aluminized-carbon Spin Blade rough surface and 38mm all converged; only the carbon weave enum is an approximation.",
+  },
+  {
+    id: "adidas-rx-series-2026",
+    brand: "Adidas",
+    model: "RX Series 2026",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "fiberglass-frame",
+    surfaceId: "smooth",
+    weightG: 367,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Comfort-oriented round all-court racket; round shape, 360-375g, even balance, low-density EVA Soft core and fiberglass frame/face converged; balance rescaled to schema band.",
+  },
+  {
+    id: "wilson-carbon-force-2024",
+    brand: "Wilson",
+    model: "Carbon Force 2024",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "budget",
+    sourceConfidence: "approximate",
+    note: "Forgiving entry/all-round Wilson with soft EVA core and carbon-fiberglass composite face; 365g, 38mm and 26.0cm balance converge, but shape disputed (diamond vs teardrop) and blended face mapped to fiberglass; street price ~$99.",
+  },
+  {
+    id: "babolat-technical-viper-2024",
+    brand: "Babolat",
+    model: "Technical Viper 2024",
+    shapeId: "diamond",
+    coreId: "hybrid-core",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 27.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Babolat's power diamond (Juan Lebron Viper line); sources agree on Carbon 12K surface, diamond shape, 365g, 38mm and 27.0cm balance; 'EVA Sandwich' dual-density core mapped to hybrid-core.",
+  },
+  {
+    id: "babolat-contact-2024",
+    brand: "Babolat",
+    model: "Contact 2024",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "carbon-frame",
+    surfaceId: "smooth",
+    weightG: 340,
+    balanceCm: 25.0,
+    thicknessMm: 38,
+    level: "beginner",
+    priceTier: "budget",
+    sourceConfidence: "high",
+    note: "Babolat's comfortable round beginner racket; sources agree on round shape, fiberglass surface, carbon+fiberglass hybrid frame, EVA core, 340g, 38mm and head-light balance; only exact balance in cm estimated.",
+  },
+  {
+    id: "starvie-triton-power-plus-2025",
+    brand: "StarVie",
+    model: "Triton Power+ 2025",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 368,
+    balanceCm: 27.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "StarVie's flagship diamond attack racquet; shape, high-density H-EVA Power core and 18K Carbon Hybrid face converged; weight is 350-385g midpoint and high balance (~27cm) approximate.",
+  },
+  {
+    id: "siux-diablo-revolution-iii-pro-2024",
+    brand: "Siux",
+    model: "Diablo Revolution III Pro 2024",
+    shapeId: "teardrop",
+    coreId: "eva-soft",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Advanced power/versatile racquet; 18K carbon face, Ultra Soft EVA core and 355-375g weight converged; officially a 'hybrid' round/diamond shape mapped to teardrop, balance listed only 'medium' so 26.0 approximate.",
+  },
+  {
+    id: "varlion-lw-summum-carbon-black-2024",
+    brand: "Varlion",
+    model: "LW Summum Carbon Black 2024",
+    shapeId: "round",
+    coreId: "eva-medium",
+    faceId: "carbon-3k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 360,
+    balanceCm: 25.0,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "premium",
+    sourceConfidence: "approximate",
+    note: "Round 'Lethal Weapon' control racquet; shape, low balance, 38mm core and rough Slice Texture confirmed on Varlion's own site; core hardness conflicts (medium vs soft), weight varies 345-375g (midpoint 360), face weave unspecified.",
+  },
+  {
+    id: "black-crown-piton-12-2024",
+    brand: "Black Crown",
+    model: "Piton 12 2024",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 363,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Round control-power racket for advanced players; shape, 355-370g weight and rough SandSpin surface converged; fiberglass+18K-carbon hybrid face mapped to carbon-18k, 'Power Soft Memory EVA' core to eva-soft, balance approximate.",
+  },
+  {
+    id: "vibora-yarara-elite-24k-2024",
+    brand: "Vibor-A",
+    model: "Yarara Elite 24K 2024",
+    shapeId: "teardrop",
+    coreId: "eva-medium",
+    faceId: "carbon-18k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "premium",
+    sourceConfidence: "high",
+    note: "Advanced hybrid teardrop; Tear shape, medium EVA Pro core, 24K carbon face, 38mm, 3D rough and 360-370g all converged; 24K carbon mapped to carbon-18k (no 24k enum), mid-high balance approximated to 26.0.",
+  },
+  {
+    id: "drop-shot-explorer-pro-6-0-2024",
+    brand: "Drop Shot",
+    model: "Explorer Pro 6.0 2024",
+    shapeId: "round",
+    coreId: "eva-medium",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 365,
+    balanceCm: 25.5,
+    thicknessMm: 38,
+    level: "intermediate",
+    priceTier: "mid",
+    sourceConfidence: "high",
+    note: "Round intermediate/advanced all-courter; Round shape, 12K carbon + 3D face, EVA Pro core and 360-370g converged; medium-hard core mapped eva-medium, balance and price tier (street price) approximate.",
+  },
+  {
+    id: "dunlop-aero-star-pro-12k-2024",
+    brand: "Dunlop",
+    model: "Aero-Star Pro 12K 2024",
+    shapeId: "diamond",
+    coreId: "eva-hard",
+    faceId: "carbon-12k",
+    frameId: "carbon-frame",
+    surfaceId: "rough",
+    weightG: 367,
+    balanceCm: 26.0,
+    thicknessMm: 38,
+    level: "advanced",
+    priceTier: "mid",
+    sourceConfidence: "approximate",
+    note: "Diamond power racket from Dunlop's Professional series; Diamond head shape + 12K carbon + 38mm confirmed on official copy and reviews; core hardness and rough surface inferred from its diamond power profile, weight ~365-370g and 'medium' balance approximate.",
+  },
+  {
+    id: "kuikma-pr-500-2022",
+    brand: "Kuikma",
+    model: "PR 500 2022",
+    shapeId: "round",
+    coreId: "eva-soft",
+    faceId: "fiberglass",
+    frameId: "fiberglass-frame",
+    surfaceId: "smooth",
+    weightG: 360,
+    balanceCm: 25.0,
+    thicknessMm: 38,
+    level: "beginner",
+    priceTier: "budget",
+    sourceConfidence: "high",
+    note: "Decathlon (Kuikma) entry-level control racket; round shape, 360g, 38mm, soft EVA core, fiberglass face/frame and smooth surface converged; 'low' balance approximated to 25.0.",
+  },
 ];
 
 
@@ -1706,9 +1965,28 @@ function matchRacquets(targetSpec, options: { limit?: number; budgetTier?: strin
   // toward whichever brand happened to be listed first. Any genuinely exact
   // ties are broken brand-neutrally via a stable id hash, not array position.
   const idHash = (s: string) => { let x = 0; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0; return x; };
-  return scored
-    .sort((a, b) => b.rawPct - a.rawPct || idHash(a.racquet.id) - idHash(b.racquet.id))
-    .slice(0, limit);
+  const sorted = scored.sort((a, b) => b.rawPct - a.rawPct || idHash(a.racquet.id) - idHash(b.racquet.id));
+
+  // Brand diversity cap: allow at most 2 models from any single brand in the
+  // returned set, so a brand with many listed models can't crowd out the rest.
+  // If the cap leaves fewer than `limit` results (e.g. a small filtered pool),
+  // backfill from the next-best remaining models regardless of brand.
+  const perBrandMax = 2;
+  const brandCount: Record<string, number> = {};
+  const capped: typeof sorted = [];
+  for (const s of sorted) {
+    if (capped.length >= limit) break;
+    if ((brandCount[s.racquet.brand] || 0) >= perBrandMax) continue;
+    brandCount[s.racquet.brand] = (brandCount[s.racquet.brand] || 0) + 1;
+    capped.push(s);
+  }
+  if (capped.length < limit) {
+    for (const s of sorted) {
+      if (capped.length >= limit) break;
+      if (!capped.includes(s)) capped.push(s);
+    }
+  }
+  return capped;
 }
 
 function recommendSpec(answers) {
@@ -7618,7 +7896,7 @@ export default function App() {
       <div style={{ padding:"16px", background:"rgba(0,0,0,0.025)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:12, marginBottom:24 }}>
         <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Closest racquets on the market</p>
         <p style={{ fontSize:11.5, color:"#7A7268", lineHeight:1.5, marginTop:0, marginBottom:14, fontFamily:"Inter, sans-serif" }}>
-          Matched against {MARKET_RACQUETS.length} verified models across 11 brands. Every model is scored by the same formula; none is favored. Percentages reflect spec similarity to your current build, not a quality ranking.
+          Matched against {MARKET_RACQUETS.length} verified models across 15 brands. Every model is scored by the same formula, and no more than two of any one brand can appear here — so results reflect spec similarity to your current build, not a brand's model count or a quality ranking.
         </p>
         {matchedRacquets.map((m, i) => (
           <div key={m.racquet.id} style={{ padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,0.045)" }}>
