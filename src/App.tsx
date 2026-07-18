@@ -6526,9 +6526,11 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       if (!mctx) { onHolesChange([]); return; }
       mctx.fillStyle = "#fff"; mctx.fillRect(0, 0, N, N);
       mctx.fillStyle = "#000"; mctx.textAlign = "center"; mctx.textBaseline = "middle";
-      if (multi && "letterSpacing" in mctx) (mctx as any).letterSpacing = `${N * 0.085}px`;
-      const fontPx = multi ? N * 0.62 : N * 0.92;
-      mctx.font = `700 ${fontPx}px 'Barlow Condensed', Arial, sans-serif`;
+      if (multi && "letterSpacing" in mctx) (mctx as any).letterSpacing = `${N * 0.05}px`;
+      // Standard-width sans (Arial) reads far better as a single-stroke skeleton
+      // than a condensed face — letters like A/M/W splay to their natural width.
+      const fontPx = multi ? N * 0.56 : N * 0.80;
+      mctx.font = `700 ${fontPx}px Arial, Helvetica, sans-serif`;
       mctx.fillText(txt, N / 2, N / 2 + N * 0.02);
       const mdata = mctx.getImageData(0, 0, N, N).data;
       const gg = new Uint8Array(N * N);
@@ -6554,7 +6556,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
           if (rm.length) { changed = true; for (const i of rm) gg[i] = 0; }
         }
       }
-      const mspan = (multi ? 0.80 : 0.55) * S;
+      const mspan = (multi ? 0.82 : 0.55) * S;
       const mcells: HolePoint[] = [];
       for (let iy = 0; iy < N; iy++) for (let ix = 0; ix < N; ix++) {
         if (gg[iy * N + ix]) mcells.push({ x: ((ix / (N - 1)) * 2 - 1) * mspan, y: ((iy / (N - 1)) * 2 - 1) * mspan });
