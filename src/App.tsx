@@ -2513,6 +2513,29 @@ function recommendSpec(answers) {
     }
   }
 
+  // --- Reachability widenings ---
+  // The diamond/power path used to funnel into a narrow band (hard core, 3K
+  // face, balance ≤26.6cm), which left several legitimate real diamonds
+  // impossible to ever surface. These open up physically-sensible answer→spec
+  // paths so the full diamond market is targetable, each gated on specific
+  // answers (they don't change the average recommendation):
+  //  • spin usage picks the carbon weave on a power diamond (more spin → more
+  //    textured woven carbon: none→3K, some→12K, heavy→18K).
+  //  • an all-out smasher/finisher gets a genuinely head-heavy 27cm balance.
+  //  • an aggressive intermediate with limited power gets a lighter, more
+  //    forgiving (medium-core, 12K) diamond rather than a brutal one.
+  if (shapeId === "diamond" && derivedStyle === "power") {
+    if (spinUsage === "heavy") faceId = "carbon-18k";
+    else if (spinUsage === "some") faceId = "carbon-12k";
+  }
+  if (shapeId === "diamond" && biggestWeapon === "smash" && (pointStyle === "finisher" || netInstinct === "winner")) {
+    balanceCm = Math.max(balanceCm, 27.0);
+  }
+  if (goal === "power" && availablePower === "limited" && level === "intermediate") {
+    shapeId = "diamond"; coreId = "eva-medium"; faceId = "carbon-12k";
+    weightG = Math.min(weightG, 356); balanceCm = Math.max(balanceCm, 26.3);
+  }
+
   return { shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, weightG, balanceCm, gripCircMm };
 }
 
