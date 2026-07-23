@@ -389,14 +389,20 @@ function computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thick
 // COMPUTATION FUNCTIONS
 // ---------------------------------------------------------------------------
 
-function computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) {
+function computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm, weightG }) {
   let stability = 0.5;
   stability += (frame.stiffness - 3) * 0.06;
   stability += (face.durability - 3) * 0.03;
   stability += (6 - core.comfort) * 0.015;
+  // Throat torsional stiffness: a solid (closed) throat and a diagonal X-brace
+  // resist frame twist best; a lateral (horizontal) tie is moderate; a plain
+  // vertical (longitudinal) strut adds the least anti-twist (it's aligned with
+  // the swing, not the twist). More struts stiffen further. (Researched.)
   if (bridgeId === "closed") stability += 0.12;
-  else if (beamOrientation === "diagonal") stability += 0.1;
-  else if (beamOrientation === "horizontal") stability += 0.04;
+  else {
+    stability += beamOrientation === "diagonal" ? 0.13 : beamOrientation === "horizontal" ? 0.06 : 0.02;
+    stability += ((beamCount ?? 2) - 2) * 0.03;
+  }
   stability += ((widthMm - 230) / 30) * 0.05;
   if (weightG !== undefined) stability += ((weightG - 365) / 15) * 0.07;
   return Math.max(0.15, Math.min(0.95, stability));
@@ -609,12 +615,12 @@ function leadTapeGramsForTargetSW(racquet, posFromButtCm, targetSW) {
   return Math.round(grams * 2) / 2;
 }
 
-function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core, face, frame, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
+function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core, face, frame, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
   const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
   const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
   const y = topY + headHeight * yFrac;
-  const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG });
+  const stability = computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm, weightG });
   const baseR = shape === "round" ? 50 : shape === "diamond" ? 32 : shape === "diamond-wide" ? 38 : 40;
   const stabilityScale = 0.78 + stability * 0.5;
   let r = baseR * stabilityScale;
@@ -673,7 +679,7 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, 
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }) {
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }) {
   const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
@@ -683,8 +689,36 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   add("durability", frame.stiffness >= 4 ? 5 : frame.stiffness); add("comfort", 6 - frame.stiffness);
   add("spin", surface.spin);
   add("comfort", grip.vibrationDamp);
-  if (bridgeId === "closed") { add("control", 4); add("durability", 4); add("comfort", 3); }
-  else if (beamOrientation === "diagonal") { add("control", 4); add("durability", 4); add("comfort", 3); }
+  // Throat/bridge — real trade-offs (researched against pro usage + physics):
+  //  • closed/solid throat: most connected control + torsional stability + direct
+  //    power transfer, but harsh (low comfort) and no aero help;
+  //  • open + vertical strut: the attacking-diamond choice (Coello/Lebrón) — an
+  //    open throat cuts drag so the head accelerates faster → more effective smash
+  //    power, plus throat flex damps shock (comfort/touch); it gives up frame
+  //    control/torsional stiffness;
+  //  • open + diagonal X-brace: max control + anti-twist, but stiffer/heavier and
+  //    less comfortable/aero;
+  //  • open + horizontal tie: firm smash base + off-centre hold, at an aero cost.
+  //  More struts stiffen (control↑) but cost comfort and swing-speed (power↑ from
+  //  aero fades). No option is strictly best — it depends what you're optimizing.
+  {
+    let bP, bC, bCf, bD;
+    const bc = beamCount ?? 2;
+    if (bridgeId === "closed") { bP = 4; bC = 5; bCf = 1.5; bD = 5; }
+    else if (beamOrientation === "diagonal") { bP = 3; bC = 4.5; bCf = 2.5; bD = 4.5; }
+    else if (beamOrientation === "horizontal") { bP = 4; bC = 3.5; bCf = 3; bD = 3.5; }
+    else { bP = 4.5; bC = 3; bCf = 4; bD = 3; } // open + vertical
+    if (bridgeId !== "closed") { bC += (bc - 2) * 0.5; bCf += (2 - bc) * 0.5; bP += (2 - bc) * 0.35; bD += (bc - 2) * 0.4; }
+    // Aerodynamics: the faster the head travels (heavier + more head-heavy = a
+    // hard attacking swing), the more an OPEN throat's lower drag converts into
+    // real smash power, and the more a solid CLOSED throat's drag saps it. On a
+    // light, head-light control build the swing is slow and this washes out —
+    // which is why the pro attacking diamonds run open+vertical for head speed.
+    const aeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
+    bP += (bridgeId === "closed" ? -aeroBias * 0.9 : (1 - (bc - 1) * 0.12) * aeroBias * 0.9); // each extra strut adds a little drag
+    const cl = v => Math.max(1, Math.min(5, v));
+    add("power", cl(bP)); add("control", cl(bC)); add("comfort", cl(bCf)); add("durability", cl(bD));
+  }
 
   // Real geometric hole physics — replaces the old five-bucket holeEffect
   // lookup table. Uses exact piecewise-linear interpolation through the same
@@ -735,7 +769,7 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
     out[k] = n[k] ? Math.round((s[k] / n[k]) * 10) / 10 : 0;
   });
-  out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
+  out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
   return out;
 }
 
@@ -802,7 +836,7 @@ function buildReverseLibrary(base: any) {
           for (const surface of SURFACE_TEXTURES) {
             const scores = computeScores({
               shape, core, face, frame, surface, grip: base.grip,
-              bridgeId: base.bridgeId, beamOrientation: base.beamOrientation,
+              bridgeId: base.bridgeId, beamOrientation: base.beamOrientation, beamCount: base.beamCount,
               holes: base.holes, holeDiameterMm: base.holeDiameterMm,
               weightG: base.weightG, balanceCm: base.balanceCm,
               widthMm: base.widthMm, thicknessMm: base.thicknessMm,
@@ -3649,7 +3683,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, len
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, topY, headHeight, halfWidth });
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const tint = faceVisual.tint;
   // Frame material gets a distinct rim stroke — fiberglass frames render
@@ -3987,7 +4021,7 @@ function RacquetIllustration3D({
     if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45;
     return t < 0.42 ? Math.sin((t / 0.42) * (Math.PI / 2)) * 0.93 : 0.93 - ((t - 0.42) / 0.58) * 0.45;
   };
-  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, holes, holeDiameterMm, topY, headHeight, halfWidth });
+  const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, topY, headHeight, halfWidth });
   // Illustration mode uses its own, more strongly differentiated
   // tint/darkTone (see ILLUSTRATION_FACE_VISUAL) since this view has no
   // weave-line overlay to help distinguish materials the way the flat
@@ -7611,7 +7645,7 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
