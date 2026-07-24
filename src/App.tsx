@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ChevronDown, AlertTriangle, Sparkles, BarChart3,
   Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
-  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2, Download, Home
+  Settings2, User, CheckCircle2, ArrowRight, ArrowLeft, Share2, Link2, Loader2, Download, Home
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -6334,6 +6334,8 @@ function FindRacquetPanel({ onApply, mode }) {
   // per question — this is what makes the section list data-driven.
   const [answers, setAnswers] = useState<Record<string, string>>(() => loadProgress<Record<string, string>>(FINDER_KEY, {}));
   const [applied, setApplied] = useState(false);
+  // Stepped flow: show one section per screen instead of one long scroll.
+  const [step, setStep] = useState(0);
 
   // Persist answers so progress survives tab changes, mode switches, reloads.
   useEffect(() => { saveProgress(FINDER_KEY, answers); }, [answers]);
@@ -6343,7 +6345,7 @@ function FindRacquetPanel({ onApply, mode }) {
     setApplied(false);
   };
 
-  const handleReset = () => { setAnswers({}); setApplied(false); clearProgress(FINDER_KEY); };
+  const handleReset = () => { setAnswers({}); setApplied(false); setStep(0); clearProgress(FINDER_KEY); };
 
   const isAdvanced = answers.level === "advanced";
 
@@ -6397,31 +6399,12 @@ function FindRacquetPanel({ onApply, mode }) {
   const feelUnsureFollowup =
     "If you're not sure: a smoother face holds the ball a beat longer before release, which gives you more time to feel and direct the shot — but some players feel like the ball \"slides\" rather than bites. A grippier, textured face releases faster with more spin potential, but punishes mistimed contact more. There's no wrong answer here — it's worth testing both if you can.";
 
-  return (
-    <div>
-      {mode === "player" && (
-        <div style={{ padding:"14px 16px", background:"linear-gradient(135deg, #EAF3EC, rgba(0,212,240,0.06))", borderRadius:10, border:"1px solid rgba(26,92,42,0.25)", marginBottom:20 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-            <Sparkles size={14} color="#1A5C2A"/>
-            <span style={{ fontSize:13, fontWeight:700, color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase" }}>Smart Finder</span>
-          </div>
-          <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
-            A deeper set of questions across a few short sections — covering background, body, goals, and feel — so the recommendation actually fits you, not just a category. Advanced players get a few extra questions for finer tuning.
-          </p>
-        </div>
-      )}
-
-      {Object.keys(answers).length > 0 && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: "#9A9284", fontFamily: "Inter, sans-serif" }}>Answers save automatically as you go</span>
-          <button onClick={handleReset} style={{ background: "none", border: "none", color: "#7A7268", fontSize: 11.5, fontFamily: "Inter, sans-serif", cursor: "pointer", textDecoration: "underline", padding: 4 }}>Start over</button>
-        </div>
-      )}
-
-      <QDivider label="Background" />
+  // Each labelled section becomes its own step (one screen), preserving every
+  // question and conditional exactly — this is pacing, not a logic change.
+  const secBackground = (
+    <>
       {/* Racquet-sport question first, then everything about that prior sport
-          (depth, transition insight, tennis specs) grouped directly beneath
-          it — so the padel level/frequency questions don't split them up. */}
+          (depth, transition insight, tennis specs) grouped directly beneath it. */}
       <QRow q={FINDER_SECTION_1[0]} value={answers[FINDER_SECTION_1[0].id] ?? null} onChange={setAnswer} />
       {needsBgLevel && (
         <QRow q={bgLevelQuestion} value={answers.racquetBackgroundLevel ?? null} onChange={setAnswer} />
@@ -6434,8 +6417,10 @@ function FindRacquetPanel({ onApply, mode }) {
       )}
       {showTennisSpecs && FINDER_TENNIS_SPECS.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
       {FINDER_SECTION_1.slice(1).map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
-
-      <QDivider label="Body & physical history" />
+    </>
+  );
+  const secBody = (
+    <>
       {FINDER_SECTION_2.map(q => (
         <React.Fragment key={q.id}>
           <QRow q={q} value={answers[q.id] ?? null} onChange={setAnswer} />
@@ -6444,68 +6429,146 @@ function FindRacquetPanel({ onApply, mode }) {
           )}
         </React.Fragment>
       ))}
-
-      <QDivider label="Play style & goals" />
+    </>
+  );
+  const secStyle = (
+    <>
       {styleQs.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
       {FINDER_SPIN.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
-
-      <QDivider label="The feel fork" />
+    </>
+  );
+  const secFeel = (
+    <>
       <QRow q={FINDER_FEEL_FORK} value={answers.feelPreference ?? null} onChange={setAnswer} />
       {answers.feelPreference === "unsure" && (
         <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
           {feelUnsureFollowup}
         </p>
       )}
-
-      <QDivider label="Practical constraints" />
+    </>
+  );
+  const secPractical = (
+    <>
       {FINDER_SECTION_5.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
-
-      {isAdvanced && (
-        <>
-          <QDivider label="Role & tactical fit (advanced)" />
-          {FINDER_SECTION_A.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
-
-          <QDivider label="Fine-tuning (advanced)" />
-          {FINDER_SECTION_B.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
-          {answers.hasModifications === "added-weight" && (
-            <QRow q={FINDER_MOD_PLACEMENT} value={answers.modPlacement ?? null} onChange={setAnswer} />
-          )}
-
-          <QDivider label="Brand technology (advanced)" />
-          <QRow q={FINDER_SECTION_D} value={answers.techFeel ?? null} onChange={setAnswer} />
-          {answers.techFeel && TECH_FEEL_FOLLOWUPS[answers.techFeel] && (
-            <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
-              {TECH_FEEL_FOLLOWUPS[answers.techFeel]}
-            </p>
-          )}
-        </>
+    </>
+  );
+  const secRole = (
+    <>
+      {FINDER_SECTION_A.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+    </>
+  );
+  const secFine = (
+    <>
+      {FINDER_SECTION_B.map(q => <QRow key={q.id} q={q} value={answers[q.id] ?? null} onChange={setAnswer} />)}
+      {answers.hasModifications === "added-weight" && (
+        <QRow q={FINDER_MOD_PLACEMENT} value={answers.modPlacement ?? null} onChange={setAnswer} />
       )}
-
-      <button
-        onClick={handleApply}
-        disabled={!canApply}
-        style={{
-          width:"100%", padding:"14px 16px", borderRadius:10, border:"none",
-          background: canApply ? "linear-gradient(135deg, #1A5C2A, #2D7A3A)" : "rgba(0,0,0,0.045)",
-          color: canApply ? "#FFFFFF" : "#B0A898",
-          fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:15,
-          letterSpacing:"0.08em", textTransform:"uppercase", cursor: canApply ? "pointer" : "not-allowed",
-          marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-          WebkitTapHighlightColor:"transparent",
-        }}
-      >
-        {applied ? <><CheckCircle2 size={16}/> Spec Applied</> : <>Build My Racquet <ArrowRight size={16}/></>}
-      </button>
-
-      {!canApply && (
-        <p style={{ textAlign:"center", fontSize:11.5, color:"#7A7268", marginTop:8, fontFamily:"Inter, sans-serif" }}>
-          Answer the questions above (advanced sections are optional) to unlock your recommendation.
+    </>
+  );
+  const secTech = (
+    <>
+      <QRow q={FINDER_SECTION_D} value={answers.techFeel ?? null} onChange={setAnswer} />
+      {answers.techFeel && TECH_FEEL_FOLLOWUPS[answers.techFeel] && (
+        <p style={{ fontSize: 12.5, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginTop: -8, marginBottom: 16 }}>
+          {TECH_FEEL_FOLLOWUPS[answers.techFeel]}
         </p>
       )}
+    </>
+  );
 
+  const steps = [
+    { key: "background", label: "Background", node: secBackground, reqIds: ["racquetBackground", "level", "frequency", ...(needsBgLevel ? ["racquetBackgroundLevel"] : []), ...(showTennisSpecs ? ["tennisRacquetType", "tennisBalance", "tennisWeightAdd"] : [])] },
+    { key: "body", label: "Body & physical history", node: secBody, reqIds: ["handMeasure", "gripShapePref", "injuryHistory", "armCare"] },
+    { key: "style", label: "Play style & goals", node: secStyle, reqIds: ["availablePower", "netInstinct", "goal", "spinUsage", "defenseTexture"] },
+    { key: "feel", label: "The feel fork", node: secFeel, reqIds: ["feelPreference"] },
+    { key: "practical", label: "Practical constraints", node: secPractical, reqIds: ["handTime", "budgetTier"] },
+    ...(isAdvanced ? [
+      { key: "role", label: "Role & tactical fit", node: secRole, reqIds: [] as string[] },
+      { key: "fine", label: "Fine-tuning", node: secFine, reqIds: [] as string[] },
+      { key: "tech", label: "Brand technology", node: secTech, reqIds: [] as string[] },
+    ] : []),
+  ];
+
+  const curStep = Math.min(step, steps.length - 1);
+  const cur = steps[curStep];
+  const stepComplete = cur.reqIds.every(id => answers[id]);
+  const isLastStep = curStep === steps.length - 1;
+  const pct = Math.round(((curStep + 1) / steps.length) * 100);
+
+  return (
+    <div>
+      {mode === "player" && curStep === 0 && (
+        <div style={{ padding:"14px 16px", background:"linear-gradient(135deg, #EAF3EC, rgba(0,212,240,0.06))", borderRadius:10, border:"1px solid rgba(26,92,42,0.25)", marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <Sparkles size={14} color="#1A5C2A"/>
+            <span style={{ fontSize:13, fontWeight:700, color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", letterSpacing:"0.06em", textTransform:"uppercase" }}>Smart Finder</span>
+          </div>
+          <p style={{ fontSize:12.5, color:"#4A4540", lineHeight:1.5, fontFamily:"Inter, sans-serif", margin:0 }}>
+            A few short sections — background, body, goals, and feel — so the recommendation actually fits you, not just a category. Advanced players get a few extra questions for finer tuning.
+          </p>
+        </div>
+      )}
+
+      {/* Progress indicator — replaces the single long scroll with paced steps */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 7 }}>
+          <span style={{ fontSize: 14, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: "#1A5C2A" }}>{cur.label}</span>
+          <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "#9A9284" }}>Step {curStep + 1} of {steps.length}</span>
+        </div>
+        <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+          <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, #1A5C2A, #2D7A3A)", borderRadius: 3, transition: "width 0.25s ease" }} />
+        </div>
+        {Object.keys(answers).length > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+            <span style={{ fontSize: 11, color: "#9A9284", fontFamily: "Inter, sans-serif" }}>Answers save automatically</span>
+            <button onClick={handleReset} style={{ background: "none", border: "none", color: "#7A7268", fontSize: 11.5, fontFamily: "Inter, sans-serif", cursor: "pointer", textDecoration: "underline", padding: 4 }}>Start over</button>
+          </div>
+        )}
+      </div>
+
+      <div key={cur.key}>{cur.node}</div>
+
+      {/* Step navigation */}
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        {curStep > 0 && (
+          <button onClick={() => setStep(s => Math.max(0, s - 1))} style={{
+            flexShrink: 0, padding: "14px 18px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)", background: "#FFFFFF", color: "#4A4540",
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 6, WebkitTapHighlightColor: "transparent",
+          }}><ArrowLeft size={16}/> Back</button>
+        )}
+        {!isLastStep ? (
+          <button onClick={() => { if (stepComplete) setStep(s => s + 1); }} disabled={!stepComplete} style={{
+            flex: 1, padding: "14px 16px", borderRadius: 10, border: "none",
+            background: stepComplete ? "linear-gradient(135deg, #1A5C2A, #2D7A3A)" : "rgba(0,0,0,0.045)",
+            color: stepComplete ? "#FFFFFF" : "#B0A898",
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "0.08em", textTransform: "uppercase",
+            cursor: stepComplete ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, WebkitTapHighlightColor: "transparent",
+          }}>Continue <ArrowRight size={16}/></button>
+        ) : (
+          <button onClick={handleApply} disabled={!canApply} style={{
+            flex: 1, padding: "14px 16px", borderRadius: 10, border: "none",
+            background: canApply ? "linear-gradient(135deg, #1A5C2A, #2D7A3A)" : "rgba(0,0,0,0.045)",
+            color: canApply ? "#FFFFFF" : "#B0A898",
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "0.08em", textTransform: "uppercase",
+            cursor: canApply ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, WebkitTapHighlightColor: "transparent",
+          }}>{applied ? <><CheckCircle2 size={16}/> Spec Applied</> : <>Build My Racquet <ArrowRight size={16}/></>}</button>
+        )}
+      </div>
+
+      {!isLastStep && !stepComplete && (
+        <p style={{ textAlign: "center", fontSize: 11.5, color: "#7A7268", marginTop: 8, fontFamily: "Inter, sans-serif" }}>
+          Answer this section to continue.
+        </p>
+      )}
+      {isLastStep && !canApply && (
+        <p style={{ textAlign:"center", fontSize:11.5, color:"#7A7268", marginTop:8, fontFamily:"Inter, sans-serif" }}>
+          Answer the required questions (advanced sections are optional) to unlock your recommendation.
+        </p>
+      )}
       {applied && (
         <p style={{ textAlign:"center", fontSize:12.5, color:"#7A7268", marginTop:10, fontFamily:"Inter, sans-serif" }}>
-          Spec applied — scroll to Build to fine-tune any option.
+          Spec applied — go to Build to fine-tune any option.
         </p>
       )}
     </div>
