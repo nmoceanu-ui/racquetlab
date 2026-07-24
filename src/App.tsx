@@ -778,6 +778,17 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
     out[k] = n[k] ? Math.round((s[k] / n[k]) * 10) / 10 : 0;
   });
+  // Hole aerodynamics. Open face area cuts air drag on the downswing, so on a
+  // heavy, head-heavy frame swung hard the head accelerates faster → real
+  // effective smash power. This partly offsets the face-softening power loss
+  // that holes otherwise impose (HOLE_POWER_CURVE above), which is why real
+  // attacking diamonds are heavily perforated rather than bare-faced. It scales
+  // with the same weight × head-heaviness "swing intensity" as the throat aero
+  // and saturates past ~20% open — on a light, head-light control frame the
+  // swing is slow so this washes out, and holes stay a pure forgiveness lever.
+  const holeAeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
+  const holeAeroBonus = (Math.min(openPct, 20) / 20) * holeAeroBias * 0.9;
+  out.power = Math.round(Math.min(5, out.power + holeAeroBonus) * 10) / 10;
   out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
   return out;
 }
