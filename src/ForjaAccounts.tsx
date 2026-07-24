@@ -25,6 +25,33 @@ import {
 
 const COLORS = ["#1A5C2A", "#9A6A3C", "#6E5AA8", "#2F6E8F", "#A34A3C", "#7A7268"];
 
+// Distinct series colors for the Compare view (green / rust / violet).
+const CMP_COLORS = ["#1A5C2A", "#B4622B", "#6E5AA8"];
+const RADAR_AXES = ["Power", "Control", "Comfort", "Sweet Spot", "Stability", "Spin", "Durability"];
+
+// Small self-contained radar (no chart lib) that overlays 2-3 builds so the
+// shape difference reads at a glance on a phone.
+function CompareRadar({ series }: { series: { color: string; vals: number[] }[] }) {
+  const size = 232, c = size / 2, R = c - 34, N = RADAR_AXES.length;
+  const pt = (i: number, r: number): [number, number] => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+    return [c + r * Math.cos(a), c + r * Math.sin(a)];
+  };
+  const ring = (rr: number) =>
+    RADAR_AXES.map((_, i) => { const [x, y] = pt(i, (R * rr) / 5); return `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`; }).join(" ") + " Z";
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" style={{ maxWidth: 250, display: "block", margin: "2px auto 6px" }}>
+      {[1, 2, 3, 4, 5].map((rr) => <path key={rr} d={ring(rr)} fill="none" stroke="#D4CCB8" strokeWidth={rr === 5 ? 1.1 : 0.6} />)}
+      {RADAR_AXES.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="#D4CCB8" strokeWidth={0.6} />; })}
+      {series.map((s, si) => {
+        const d = s.vals.map((v, i) => { const [x, y] = pt(i, (R * Math.max(0, Math.min(5, v))) / 5); return `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`; }).join(" ") + " Z";
+        return <path key={si} d={d} fill={s.color} fillOpacity={0.13} stroke={s.color} strokeWidth={2} />;
+      })}
+      {RADAR_AXES.map((lab, i) => { const [x, y] = pt(i, R + 15); return <text key={i} x={x} y={y} fontSize={8} fill="#7A7268" textAnchor="middle" dominantBaseline="middle" fontFamily="'Barlow Condensed',sans-serif">{lab.toUpperCase()}</text>; })}
+    </svg>
+  );
+}
+
 const CSS = `
 .fa-root{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:'Inter',system-ui,sans-serif;color:#18181B;}
 .fa-root *{box-sizing:border-box;}
@@ -90,6 +117,33 @@ const CSS = `
 .fa-banner .add{background:#1A5C2A;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;}
 .fa-toast{pointer-events:none;position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:#18181B;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
 
+/* Compare mode */
+.fa-cmpbtn{background:#EAF3EC;border:1px solid rgba(26,92,42,.3);color:#1A5C2A;border-radius:8px;padding:7px 11px;font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;}
+.fa-cmpbtn:hover{background:#dceadf;}
+.fa-hint{margin:14px 22px 4px;font-size:12.5px;color:#7A7268;font-family:'Inter',sans-serif;}
+.fa-cmp{display:flex;align-items:center;gap:11px;cursor:pointer;}
+.fa-cmp.on{border-color:#1A5C2A;box-shadow:0 0 0 2px rgba(26,92,42,.16);}
+.fa-ck{width:24px;height:24px;border-radius:7px;border:2px solid #C0B8A4;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;font-family:'Barlow Condensed','Inter',sans-serif;flex:0 0 auto;}
+.fa-cmpbar{border-top:1px solid #D4CCB8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:12px;background:#F0EBE0;}
+.fa-cmpbar span{font-size:12.5px;color:#7A7268;font-family:'Inter',sans-serif;}
+.fa-cmpbar button{background:#1A5C2A;color:#fff;border:none;border-radius:9px;padding:11px 18px;font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-size:14px;cursor:pointer;}
+.fa-cmpbar button:disabled{opacity:.45;cursor:default;}
+.fa-cmp-modal{pointer-events:auto;background:#F0EBE0;border:1px solid #D4CCB8;border-radius:16px;width:min(560px,94vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(40,30,15,.3);overflow:hidden;}
+.fa-cmp-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #D4CCB8;}
+.fa-cmp-head h2{font-family:'Barlow Condensed','Inter',sans-serif;font-weight:700;font-size:20px;margin:0;text-transform:uppercase;letter-spacing:.03em;}
+.fa-cmp-body{overflow:auto;padding:16px 16px 22px;}
+.fa-cmp-legend{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.fa-cmp-legend .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:#18181B;font-weight:600;}
+.fa-cmp-legend .chip{width:12px;height:12px;border-radius:4px;flex:0 0 auto;}
+.fa-cmp-sec{font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:12px;color:#1A5C2A;margin:14px 0 8px;border-bottom:1px solid #D4CCB8;padding-bottom:5px;}
+.fa-cmp-row{display:grid;gap:8px;align-items:center;padding:5px 0;}
+.fa-cmp-row .lab{font-size:11.5px;color:#7A7268;font-family:'Inter',sans-serif;}
+.fa-cmp-row .cell{display:flex;align-items:center;gap:6px;min-width:0;}
+.fa-cmp-row .cell.spec{font-size:11.5px;font-family:'Inter',sans-serif;line-height:1.3;word-break:break-word;}
+.fa-cmp-row .barwrap{flex:1;height:6px;background:rgba(0,0,0,.07);border-radius:3px;overflow:hidden;min-width:14px;}
+.fa-cmp-row .bar{height:100%;border-radius:3px;}
+.fa-cmp-row .num{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;min-width:22px;text-align:right;}
+
 /* Mobile: lift the floating account controls above the fixed bottom tab bar
    (the bottom nav shows only below 768px — same breakpoint the app uses). */
 @media (max-width: 767px){
@@ -132,6 +186,10 @@ function ForjaAccountsInner() {
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [importCode, setImportCode] = useState<string | null>(null);
   const [importDismissed, setImportDismissed] = useState(false);
+  // Compare mode
+  const [compareMode, setCompareMode] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
   const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
   const toastTimer = useRef<number | undefined>(undefined);
 
@@ -139,6 +197,15 @@ function ForjaAccountsInner() {
     setToast(m);
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(""), 2400);
+  };
+
+  const MAX_CMP = 3;
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= MAX_CMP ? prev : [...prev, id]));
+  const exitCompare = () => {
+    setCompareMode(false);
+    setSelected([]);
+    setCompareOpen(false);
   };
 
   useEffect(() => {
@@ -345,24 +412,40 @@ function ForjaAccountsInner() {
     return p?.color || "#7A7268";
   };
 
-  const buildCard = (b: LibraryBuild) => (
-    <div className="fa-card" key={b.id}>
-      <div className="nm">{b.name || "Untitled build"}</div>
-      <div className="dt">{new Date(b.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
-      <div className="actions">
-        <button className="grow" onClick={() => openBuild(b.code)}>Open</button>
-        <button onClick={() => shareBuild(b.code)}>Share</button>
-        <button onClick={() => askRenameBuild(b)} aria-label="Rename">Rename</button>
-        <button onClick={() => askDeleteBuild(b)} aria-label="Delete" style={{ color: "#8a2318" }}>Delete</button>
+  const buildCard = (b: LibraryBuild) => {
+    if (compareMode) {
+      const idx = selected.indexOf(b.id);
+      const on = idx >= 0;
+      const col = CMP_COLORS[idx] || "#1A5C2A";
+      return (
+        <div className={"fa-card fa-cmp" + (on ? " on" : "")} key={b.id} onClick={() => toggleSelect(b.id)}>
+          <div className="fa-ck" style={{ borderColor: on ? col : "#C0B8A4", background: on ? col : "transparent" }}>{on ? idx + 1 : ""}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="nm">{b.name || "Untitled build"}</div>
+            <div className="dt">{new Date(b.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="fa-card" key={b.id}>
+        <div className="nm">{b.name || "Untitled build"}</div>
+        <div className="dt">{new Date(b.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
+        <div className="actions">
+          <button className="grow" onClick={() => openBuild(b.code)}>Open</button>
+          <button onClick={() => shareBuild(b.code)}>Share</button>
+          <button onClick={() => askRenameBuild(b)} aria-label="Rename">Rename</button>
+          <button onClick={() => askDeleteBuild(b)} aria-label="Delete" style={{ color: "#8a2318" }}>Delete</button>
+        </div>
+        <select className="fa-sel" value={b.project_id || ""} onChange={(e) => moveBuild(b, e.target.value)}>
+          <option value="">— Personal (no project) —</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
       </div>
-      <select className="fa-sel" value={b.project_id || ""} onChange={(e) => moveBuild(b, e.target.value)}>
-        <option value="">— Personal (no project) —</option>
-        {projects.map((p) => (
-          <option key={p.id} value={p.id}>{p.name}</option>
-        ))}
-      </select>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="fa-root">
@@ -437,13 +520,24 @@ function ForjaAccountsInner() {
       {/* My Builds drawer */}
       {user && drawerOpen && (
         <>
-          <div className="fa-overlay" style={{ background: "rgba(40,30,15,.3)", justifyContent: "flex-end", padding: 0 }} onClick={(e) => { if (e.target === e.currentTarget) setDrawerOpen(false); }}>
+          <div className="fa-overlay" style={{ background: "rgba(40,30,15,.3)", justifyContent: "flex-end", padding: 0 }} onClick={(e) => { if (e.target === e.currentTarget) { setDrawerOpen(false); exitCompare(); } }}>
             <div className="fa-drawer">
               <div className="fa-dh">
                 <div><h2>My Builds</h2><div className="cnt">{builds.length} builds · {projects.length} projects</div></div>
-                <button className="fa-x" style={{ float: "none", margin: 0 }} onClick={() => setDrawerOpen(false)}>×</button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {builds.length >= 2 && (
+                    <button className="fa-cmpbtn" onClick={() => (compareMode ? exitCompare() : setCompareMode(true))}>
+                      {compareMode ? "Cancel" : "⇄ Compare"}
+                    </button>
+                  )}
+                  <button className="fa-x" style={{ float: "none", margin: 0 }} onClick={() => { setDrawerOpen(false); exitCompare(); }}>×</button>
+                </div>
               </div>
-              <button className="fa-newp" onClick={askNewProject}>+ New project</button>
+              {compareMode ? (
+                <div className="fa-hint">Select 2–3 builds to compare side by side.</div>
+              ) : (
+                <button className="fa-newp" onClick={askNewProject}>+ New project</button>
+              )}
               <div className="fa-list">
                 {builds.length === 0 && (
                   <div className="fa-empty">Your library is empty. Build a racquet and hit Save &amp; Share while signed in — it'll appear here.</div>
@@ -454,8 +548,8 @@ function ForjaAccountsInner() {
                       <span className="fa-dot" style={{ background: project.color || "#7A7268" }} onClick={() => cycleColor(project)} title="Change color" />
                       <span className="fa-fn" onClick={() => setCollapsed((c) => ({ ...c, [project.id]: !c[project.id] }))}>{project.name}</span>
                       <span className="fa-fc">{items.length}</span>
-                      <button className="fa-pmenu" onClick={() => askRenameProject(project)} title="Rename">✎</button>
-                      <button className="fa-pmenu" onClick={() => askDeleteProject(project)} title="Delete" style={{ color: "#8a2318" }}>🗑</button>
+                      {!compareMode && <button className="fa-pmenu" onClick={() => askRenameProject(project)} title="Rename">✎</button>}
+                      {!compareMode && <button className="fa-pmenu" onClick={() => askDeleteProject(project)} title="Delete" style={{ color: "#8a2318" }}>🗑</button>}
                     </div>
                     {!collapsed[project.id] && (
                       <div className="fa-fbody">
@@ -475,10 +569,90 @@ function ForjaAccountsInner() {
                   </div>
                 )}
               </div>
+              {compareMode && (
+                <div className="fa-cmpbar">
+                  <span>{selected.length} selected{selected.length >= MAX_CMP ? " · max" : ""}</span>
+                  <button disabled={selected.length < 2} onClick={() => setCompareOpen(true)}>
+                    Compare{selected.length >= 2 ? ` (${selected.length})` : ""}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </>
       )}
+
+      {/* Compare overlay */}
+      {compareOpen && (() => {
+        const chosen = selected.map((id) => builds.find((b) => b.id === id)).filter(Boolean) as LibraryBuild[];
+        const scorer = (window as any).__palalabScoreSpec as ((spec: any) => any) | undefined;
+        const data = chosen.map((b, i) => ({ b, color: CMP_COLORS[i] || "#7A7268", r: typeof scorer === "function" ? scorer(b.spec) : null }));
+        const n = data.length;
+        const gcols = `86px repeat(${n}, minmax(0,1fr))`;
+        const metrics: [string, string][] = [["power", "Power"], ["control", "Control"], ["comfort", "Comfort"], ["sweetSpot", "Sweet Spot"], ["stability", "Stability"], ["spin", "Spin"], ["durability", "Durability"]];
+        const specRows: [string, (d: (typeof data)[number]) => string][] = [
+          ["Shape", (d) => (d.r ? d.r.summary.shape : "—")],
+          ["Weight", (d) => (d.r ? `${d.r.summary.weightG}g` : "—")],
+          ["Balance", (d) => (d.r ? `${d.r.summary.balanceCm}cm` : "—")],
+          ["Core", (d) => (d.r ? d.r.summary.core : "—")],
+          ["Face", (d) => (d.r ? d.r.summary.face : "—")],
+          ["Frame", (d) => (d.r ? d.r.summary.frame : "—")],
+          ["Surface", (d) => (d.r ? d.r.summary.surface : "—")],
+          ["Throat", (d) => (d.r ? d.r.summary.throat : "—")],
+        ];
+        const anyScored = data.some((d) => d.r);
+        return (
+          <div className="fa-overlay" onClick={(e) => { if (e.target === e.currentTarget) setCompareOpen(false); }}>
+            <div className="fa-cmp-modal">
+              <div className="fa-cmp-head">
+                <h2>Compare</h2>
+                <button className="fa-x" style={{ float: "none", margin: 0 }} onClick={() => setCompareOpen(false)}>×</button>
+              </div>
+              <div className="fa-cmp-body">
+                {!anyScored && <div className="fa-empty">Couldn't score these builds — reload the app and try again.</div>}
+                {anyScored && (
+                  <>
+                    <div className="fa-cmp-legend">
+                      {data.map((d) => (
+                        <div className="lg" key={d.b.id}><span className="chip" style={{ background: d.color }} />{d.b.name || "Untitled build"}</div>
+                      ))}
+                    </div>
+                    <CompareRadar series={data.map((d) => ({ color: d.color, vals: metrics.map(([k]) => (d.r ? d.r.scores[k] ?? 0 : 0)) }))} />
+                    <div className="fa-cmp-sec">Scores</div>
+                    {metrics.map(([k, lab]) => (
+                      <div className="fa-cmp-row" style={{ gridTemplateColumns: gcols }} key={k}>
+                        <div className="lab">{lab}</div>
+                        {data.map((d) => {
+                          const v = d.r ? d.r.scores[k] ?? 0 : 0;
+                          return (
+                            <div className="cell" key={d.b.id}>
+                              <div className="barwrap"><div className="bar" style={{ width: `${(v / 5) * 100}%`, background: d.color }} /></div>
+                              <span className="num" style={{ color: d.color }}>{v.toFixed(1)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                    <div className="fa-cmp-sec">Specs</div>
+                    {specRows.map(([lab, get]) => {
+                      const vals = data.map((d) => get(d));
+                      const same = vals.every((v) => v === vals[0]);
+                      return (
+                        <div className="fa-cmp-row" style={{ gridTemplateColumns: gcols }} key={lab}>
+                          <div className="lab">{lab}</div>
+                          {data.map((d, i) => (
+                            <div className="cell spec" key={d.b.id} style={{ fontWeight: same ? 400 : 700, color: same ? "#4A4540" : d.color }}>{vals[i]}</div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Prompt modal */}
       {prompt && (

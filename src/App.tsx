@@ -7801,6 +7801,41 @@ export default function App() {
   const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holes.length > 0 || coreId === "hybrid-core";
 
+  // Expose a spec scorer on window so the account overlay (a separate React
+  // tree in ForjaAccounts) can score saved builds with the real engine for the
+  // "Compare builds" view. Takes a raw saved spec, returns {scores, summary}.
+  useEffect(() => {
+    (window as any).__palalabScoreSpec = (raw: any) => {
+      const g = raw || {};
+      const shp = SHAPES.find(s => s.id === g.shapeId) || SHAPES.find(s => s.id === "teardrop")!;
+      const cor = CORE_MATERIALS.find(c => c.id === g.coreId) || CORE_MATERIALS.find(c => c.id === "eva-medium")!;
+      const fac = FACE_MATERIALS.find(f => f.id === g.faceId) || FACE_MATERIALS.find(f => f.id === "carbon-12k")!;
+      const frm = FRAME_MATERIALS.find(f => f.id === g.frameId) || FRAME_MATERIALS.find(f => f.id === "hybrid-frame")!;
+      const srf = SURFACE_TEXTURES.find(s => s.id === g.surfaceId) || SURFACE_TEXTURES.find(s => s.id === "rough")!;
+      const grp = GRIP_MATERIALS.find(gr => gr.id === g.gripId) || GRIP_MATERIALS.find(gr => gr.id === "pu-grip")!;
+      const bId = typeof g.bridgeId === "string" ? g.bridgeId : "open";
+      const bOr = typeof g.beamOrientation === "string" ? g.beamOrientation : "vertical";
+      const bCt = typeof g.beamCount === "number" ? g.beamCount : 2;
+      const wG = typeof g.weightG === "number" ? g.weightG : 365;
+      const bal = typeof g.balanceCm === "number" ? g.balanceCm : 25.8;
+      const wid = typeof g.widthMm === "number" ? g.widthMm : 255;
+      const thk = typeof g.thicknessMm === "number" ? g.thicknessMm : 38;
+      const hls = Array.isArray(g.holes) ? g.holes : [];
+      const hd = typeof g.holeDiameterMm === "number" ? g.holeDiameterMm : 9;
+      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk });
+      const bridgeLabel = (BRIDGE_TYPES.find(b => b.id === bId)?.label) ?? bId;
+      const cap = (x: string) => (x ? x[0].toUpperCase() + x.slice(1) : x);
+      return {
+        scores: sc,
+        summary: {
+          shape: shp.label, weightG: wG, balanceCm: bal,
+          core: cor.label, face: fac.label, frame: frm.label, surface: srf.label,
+          throat: bId === "closed" ? bridgeLabel : `${bridgeLabel} · ${cap(bOr)} · ${bCt}`,
+        },
+      };
+    };
+  }, []);
+
   // --- Reverse solver (drag target scores -> materials) ---
   const [rsOpen, setRsOpen] = useState(true);
   const [rsLib, setRsLib] = useState<any[] | null>(null);
