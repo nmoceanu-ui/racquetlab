@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ChevronDown, AlertTriangle, Sparkles, BarChart3,
   Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
-  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2, Download
+  Settings2, User, CheckCircle2, ArrowRight, Share2, Link2, Loader2, Download, Home
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -7591,7 +7591,9 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
 
 export default function App() {
   const [mode, setMode] = useState<"player"|"manufacturer">("player");
-  const [activeTab, setActiveTab] = useState<"find"|"build"|"view"|"scores">("find");
+  const [activeTab, setActiveTab] = useState<"home"|"find"|"build"|"view"|"scores">(
+    () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("b")) ? "view" : "home"
+  );
   const [diagramMode, setDiagramMode] = useState<"diagram"|"illustration"|"profile">("diagram");
 
   // Build state
@@ -7830,6 +7832,7 @@ export default function App() {
   const topScore = Math.max(scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.stability, scores.spin, scores.durability);
 
   const tabDefs = [
+    { id: "home", label: "Home", icon: <Home size={18}/> },
     { id: "find", label: mode === "manufacturer" ? "Brief" : "Find", icon: mode === "manufacturer" ? <Wrench size={18}/> : <Sparkles size={18}/> },
     { id: "build", label: "Build", icon: <Settings2 size={18}/> },
     { id: "view", label: "View", icon: <Eye size={18}/> },
@@ -8373,7 +8376,54 @@ export default function App() {
     </div>
   );
 
+  // ---- HOME HUB (mobile-first landing) ----
+  const homeContent = (
+    <div style={{ padding: "30px 18px 16px", maxWidth: 460, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: 26 }}>
+        <img src="/icon-192.png?v=2" alt="" width={54} height={54} style={{ width:54, height:54, borderRadius:13, objectFit:"cover", margin:"0 auto 12px", display:"block" }} />
+        <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:28, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>PALA<span style={{color:"#1A5C2A"}}>LAB</span></div>
+        <p style={{ fontSize:14, color:"#5A574C", lineHeight:1.5, margin:"10px auto 0", maxWidth:320, fontFamily:"Inter, sans-serif" }}>Design your perfect padel racquet — or find the one that fits your game.</p>
+      </div>
+
+      {[
+        { id:"find",  icon:<Sparkles size={22}/>,  title:"Find my racquet", sub:"Answer a few quick questions and get a spec matched to how you play." },
+        { id:"build", icon:<Settings2 size={22}/>, title:"Build a spec",     sub:"Know the numbers? Tune shape, weight, balance and materials yourself." },
+      ].map(c => (
+        <button key={c.id} onClick={() => setActiveTab(c.id as any)} style={{
+          width:"100%", display:"flex", alignItems:"center", gap:14, textAlign:"left",
+          background:"#FFFFFF", border:"1.5px solid #D4CCB8", borderRadius:16, padding:"18px 16px", marginBottom:12, cursor:"pointer", WebkitTapHighlightColor:"transparent",
+        }}>
+          <div style={{ flexShrink:0, width:48, height:48, borderRadius:12, background:"#EAF3EC", color:"#1A5C2A", display:"flex", alignItems:"center", justifyContent:"center" }}>{c.icon}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, fontSize:19, letterSpacing:"0.02em", color:"#18181B", lineHeight:1.1 }}>{c.title}</div>
+            <div style={{ fontSize:12.5, color:"#7A7268", lineHeight:1.45, marginTop:3, fontFamily:"Inter, sans-serif" }}>{c.sub}</div>
+          </div>
+          <ArrowRight size={18} color="#B0A898" style={{ flexShrink:0 }} />
+        </button>
+      ))}
+
+      {/* Current spec strip */}
+      <div style={{ background:"#FBF8F1", border:"1px solid #E3DCC8", borderRadius:14, padding:"14px 16px", marginTop:6 }}>
+        <div style={{ fontSize:10, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:5 }}>Your current spec</div>
+        <div style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:13.5, color:"#18181B" }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
+        <div style={{ display:"flex", gap:8, marginTop:12 }}>
+          {[
+            { id:"view",   icon:<Eye size={14}/>,       label:"Visualize" },
+            { id:"scores", icon:<BarChart3 size={14}/>, label:"Scores" },
+          ].map(b => (
+            <button key={b.id} onClick={() => setActiveTab(b.id as any)} style={{
+              flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"9px 10px", borderRadius:9,
+              border:"1px solid rgba(0,0,0,0.08)", background:"#FFFFFF", color:"#1A5C2A", cursor:"pointer",
+              fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, fontSize:12.5, letterSpacing:"0.05em", textTransform:"uppercase", WebkitTapHighlightColor:"transparent",
+            }}>{b.icon}{b.label}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const tabContent = {
+    home: homeContent,
     find: findContent,
     build: buildContent,
     view: viewContent,
@@ -8403,11 +8453,11 @@ export default function App() {
             <img src="/icon-192.png?v=2" alt="PalaLab" width={32} height={32} style={{ width:32, height:32, borderRadius:8, objectFit:"cover", flexShrink:0, display:"block" }} />
             <div>
               <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>PALA<span style={{color:"#1A5C2A"}}>LAB</span></div>
-              <div style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
+              <div className={(activeTab === "home" || activeTab === "find") ? "mobile-hide" : ""} style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
             </div>
           </div>
 
-          <div className="header-actions" style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div className={"header-actions" + (activeTab === "home" ? " mobile-hide" : "")} style={{ display:"flex", alignItems:"center", gap:10 }}>
           {/* Install app (Add to Home Screen) — hides itself once installed */}
           <InstallButton />
           {/* Save & Share */}
@@ -8415,6 +8465,7 @@ export default function App() {
             onClick={handleSaveBuild}
             disabled={shareStatus === "saving" || !supabaseConfigured}
             title={!supabaseConfigured ? "Save & Share is coming soon" : undefined}
+            className={(activeTab === "home" || activeTab === "find") ? "mobile-hide" : ""}
             style={{
               display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
               border: `1px solid ${supabaseConfigured ? "rgba(26,92,42,0.35)" : "rgba(0,0,0,0.06)"}`,
@@ -8442,7 +8493,7 @@ export default function App() {
           </button>
 
           {/* Mode toggle */}
-          <div style={{ display:"flex", gap:4, background:"rgba(0,0,0,0.04)", padding:3, borderRadius:8, border:"1px solid rgba(0,0,0,0.05)" }}>
+          <div className={(activeTab === "build" || activeTab === "find") ? "" : "mobile-hide"} style={{ display:"flex", gap:4, background:"rgba(0,0,0,0.04)", padding:3, borderRadius:8, border:"1px solid rgba(0,0,0,0.05)" }}>
             {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Factory",icon:<Wrench size={12}/>}].map(m => (
               <button key={m.id} onClick={() => { setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
                 display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
@@ -8494,6 +8545,7 @@ export default function App() {
               .header-row { flex-wrap: wrap; }
               .header-actions { flex: 1 1 100%; justify-content: space-between; margin-top: 8px; }
               .install-label { display: none; }
+              .mobile-hide { display: none !important; }
             }
           `}</style>
 
@@ -8519,7 +8571,7 @@ export default function App() {
               ))}
             </div>
             <div style={{ overflowY:"auto", flex:1, padding:"0", paddingBottom:24 }}>
-              {(activeTab === "view" || activeTab === "find" || activeTab === "build") ? viewContent : scoresContent}
+              {(activeTab === "view" || activeTab === "find" || activeTab === "build" || activeTab === "home") ? viewContent : scoresContent}
             </div>
           </div>
 
