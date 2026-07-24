@@ -8647,25 +8647,29 @@ export default function App() {
         {tabContent[activeTab]}
       </div>
 
-      {/* Bottom nav (mobile only) */}
+      {/* Bottom nav (mobile only).
+          NOTE: no transform / will-change here on purpose — a GPU-promoted
+          position:fixed bar is mis-anchored by iOS Safari (drifts and gets
+          clipped by the home-indicator area after the URL bar animates). Plain
+          fixed + safe-area padding is the stable pattern. */}
       <nav className="bottom-nav" style={{
         position:"fixed", bottom:0, left:0, right:0, zIndex:100,
         background:"#FFFFFF",
         borderTop:"1.5px solid #D4CCB8",
-        paddingBottom:"env(safe-area-inset-bottom)",
+        paddingBottom:"max(6px, env(safe-area-inset-bottom))",
         display:"flex",
-        transform:"translateZ(0)", WebkitTransform:"translateZ(0)", willChange:"transform",
       }}>
         {tabDefs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} style={{
-            flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-            padding:"10px 4px", border:"none", background:"none", cursor:"pointer",
+            position:"relative",
+            flex:1, minWidth:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            padding:"9px 2px 5px", border:"none", background:"none", cursor:"pointer",
             color: activeTab===tab.id ? "#1A5C2A" : "#B0A898",
             WebkitTapHighlightColor:"transparent", transition:"color 0.15s ease", gap:4,
           }}>
+            {activeTab===tab.id && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:22, height:2, borderRadius:1, background:"#1A5C2A" }}/>}
             <span style={{ transition:"color 0.15s ease" }}>{tab.icon}</span>
-            <span style={{ fontSize:9.5, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase" }}>{tab.label}</span>
-            {activeTab===tab.id && <span style={{ position:"absolute", bottom:"env(safe-area-inset-bottom)", width:20, height:2, borderRadius:1, background:"#1A5C2A" }}/>}
+            <span style={{ fontSize:9.5, lineHeight:1, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase" }}>{tab.label}</span>
           </button>
         ))}
       </nav>
