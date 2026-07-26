@@ -565,11 +565,16 @@ function ForjaAccountsInner() {
                         const idx = selected.findIndex((x) => x.key === key);
                         const on = idx >= 0;
                         return (
-                          <button key={r.id} className={"fa-dbrow" + (on ? " on" : "")}
-                            onClick={() => toggleSelect({ key, kind: "racquet", name: `${r.brand} ${r.model}`, spec: r.spec })}>
-                            <span className="fa-ck" style={{ width: 22, height: 22, fontSize: 12, borderColor: on ? (CMP_COLORS[idx] || "#1A5C2A") : "#C0B8A4", background: on ? (CMP_COLORS[idx] || "#1A5C2A") : "transparent" }}>{on ? idx + 1 : "+"}</span>
-                            <span style={{ flex: 1, textAlign: "left" }}>{r.brand} {r.model}</span>
-                          </button>
+                          <div key={r.id} className={"fa-dbrow" + (on ? " on" : "")} style={{ cursor: "default" }}>
+                            <button onClick={() => toggleSelect({ key, kind: "racquet", name: `${r.brand} ${r.model}`, spec: r.spec })}
+                              style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit", textAlign: "left" }}>
+                              <span className="fa-ck" style={{ width: 22, height: 22, fontSize: 12, borderColor: on ? (CMP_COLORS[idx] || "#1A5C2A") : "#C0B8A4", background: on ? (CMP_COLORS[idx] || "#1A5C2A") : "transparent" }}>{on ? idx + 1 : "+"}</span>
+                              <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.brand} {r.model}</span>
+                            </button>
+                            <button title="Load this model into the builder and visualize it"
+                              onClick={() => { const fn = (window as any).__palalabLoadRacquet; if (fn) fn(r.id); setDrawerOpen(false); exitCompare(); }}
+                              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: 7, border: "1px solid #1A5C2A", background: "#1A5C2A", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter',sans-serif" }}>View</button>
+                          </div>
                         );
                       })}
                     </div>
