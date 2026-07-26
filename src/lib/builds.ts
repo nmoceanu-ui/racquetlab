@@ -8,7 +8,7 @@ export type SavedBuildResult =
   | { ok: false; error: string };
 
 export type LoadedBuildResult =
-  | { ok: true; spec: Record<string, unknown> }
+  | { ok: true; spec: Record<string, unknown>; name: string | null }
   | { ok: false; error: string };
 
 export type LibraryBuild = {
@@ -97,14 +97,14 @@ export async function loadBuild(code: string): Promise<LoadedBuildResult> {
   }
   const { data, error } = await supabase
     .from("saved_builds")
-    .select("spec")
+    .select("spec, name")
     .eq("code", code.toLowerCase())
     .single();
 
   if (error || !data) {
     return { ok: false, error: "That build link doesn't exist or may have been removed." };
   }
-  return { ok: true, spec: data.spec as Record<string, unknown> };
+  return { ok: true, spec: data.spec as Record<string, unknown>, name: (data.name as string | null) ?? null };
 }
 
 // ---- Account library (all filtered by owner explicitly for safety) ----
