@@ -486,7 +486,7 @@ const HOLE_COMFORT_CURVE: [number, number][] = [[0, 1], [2.5, 2], [12, 3], [22, 
 const HOLE_SWEETSPOT_CURVE: [number, number][] = [[0, 1], [2.5, 2], [12, 3], [22, 3], [32, 4]];
 const HOLE_RADIUS_BOOST_CURVE: [number, number][] = [[0, 0.85], [2.5, 0.9], [12, 0.97], [22, 1.0], [32, 1.08]];
 
-interface HolePoint { x: number; y: number; } // normalized, -1..1 relative to face center
+interface HolePoint { x: number; y: number; d?: number; } // normalized x,y (-1..1 from face centre); optional per-hole diameter in mm (falls back to the build's global holeDiameterMm — e.g. oversized air ports on an otherwise uniform face)
 
 // ---------------------------------------------------------------------------
 // LEGACY BUCKET → COORDINATE CONVERSION
@@ -546,8 +546,13 @@ function computeHoleOpenAreaPct(holes: HolePoint[], holeDiameterMm: number, face
   // Real hole area in mm², scaled by how many holes actually land inside
   // the usable elliptical hitting area (mirrors the 0.9 face-area factor
   // used elsewhere in this file for consistency).
-  const holeAreaMm2 = Math.PI * (holeDiameterMm / 2) ** 2;
-  const totalHoleAreaMm2 = holeAreaMm2 * holes.length;
+  // Each hole contributes its own diameter when one is set (oversized air
+  // ports on the OXDOG Pro Smash, say), otherwise it inherits the build's
+  // global holeDiameterMm — so a plain {x,y} face scores exactly as before.
+  const totalHoleAreaMm2 = holes.reduce((sum, h) => {
+    const d = (typeof h.d === "number" && h.d > 0) ? h.d : holeDiameterMm;
+    return sum + Math.PI * (d / 2) ** 2;
+  }, 0);
   const faceAreaMm2 = Math.PI * (faceWidthMm / 2) * (faceHeightMm / 2) * 0.9;
   return Math.min(45, (totalHoleAreaMm2 / faceAreaMm2) * 100); // cap at 45% — beyond this the face isn't structurally viable
 }
@@ -4033,9 +4038,10 @@ function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, sideProfile, 
   // halfWidth), so real placed holes render exactly where they were
   // clicked, respecting this shape's true proportions.
   const faceMidY = topY + headHeight * 0.5;
-  const holeDots: {x:number,y:number}[] = (holes ?? []).map((h: HolePoint) => ({
+  const holeDots: {x:number,y:number,d?:number}[] = (holes ?? []).map((h: HolePoint) => ({
     x: cx + h.x * (halfWidth - 26),
     y: faceMidY + h.y * (headHeight * 0.42),
+    d: h.d,
   }));
   // Weave pattern: woven materials (carbon, kevlar, graphene) get a true
   // crosshatch — two perpendicular diagonal line sets — covering the
@@ -4110,7 +4116,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, sideProfile, 
         </g>
       )}
       <path d={headOutlinePath(shape, cx, topY+7, halfWidth-9, headHeight-14)} fill="none" stroke={STROKE} strokeWidth="1" opacity="0.5"/>
-      <g clipPath="url(#headClip)">{holeDots.map((h,i)=><circle key={i} cx={h.x} cy={h.y} r={6.5} fill="none" stroke={STROKE} strokeWidth="1.3"/>)}</g>
+      <g clipPath="url(#headClip)">{holeDots.map((h,i)=><circle key={i} cx={h.x} cy={h.y} r={6.5 * (typeof h.d === "number" && h.d > 0 ? h.d / (holeDiameterMm || 9) : 1)} fill="none" stroke={STROKE} strokeWidth="1.3"/>)}</g>
       {mode === "diagram" && (
         <g>
           <circle cx={cx} cy={sweet.y} r={sweet.r+16} fill="none" stroke="#1A5C2A" strokeWidth="1" strokeDasharray="2 4" opacity={0.15+(1-sweet.stability)*0.35}/>
@@ -4413,16 +4419,18 @@ function RacquetIllustration3D({
   // that specific height (innerFaceHalfWidthFrac) so a hole clicked near
   // a teardrop's narrow tip or a diamond's taper still renders inside the
   // true outline rather than poking past the rim.
-  const holeDots: { x: number; y: number }[] = [];
+  const holeDots: { x: number; y: number; r: number }[] = [];
   const holeRadius = 6; // matches the rendered circle radius below
   const edgeMargin = 14; // minimum clearance kept between any hole's edge and the face rim
   (holes ?? []).forEach((h: HolePoint) => {
     const fy = topY + headHeight * 0.5 + h.y * (headHeight * 0.42);
     const rowT = Math.max(0, Math.min(1, (fy - topY) / headHeight));
     const realRowHalf = Math.max(8, halfWidth * innerFaceHalfWidthFrac(rowT) - edgeMargin);
-    const placementHalf = Math.max(0, realRowHalf - holeRadius);
+    // Oversized ports render proportionally bigger than the base 6px hole.
+    const rPx = holeRadius * (typeof h.d === "number" && h.d > 0 ? h.d / (holeDiameterMm || 9) : 1);
+    const placementHalf = Math.max(0, realRowHalf - rPx);
     const fx = cx + Math.max(-1, Math.min(1, h.x)) * placementHalf;
-    holeDots.push({ x: fx, y: fy });
+    holeDots.push({ x: fx, y: fy, r: rPx });
   });
 
   const frameDark = frameObj?.id === "fiberglass-frame" ? "#9A968A" : frameObj?.id === "basalt-frame" ? "#241A12" : "#0A0A0C";
@@ -4761,13 +4769,16 @@ function RacquetIllustration3D({
       </g>
 
       <g clipPath="url(#illustInnerClip)">
-        {holeDots.map((h, i) => (
+        {holeDots.map((h, i) => {
+          const k = h.r / 6; // scale factor vs the base 6px hole
+          return (
           <g key={i}>
-            <circle cx={h.x} cy={h.y + 0.8} r={6.8} fill="#000000" opacity="0.3" />
-            <circle cx={h.x} cy={h.y} r={6} fill={faceVisual.darkTone} opacity="0.9" />
-            <path d={`M ${h.x - 4.2} ${h.y - 3.4} A 5.2 5.2 0 0 1 ${h.x + 4.2} ${h.y - 3.4}`} fill="none" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.5" strokeLinecap="round" />
+            <circle cx={h.x} cy={h.y + 0.8} r={6.8 * k} fill="#000000" opacity="0.3" />
+            <circle cx={h.x} cy={h.y} r={h.r} fill={faceVisual.darkTone} opacity="0.9" />
+            <path d={`M ${h.x - 4.2 * k} ${h.y - 3.4 * k} A ${5.2 * k} ${5.2 * k} 0 0 1 ${h.x + 4.2 * k} ${h.y - 3.4 * k}`} fill="none" stroke="#FFFFFF" strokeWidth="1.1" opacity="0.5" strokeLinecap="round" />
           </g>
-        ))}
+          );
+        })}
       </g>
 
       <g clipPath="url(#illustInnerClip)">
@@ -7398,6 +7409,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [designNote, setDesignNote] = useState<string>("");
   const [clickMode, setClickMode] = useState<"add" | "remove">("add");
+  const [portMode, setPortMode] = useState(false); // when on, added holes carry an oversized per-hole diameter (air ports)
+  const PORT_MM = 13; // FIP max — the oversized "air port" size (OXDOG Pro Smash-style)
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [lastBlockedMsg, setLastBlockedMsg] = useState<string | null>(null);
   const [designScale, setDesignScale] = useState(1);
@@ -7480,7 +7493,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       setLastBlockedMsg(null);
     }
 
-    onHolesChange([...holes, { x: nx, y: ny }]);
+    onHolesChange([...holes, portMode ? { x: nx, y: ny, d: PORT_MM } : { x: nx, y: ny }]);
   };
 
   const applyPreset = (preset: string) => {
@@ -7528,6 +7541,20 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
     }
     if (preset === "dense") {
       onHolesChange(generateLegacyHoleGrid("high", "even", shape));
+      return;
+    }
+    if (preset === "airports") {
+      // OXDOG Pro Smash-style layout: a normal grid through the sweet spot,
+      // with the outer/lower ring opened up into oversized air ports for
+      // faster head speed. The ports carry an explicit per-hole diameter;
+      // the rest inherit the global slider — so open area (and score) shift
+      // exactly as much as the bigger ports actually add.
+      const grid = generateLegacyHoleGrid("standard", "even", shape);
+      const ported = grid.map(h => {
+        const dist = Math.sqrt(h.x * h.x + h.y * h.y);
+        return dist > 0.55 ? { ...h, d: PORT_MM } : h; // outer ring → ports
+      });
+      onHolesChange(ported);
       return;
     }
     if (preset === "monogram") {
@@ -7724,6 +7751,14 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
         <span style={{ fontSize: 10.5, color: "#7A7268", fontFamily: "Inter, sans-serif" }}>({(GRID_PITCH_NORM * 255 / 2).toFixed(0)}mm spacing — free placement still works when off)</span>
       </div>
 
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+          <input type="checkbox" checked={portMode} onChange={e => { setPortMode(e.target.checked); if (e.target.checked) setClickMode("add"); }} style={{ accentColor: "#2563EB" }}/>
+          <span style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif" }}>Large port ({PORT_MM}mm)</span>
+        </label>
+        <span style={{ fontSize: 10.5, color: "#7A7268", fontFamily: "Inter, sans-serif" }}>(oversized air ports — placed holes keep this size regardless of the global slider)</span>
+      </div>
+
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VB} ${VB}`}
@@ -7774,7 +7809,12 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
         {holes.map((h, i) => {
           const dist = Math.sqrt(h.x * h.x + h.y * h.y);
           const px = cx + h.x * a, py = cy + h.y * b;
-          return <circle key={i} cx={px} cy={py} r={holeRPx} fill="#fff" stroke={dist < 0.4 ? "#1A5C2A" : "#B0A68E"} strokeWidth={dist < 0.4 ? 1.4 : 0.8}/>;
+          // Oversized ports (a per-hole d larger than the global diameter)
+          // are outlined in port-blue so they read as intentionally big
+          // rather than a slider mistake.
+          const isPort = typeof h.d === "number" && h.d > holeDiameterMm + 0.01;
+          const rpx = Math.max(2.2, ((typeof h.d === "number" && h.d > 0 ? h.d : holeDiameterMm) * pxPerMm) / 2);
+          return <circle key={i} cx={px} cy={py} r={rpx} fill="#fff" stroke={isPort ? "#2563EB" : dist < 0.4 ? "#1A5C2A" : "#B0A68E"} strokeWidth={isPort ? 1.6 : dist < 0.4 ? 1.4 : 0.8}/>;
         })}
       </svg>
       <p style={{ fontSize: 11, color: "#7A7268", textAlign: "center", margin: "6px 0 0", fontFamily: "Inter, sans-serif" }}>
@@ -7801,7 +7841,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       <div style={{ marginTop: 12 }}>
         <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Quick fill patterns</p>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["vstrip", "Vertical strip"], ["standard", "Standard grid"], ["dense", "Dense grid"]].map(([id, label]) => (
+          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["vstrip", "Vertical strip"], ["standard", "Standard grid"], ["dense", "Dense grid"], ["airports", "Air ports (OXDOG)"]].map(([id, label]) => (
             <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: "#fff", color: "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
           ))}
         </div>
@@ -7892,7 +7932,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
 
       {holes.length > 0 && (
         <div style={{ marginTop: 10, fontSize: 11.5, color: "#4A4540", lineHeight: 1.6, fontFamily: "Inter, sans-serif" }}>
-          {holes.length} holes at {holeDiameterMm}mm, {(centerFrac * holes.length).toFixed(0)} concentrated at center, {(edgeFrac * holes.length).toFixed(0)} near the edge, {topCount}/{botCount} top/bottom split.
+          {(() => { const ports = holes.filter(h => typeof h.d === "number" && h.d > holeDiameterMm + 0.01).length; return `${holes.length} holes at ${holeDiameterMm}mm${ports ? ` (incl. ${ports} oversized ${PORT_MM}mm ports)` : ""}`; })()}, {(centerFrac * holes.length).toFixed(0)} concentrated at center, {(edgeFrac * holes.length).toFixed(0)} near the edge, {topCount}/{botCount} top/bottom split.
           {centerFrac > 0.5 && " Center-heavy placement — sweet spot flexes more while edges stay stiffer, resisting off-center twist."}
           {edgeFrac > 0.5 && " Edge-heavy placement — sweet spot stays direct while perimeter mass is reduced."}
         </div>
