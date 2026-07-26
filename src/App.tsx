@@ -91,6 +91,20 @@ const EDGE_PROFILES = [
   { id: "sharp", label: "Sharp / boxy (Nox-style)", note: "A squared, well-defined box-section edge. Structurally stiffer in bending, so impact transmits more directly for a crisp, 'connected' feel with more feedback, and the profiled edge is engineered for airflow — on a heavy, head-heavy frame swung hard it converts to real head speed and smash power (the same aero logic Nox markets on its profiled frames). The trade: it buzzes more (stiff frames send more vibration, which is why Nox pairs boxy carbon frames with dedicated damping) and its exposed corner is a stress riser that chips more easily unless reinforced." },
 ];
 
+// Head-shape SIDE geometry — how curved vs straight/angular the head's side
+// edges are. Rounded sides (most brands) bow outward smoothly; straight sides
+// (Siux-style, and some geometric moulds) run the perimeter more directly
+// between tip, shoulder and throat. Straightening pushes more of the frame's
+// perimeter mass out to the widest zone, which raises twistweight/off-centre
+// stability and broadens the sweet spot laterally, at a small aerodynamic cost
+// (a flatter, larger side profile catches marginally more air). "Standard"
+// (curved) is the neutral default so existing racquets are unchanged — no bias.
+const SIDE_PROFILES = [
+  { id: "curved", label: "Curved sides", note: "Smoothly bowed side edges — the conventional look on most padel moulds. Balanced twistweight and aerodynamics." },
+  { id: "soft-straight", label: "Semi-straight", note: "Partly flattened sides — a subtle move toward a more geometric outline. A little more perimeter mass at the widest point for extra off-centre stability and a slightly wider sweet spot." },
+  { id: "straight", label: "Straight sides (Siux-style)", note: "Distinctly straight, angular side edges running more directly between tip, shoulder and throat. Concentrates the most perimeter mass at the widest zone → the highest twistweight and off-centre stability and the widest sweet spot of the three, at a small aerodynamic cost from the flatter, larger side profile." },
+];
+
 const SHAPES = [
   { id: "round", label: "Round", balanceRange: "low (closer to handle, typically 24.0–25.2cm)", sweetSpot: "Large, centered — typically 25–35mm radius", power: 2, control: 5, forgiveness: 5, note: "The round head places mass symmetrically around the face center, with the center of mass closest to the handle of any shape. Lowest swingweight (easiest to accelerate) and most centered sweet spot. Off-center hits cause less face rotation because twistweight (resistance to face twist) is maximized when mass is distributed symmetrically — round heads have higher effective twistweight per gram than diamond shapes. Power ceiling is lower not because 'round = soft' but because balance point is lower: power transfer on a smash scales with (M × d²) where d is the distance from pivot point to the mass. Lower balance = smaller d = lower effective swing mass = less smash power. The round is not 'just for beginners' — it is optimal for net-forward defensive players, arm-sensitive players, and any style prioritizing touch and placement over raw smash output.", bestFor: "Beginners, defensive players, net specialists, arm/shoulder sensitivity, high-frequency recreational play" },
   { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, typically 25.4–26.2cm", sweetSpot: "Medium, shifted slightly toward tip — typically 20–28mm radius", power: 4, control: 4, forgiveness: 3, note: "A geometric compromise — narrower at the base (throat) and wider at the tip — shifting mass slightly upward from round while keeping a wider midsection than diamond. Balance point between the two extremes. Sweet spot shifts slightly higher in the face, matching where most padel smashes actually contact the face. Swingweight moderate — easier to accelerate than diamond, heavier-feeling than round. Twistweight still reasonable — the wide midsection prevents the extreme face narrowing of a pure diamond, keeping some twistweight for mishit forgiveness. Most commercially versatile shape — majority of intermediate and advanced padel racquets globally. Advanced players who primarily play baseline control rallies often find teardrop satisfying: the power uplift versus round is significant while the control penalty versus diamond is modest.", bestFor: "Intermediate to advanced players, all-court play, the most commercially versatile specification" },
@@ -696,7 +710,7 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, 
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile }) {
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }) {
   const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
@@ -840,6 +854,18 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
     out.power = clampS(out.power - 0.1);
   }
   out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
+  // Head-shape side geometry. Straighter/more-angular sides carry more of the
+  // perimeter mass out to the widest zone → higher twistweight (off-centre
+  // stability) and a broader sweet spot, at a small aero cost. "curved" (the
+  // default) is neutral so nothing existing changes — no bias.
+  if (sideProfile === "straight") {
+    out.stability = clampS(out.stability + 0.25);
+    out.sweetSpot = clampS(out.sweetSpot + 0.2);
+    out.power = clampS(out.power - 0.1);
+  } else if (sideProfile === "soft-straight") {
+    out.stability = clampS(out.stability + 0.12);
+    out.sweetSpot = clampS(out.sweetSpot + 0.1);
+  }
   return out;
 }
 
@@ -3636,23 +3662,55 @@ function sweetSpotPosLabel(shapeId, balanceCm) {
 // SVG PATH HELPERS
 // ---------------------------------------------------------------------------
 
-function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight) {
+// Blend a cubic-bezier path string toward straight chords. straightness 0 =
+// original curves; 1 = each segment's control points snap onto the straight
+// line between its endpoints (so curves become straight edges — the Siux-style
+// angular sides). Purely visual: the sweet-spot/stability math uses the raw
+// head box, not this path, so straightening never perturbs the scores.
+function straightenBezierPath(d: string, straightness: number): string {
+  if (!straightness) return d;
+  const s = Math.max(0, Math.min(1, straightness));
+  const nums = (str: string) => str.trim().split(/[ ,]+/).map(Number);
+  const tokens = d.match(/[MCZ][^MCZ]*/gi) || [];
+  let curX = 0, curY = 0, startX = 0, startY = 0;
+  const lerp = (a: number, bb: number) => a + (bb - a) * s;
+  const out: string[] = [];
+  for (const tk of tokens) {
+    const cmd = tk[0].toUpperCase();
+    if (cmd === "M") { const [x, y] = nums(tk.slice(1)); curX = startX = x; curY = startY = y; out.push(`M ${x} ${y}`); }
+    else if (cmd === "Z") { out.push("Z"); curX = startX; curY = startY; }
+    else if (cmd === "C") {
+      const p = nums(tk.slice(1)); // x1 y1 x2 y2 x y
+      const ex = p[4], ey = p[5];
+      // straight-line control points at 1/3 and 2/3 of the chord
+      const s1x = curX + (ex - curX) / 3, s1y = curY + (ey - curY) / 3;
+      const s2x = curX + 2 * (ex - curX) / 3, s2y = curY + 2 * (ey - curY) / 3;
+      out.push(`C ${lerp(p[0], s1x).toFixed(1)} ${lerp(p[1], s1y).toFixed(1)}, ${lerp(p[2], s2x).toFixed(1)} ${lerp(p[3], s2y).toFixed(1)}, ${ex} ${ey}`);
+      curX = ex; curY = ey;
+    }
+  }
+  return out.join(" ");
+}
+
+function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight, sideProfile?) {
+  const straightness = sideProfile === "straight" ? 0.82 : sideProfile === "soft-straight" ? 0.45 : 0;
   const ww = halfWidthMax, t = topY, b = topY + headHeight;
+  const wrap = (d: string) => straightenBezierPath(d, straightness);
   if (shape === "round") {
     const mid = t + headHeight * 0.5;
-    return `M ${cx} ${t} C ${cx+ww*0.74} ${t}, ${cx+ww} ${t+headHeight*0.22}, ${cx+ww} ${mid} C ${cx+ww} ${b-headHeight*0.22}, ${cx+ww*0.74} ${b}, ${cx} ${b} C ${cx-ww*0.74} ${b}, ${cx-ww} ${b-headHeight*0.22}, ${cx-ww} ${mid} C ${cx-ww} ${t+headHeight*0.22}, ${cx-ww*0.74} ${t}, ${cx} ${t} Z`;
+    return wrap(`M ${cx} ${t} C ${cx+ww*0.74} ${t}, ${cx+ww} ${t+headHeight*0.22}, ${cx+ww} ${mid} C ${cx+ww} ${b-headHeight*0.22}, ${cx+ww*0.74} ${b}, ${cx} ${b} C ${cx-ww*0.74} ${b}, ${cx-ww} ${b-headHeight*0.22}, ${cx-ww} ${mid} C ${cx-ww} ${t+headHeight*0.22}, ${cx-ww*0.74} ${t}, ${cx} ${t} Z`);
   }
   if (shape === "diamond") {
     const mid = t + headHeight * 0.32;
-    return `M ${cx} ${t+6} C ${cx+ww*0.32} ${t-2}, ${cx+ww*0.78} ${t+headHeight*0.05}, ${cx+ww*0.94} ${mid-headHeight*0.05} C ${cx+ww*1.02} ${mid+headHeight*0.02}, ${cx+ww*0.86} ${mid+headHeight*0.14}, ${cx+ww*0.7} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.7} ${b-headHeight*0.12} C ${cx-ww*0.86} ${mid+headHeight*0.14}, ${cx-ww*1.02} ${mid+headHeight*0.02}, ${cx-ww*0.94} ${mid-headHeight*0.05} C ${cx-ww*0.78} ${t+headHeight*0.05}, ${cx-ww*0.32} ${t-2}, ${cx} ${t+6} Z`;
+    return wrap(`M ${cx} ${t+6} C ${cx+ww*0.32} ${t-2}, ${cx+ww*0.78} ${t+headHeight*0.05}, ${cx+ww*0.94} ${mid-headHeight*0.05} C ${cx+ww*1.02} ${mid+headHeight*0.02}, ${cx+ww*0.86} ${mid+headHeight*0.14}, ${cx+ww*0.7} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.7} ${b-headHeight*0.12} C ${cx-ww*0.86} ${mid+headHeight*0.14}, ${cx-ww*1.02} ${mid+headHeight*0.02}, ${cx-ww*0.94} ${mid-headHeight*0.05} C ${cx-ww*0.78} ${t+headHeight*0.05}, ${cx-ww*0.32} ${t-2}, ${cx} ${t+6} Z`);
   }
   if (shape === "diamond-wide") {
     // Same peak position as standard diamond but wider through the shoulders — the defining geometric difference
     const mid = t + headHeight * 0.30;
-    return `M ${cx} ${t+6} C ${cx+ww*0.38} ${t-2}, ${cx+ww*0.88} ${t+headHeight*0.05}, ${cx+ww*1.0} ${mid-headHeight*0.03} C ${cx+ww*1.06} ${mid+headHeight*0.04}, ${cx+ww*0.92} ${mid+headHeight*0.16}, ${cx+ww*0.72} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.72} ${b-headHeight*0.12} C ${cx-ww*0.92} ${mid+headHeight*0.16}, ${cx-ww*1.06} ${mid+headHeight*0.04}, ${cx-ww*1.0} ${mid-headHeight*0.03} C ${cx-ww*0.88} ${t+headHeight*0.05}, ${cx-ww*0.38} ${t-2}, ${cx} ${t+6} Z`;
+    return wrap(`M ${cx} ${t+6} C ${cx+ww*0.38} ${t-2}, ${cx+ww*0.88} ${t+headHeight*0.05}, ${cx+ww*1.0} ${mid-headHeight*0.03} C ${cx+ww*1.06} ${mid+headHeight*0.04}, ${cx+ww*0.92} ${mid+headHeight*0.16}, ${cx+ww*0.72} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.72} ${b-headHeight*0.12} C ${cx-ww*0.92} ${mid+headHeight*0.16}, ${cx-ww*1.06} ${mid+headHeight*0.04}, ${cx-ww*1.0} ${mid-headHeight*0.03} C ${cx-ww*0.88} ${t+headHeight*0.05}, ${cx-ww*0.38} ${t-2}, ${cx} ${t+6} Z`);
   }
   const mid = t + headHeight * 0.42;
-  return `M ${cx} ${t} C ${cx+ww*0.86} ${t+2}, ${cx+ww} ${mid-headHeight*0.18}, ${cx+ww*0.95} ${mid} C ${cx+ww*0.88} ${b-headHeight*0.2}, ${cx+ww*0.46} ${b-4}, ${cx} ${b} C ${cx-ww*0.46} ${b-4}, ${cx-ww*0.88} ${b-headHeight*0.2}, ${cx-ww*0.95} ${mid} C ${cx-ww} ${mid-headHeight*0.18}, ${cx-ww*0.86} ${t+2}, ${cx} ${t} Z`;
+  return wrap(`M ${cx} ${t} C ${cx+ww*0.86} ${t+2}, ${cx+ww} ${mid-headHeight*0.18}, ${cx+ww*0.95} ${mid} C ${cx+ww*0.88} ${b-headHeight*0.2}, ${cx+ww*0.46} ${b-4}, ${cx} ${b} C ${cx-ww*0.46} ${b-4}, ${cx-ww*0.88} ${b-headHeight*0.2}, ${cx-ww*0.95} ${mid} C ${cx-ww} ${mid-headHeight*0.18}, ${cx-ww*0.86} ${t+2}, ${cx} ${t} Z`);
 }
 
 // Each face material gets a distinct visual profile rather than a shared
@@ -3939,7 +3997,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   );
 }
 
-function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
+function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, sideProfile, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
   const STROKE = "#4A4540";
   // Frame edge geometry: a sharp/boxy profile renders with mitred corners and a
   // crisp inner chamfer line; a rounded profile keeps soft joins and gets a
@@ -3947,7 +4005,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, holes, holeDi
   const edgeJoin = edgeProfile === "sharp" ? "miter" : "round";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
-  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
+  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight, sideProfile);
   const sweet = computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core: coreObj, face: faceObj, frame: frameObj, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, topY, headHeight, halfWidth });
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
   const tint = faceVisual.tint;
@@ -4028,8 +4086,8 @@ function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, holes, holeDi
     <svg viewBox="0 -22 460 662" width="100%" height="100%" style={{display:"block"}}>
       <defs><clipPath id="headClip"><path d={outline}/></clipPath></defs>
       <path d={outline} fill={tint} stroke={frameRimStyle.color} strokeWidth={frameRimStyle.width} strokeLinejoin={edgeJoin}/>
-      {edgeProfile === "sharp" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6)} fill="none" stroke={frameRimStyle.color} strokeWidth="1.4" strokeLinejoin="miter" opacity="0.75"/>}
-      {edgeProfile === "rounded" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6)} fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinejoin="round" opacity="0.5"/>}
+      {edgeProfile === "sharp" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6, sideProfile)} fill="none" stroke={frameRimStyle.color} strokeWidth="1.4" strokeLinejoin="miter" opacity="0.75"/>}
+      {edgeProfile === "rounded" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6, sideProfile)} fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinejoin="round" opacity="0.5"/>}
       {faceVisual.coverage > 0 ? (
         <g clipPath="url(#headClip)">
           {weaveLinesA.map((h, i) => <line key={"a" + i} x1={h.x1} y1={h.y1} x2={h.x2} y2={h.y2} stroke={faceVisual.weaveColor} strokeWidth="1" opacity="0.5" />)}
@@ -4239,6 +4297,7 @@ function RacquetIllustration3D({
   surfaceId,
   gripShapeId,
   edgeProfile,
+  sideProfile,
   holes,
   holeDiameterMm,
   lengthMm,
@@ -4266,8 +4325,8 @@ function RacquetIllustration3D({
   // also stays unrotated here. The 3/4-turn feel now comes entirely
   // from lighting (the rim-light arc and off-center highlight below),
   // not from literally rotating the geometry.
-  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
-  const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12);
+  const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight, sideProfile);
+  const innerOutline = headOutlinePath(shape, cx, topY + 6, halfWidth - 7, headHeight - 12, sideProfile);
   // Hollow-tube constructions get a distinct inner border in the front
   // view — a second outline just inside the foam face, reading as the
   // inner wall of the perimeter tube. This is what visually distinguishes
@@ -7859,6 +7918,7 @@ export default function App() {
   const [gripId, setGripId] = useState("pu-grip");
   const [gripShapeId, setGripShapeId] = useState("octagonal");
   const [edgeProfile, setEdgeProfile] = useState("standard");
+  const [sideProfile, setSideProfile] = useState("curved");
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
@@ -7922,6 +7982,7 @@ export default function App() {
       if (typeof s.gripId === "string") setGripId(s.gripId);
       if (typeof s.gripShapeId === "string") setGripShapeId(s.gripShapeId);
       if (typeof s.edgeProfile === "string") setEdgeProfile(s.edgeProfile);
+      if (typeof s.sideProfile === "string") setSideProfile(s.sideProfile);
       if (typeof s.bridgeId === "string") setBridgeId(s.bridgeId);
       if (typeof s.beamCount === "number") setBeamCount(s.beamCount);
       if (typeof s.beamOrientation === "string") setBeamOrientation(s.beamOrientation);
@@ -7950,7 +8011,7 @@ export default function App() {
     setShareStatus("saving");
     setShareError(null);
     const spec = {
-      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile,
+      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
     };
@@ -7978,7 +8039,7 @@ export default function App() {
     // Reset back to idle after a few seconds so the button is reusable
     // for a fresh save if the person keeps editing.
     setTimeout(() => setShareStatus("idle"), 4000);
-  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
 
   // Save edits back onto the currently-loaded build in place (same share code),
   // instead of spawning a new library entry. RLS only lets a user overwrite
@@ -7988,7 +8049,7 @@ export default function App() {
     if (!loadedCode) return;
     setUpdateStatus("saving");
     const spec = {
-      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile,
+      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
     };
@@ -8010,7 +8071,7 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile]);
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
@@ -8042,9 +8103,11 @@ export default function App() {
       const hls = Array.isArray(g.holes) ? g.holes : [];
       const hd = typeof g.holeDiameterMm === "number" ? g.holeDiameterMm : 9;
       const edge = typeof g.edgeProfile === "string" ? g.edgeProfile : "standard";
-      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge });
+      const side = typeof g.sideProfile === "string" ? g.sideProfile : "curved";
+      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge, sideProfile: side });
       const bridgeLabel = (BRIDGE_TYPES.find(b => b.id === bId)?.label) ?? bId;
       const edgeLabel = (EDGE_PROFILES.find(e => e.id === edge)?.label) ?? edge;
+      const sideLabel = (SIDE_PROFILES.find(sp => sp.id === side)?.label) ?? side;
       const cap = (x: string) => (x ? x[0].toUpperCase() + x.slice(1) : x);
       return {
         scores: sc,
@@ -8053,6 +8116,7 @@ export default function App() {
           core: cor.label, face: fac.label, frame: frm.label, surface: srf.label,
           throat: bId === "closed" ? bridgeLabel : `${bridgeLabel} · ${cap(bOr)} · ${bCt}`,
           edge: edgeLabel,
+          side: sideLabel,
         },
       };
     };
@@ -8155,7 +8219,7 @@ export default function App() {
 
   // Shared diagram props
   const diagramProps = {
-    shape: shapeId, faceId, surfaceId, gripShapeId, edgeProfile, holes, holeDiameterMm,
+    shape: shapeId, faceId, surfaceId, gripShapeId, edgeProfile, sideProfile, holes, holeDiameterMm,
     lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
     bridgeId, beamCount, beamOrientation,
   };
@@ -8264,6 +8328,11 @@ export default function App() {
           <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Frame Edge Profile</p>
           <ToggleGroup options={EDGE_PROFILES.map(e=>({id:e.id, label:e.label}))} value={edgeProfile} onChange={setEdgeProfile}/>
           <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{EDGE_PROFILES.find(e=>e.id===edgeProfile)?.note}</p>
+        </div>
+        <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Head Side Shaping</p>
+          <ToggleGroup options={SIDE_PROFILES.map(sp=>({id:sp.id, label:sp.label}))} value={sideProfile} onChange={setSideProfile}/>
+          <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{SIDE_PROFILES.find(sp=>sp.id===sideProfile)?.note}</p>
         </div>
       </AccordionSection>
 
