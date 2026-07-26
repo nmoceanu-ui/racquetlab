@@ -806,6 +806,18 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   const holeAeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
   const holeAeroBonus = (Math.min(openPct, 20) / 20) * holeAeroBias * 0.9;
   out.power = Math.round(Math.min(5, out.power + holeAeroBonus) * 10) / 10;
+  // Frame-thickness aerodynamics. A thinner frame presents a smaller frontal
+  // cross-section, so it cuts less air on the downswing → faster head speed →
+  // more effective smash power. Like the hole/throat/edge aero, this only cashes
+  // in on a heavy, head-heavy frame swung hard (holeAeroBias); on a light control
+  // frame the swing is too slow, so thinness there instead just buys flex,
+  // comfort and a bigger sweet spot (already handled in the averaged thickness
+  // term and the sweet-spot radius factor above). Baseline 38mm = no bonus,
+  // scaling to the 28mm structural floor. This is the signal that tells a factory
+  // to go thinner for an attacking frame: swing speed, not touch.
+  const thinFactor = Math.max(0, Math.min(1, (38 - (thicknessMm ?? 38)) / 10));
+  const thickAeroBonus = thinFactor * holeAeroBias * 0.6;
+  out.power = Math.round(Math.min(5, out.power + thickAeroBonus) * 10) / 10;
   // Frame edge geometry (rounded ↔ sharp). Applied as small post-average
   // deltas so "standard" (the default, and every existing racquet) is exactly
   // unchanged — no bias — while opting into rounded/sharp shifts the honest
@@ -7881,6 +7893,7 @@ export default function App() {
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [loadedName, setLoadedName] = useState<string | null>(null); // name of the build opened from a library/share link
 
   // Accordion state
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["shape"]));
@@ -7922,6 +7935,7 @@ export default function App() {
       if (typeof s.weightG === "number") setWeightG(s.weightG);
       if (typeof s.balanceCm === "number") setBalanceCm(s.balanceCm);
       if (typeof s.gripCircMm === "number") setGripCircMm(s.gripCircMm);
+      if (result.name) setLoadedName(result.name);
       setLoadStatus("idle");
       setActiveTab("view");
       analytics.buildLoaded(code);
@@ -8739,6 +8753,9 @@ export default function App() {
             <img src="/icon-192.png?v=2" alt="PalaLab" width={32} height={32} style={{ width:32, height:32, borderRadius:8, objectFit:"cover", flexShrink:0, display:"block" }} />
             <div>
               <div style={{ fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, fontSize:16, letterSpacing:"0.04em", color:"#18181B", lineHeight:1 }}>PALA<span style={{color:"#1A5C2A"}}>LAB</span></div>
+              {loadedName && (activeTab !== "home" && activeTab !== "find") && (
+                <div title={loadedName} style={{ fontSize:11, color:"#1A5C2A", fontFamily:"Inter, sans-serif", fontWeight:600, lineHeight:1.15, marginTop:3, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>✎ {loadedName}</div>
+              )}
               <div className={(activeTab === "home" || activeTab === "find") ? "mobile-hide" : ""} style={{ fontSize:10, color:"#7A7268", fontFamily:"'JetBrains Mono', monospace", letterSpacing:"0.06em", lineHeight:1, marginTop:2 }}>{shape.label.toUpperCase()} · {weightG}G · {balanceCm}CM</div>
             </div>
           </div>
