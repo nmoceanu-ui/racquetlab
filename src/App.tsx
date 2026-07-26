@@ -569,6 +569,57 @@ function computeHoleCenterEdgeSplit(holes: HolePoint[]): { centerFrac: number; e
   return { centerFrac: centerCount / holes.length, edgeFrac: edgeCount / holes.length, meanDist: distSum / holes.length };
 }
 
+// Representative face perforation for a catalog racquet. Exact factory drilling
+// maps aren't published for most commercial models, so this is a shape-
+// appropriate stand-in: the standard grid for the racquet's shape, with the
+// outer ring opened into oversized air ports for models whose design is
+// documented to use them (detected from the model's own description). Used for
+// VISUALISATION only — comparison scoring keeps a single uniform grid so no
+// racquet gets an engineered advantage from an assumed hole map.
+function racquetHasPorts(note?: string): boolean {
+  if (!note) return false;
+  const n = note.toLowerCase();
+  return n.includes("air port") || n.includes("air-port") || n.includes("airport") || n.includes("double-size hole") || n.includes("double size hole") || n.includes("oversize");
+}
+function racquetHoleLayout(shape: string, hasPorts: boolean): HolePoint[] {
+  const grid = generateLegacyHoleGrid("standard", "even", shape);
+  if (!hasPorts) return grid;
+  return grid.map(h => (Math.sqrt(h.x * h.x + h.y * h.y) > 0.55 ? { ...h, d: 13 } : h));
+}
+
+// Compact read-only face diagram — draws a racquet's shape outline and its
+// hole layout (with oversized ports rendered larger and in port-blue). Used to
+// preview a catalog model's representative perforation next to its specs.
+function RacquetFaceMini({ shape, holes, holeDiameterMm = 9, size = 128 }:
+  { shape: string; holes: HolePoint[]; holeDiameterMm?: number; size?: number }) {
+  const VB = 280;
+  const cx = VB * 0.5, cy = VB * 0.44;
+  const a = VB * 0.36, b = shape === "round" ? VB * 0.4 : (shape === "diamond" || shape === "diamond-wide") ? VB * 0.4 : VB * 0.37;
+  const pxPerMm = (a * 2) / 255;
+  const diamondPts = (cx) + "," + (cy - b) + " " + (cx + a) + "," + (cy) + " " + (cx) + "," + (cy + b) + " " + (cx - a) + "," + (cy);
+  const teardropD = "M " + cx + "," + (cy - b)
+    + " C " + (cx + a * 0.88) + "," + (cy - b * 0.4) + " " + (cx + a) + "," + (cy + b * 0.15) + " " + (cx + a * 0.5) + "," + (cy + b * 0.75)
+    + " C " + (cx + a * 0.25) + "," + (cy + b) + " " + cx + "," + (cy + b) + " " + cx + "," + (cy + b)
+    + " C " + cx + "," + (cy + b) + " " + (cx - a * 0.25) + "," + (cy + b) + " " + (cx - a * 0.5) + "," + (cy + b * 0.75)
+    + " C " + (cx - a) + "," + (cy + b * 0.15) + " " + (cx - a * 0.88) + "," + (cy - b * 0.4) + " " + cx + "," + (cy - b) + " Z";
+  const outline = shape === "round"
+    ? <ellipse cx={cx} cy={cy} rx={a} ry={b} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />
+    : (shape === "diamond" || shape === "diamond-wide")
+    ? <polygon points={diamondPts} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />
+    : <path d={teardropD} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />;
+  return (
+    <svg viewBox={"0 0 " + VB + " " + VB} width={size} height={size} style={{ display: "block" }}>
+      {outline}
+      {holes.map((h, i) => {
+        const d = (typeof h.d === "number" && h.d > 0) ? h.d : holeDiameterMm;
+        const r = Math.max(1.6, (d * pxPerMm) / 2);
+        const isPort = typeof h.d === "number" && h.d > holeDiameterMm + 0.01;
+        return <circle key={i} cx={cx + h.x * a} cy={cy + h.y * b} r={r} fill="#fff" stroke={isPort ? "#2563EB" : "#B0A68E"} strokeWidth={isPort ? 1.4 : 0.8} />;
+      })}
+    </svg>
+  );
+}
+
 // ===========================================================================
 // LEAD TAPE BALANCING ENGINE
 // ---------------------------------------------------------------------------
@@ -7054,11 +7105,17 @@ function FactoryBriefPanel({ onApply }) {
             {existingMoldRacquetId && (() => {
               const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
               return (
-                <div style={{ marginTop: 14, padding: "12px", background: "#F2F8F3", border: "1px solid rgba(26,92,42,0.25)", borderRadius: 8 }}>
-                  <div style={{ fontSize: 11, color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
-                  <div style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }}>
-                    Shape: <strong style={{color:"#18181B"}}>{mold.shapeId}</strong> · Weight: <strong style={{color:"#18181B"}}>{mold.weightG}g</strong> · Balance: <strong style={{color:"#18181B"}}>{mold.balanceCm}cm</strong> · Thickness: <strong style={{color:"#18181B"}}>{mold.thicknessMm}mm</strong><br/>
-                    Current spec: {mold.coreId} core · {mold.faceId} face · {mold.frameId} frame
+                <div style={{ marginTop: 14, padding: "12px", background: "#F2F8F3", border: "1px solid rgba(26,92,42,0.25)", borderRadius: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
+                    <div style={{ fontSize: 12, color: "#4A4540", fontFamily: "Inter, sans-serif", lineHeight: 1.6 }}>
+                      Shape: <strong style={{color:"#18181B"}}>{mold.shapeId}</strong> · Weight: <strong style={{color:"#18181B"}}>{mold.weightG}g</strong> · Balance: <strong style={{color:"#18181B"}}>{mold.balanceCm}cm</strong> · Thickness: <strong style={{color:"#18181B"}}>{mold.thicknessMm}mm</strong><br/>
+                      Current spec: {mold.coreId} core · {mold.faceId} face · {mold.frameId} frame
+                    </div>
+                  </div>
+                  <div style={{ flexShrink: 0, textAlign: "center", width: 116 }}>
+                    <RacquetFaceMini shape={mold.shapeId} holes={racquetHoleLayout(mold.shapeId, racquetHasPorts(mold.note))} size={110} />
+                    <div style={{ fontSize: 9.5, color: "#7A7268", fontFamily: "Inter, sans-serif", marginTop: 3, lineHeight: 1.35 }}>Representative perforation{racquetHasPorts(mold.note) ? " · air ports" : ""}</div>
                   </div>
                 </div>
               );
