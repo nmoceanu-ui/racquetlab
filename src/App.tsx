@@ -6903,7 +6903,7 @@ function SectionDivider({ label, step }: { label: string; step: number }) {
   );
 }
 
-function FactoryBriefPanel({ onApply }) {
+function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
   const SAVED: any = loadProgress(FACTORY_KEY, {});
   const [level, setLevel] = useState<string | null>(SAVED.level ?? null);
   const [priceTier, setPriceTier] = useState<string | null>(SAVED.priceTier ?? null);
@@ -7105,6 +7105,7 @@ function FactoryBriefPanel({ onApply }) {
             {existingMoldRacquetId && (() => {
               const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
               return (
+                <>
                 <div style={{ marginTop: 14, padding: "12px", background: "#F2F8F3", border: "1px solid rgba(26,92,42,0.25)", borderRadius: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Shell locked from this mold</div>
@@ -7118,6 +7119,10 @@ function FactoryBriefPanel({ onApply }) {
                     <div style={{ fontSize: 9.5, color: "#7A7268", fontFamily: "Inter, sans-serif", marginTop: 3, lineHeight: 1.35 }}>Representative perforation{racquetHasPorts(mold.note) ? " · air ports" : ""}</div>
                   </div>
                 </div>
+                {onVisualizeRacquet && (
+                  <button onClick={() => onVisualizeRacquet(mold)} style={{ marginTop: 10, width: "100%", padding: "10px 12px", borderRadius: 8, border: "1.5px solid #1A5C2A", background: "#1A5C2A", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Visualize full model →</button>
+                )}
+                </>
               );
             })()}
             <div style={{ marginTop: 14 }}>
@@ -8314,6 +8319,35 @@ export default function App() {
     setActiveTab("view");
   };
 
+  // Load a catalog racquet straight into the builder and jump to the visualiser,
+  // so picking a model from the database renders it immediately across Spec
+  // View / Illustration / Profile. Materials, dimensions and a representative
+  // perforation are applied; geometry not stored per-model (edge/side) resets to
+  // neutral so the render reflects the model, not leftover state from a prior build.
+  const loadMarketRacquet = useCallback((r: any) => {
+    if (!r) return;
+    setShapeId(r.shapeId); setCoreId(r.coreId); setFaceId(r.faceId);
+    setFrameId(r.frameId); setSurfaceId(r.surfaceId);
+    setWeightG(Math.round(r.weightG));
+    setBalanceCm(Math.round(r.balanceCm * 10) / 10);
+    if (typeof r.thicknessMm === "number") setThicknessMm(r.thicknessMm);
+    setWidthMm(255);
+    setEdgeProfile("standard"); setSideProfile("curved");
+    setHolesRaw(racquetHoleLayout(r.shapeId, racquetHasPorts(r.note)));
+    setHoleDiameterMm(9);
+    setLoadedName((r.brand ? r.brand + " " : "") + r.model);
+    setLoadedCode(null);
+    setActiveTab("view");
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+  }, []);
+  // Bridge so the Compare drawer (a separate React tree) can trigger a load by id.
+  useEffect(() => {
+    (window as any).__palalabLoadRacquet = (id: string) => {
+      const r = (MARKET_RACQUETS as any[]).find((x) => x.id === id);
+      if (r) loadMarketRacquet(r);
+    };
+  }, [loadMarketRacquet]);
+
   // Shared diagram props
   const diagramProps = {
     shape: shapeId, faceId, surfaceId, gripShapeId, edgeProfile, sideProfile, holes, holeDiameterMm,
@@ -8352,7 +8386,7 @@ export default function App() {
       {mode === "manufacturer" && (
         <div style={{ marginBottom: 4 }}>
           <AccordionSection id="factoryBrief" icon={<Wrench size={15}/>} label="Factory Brief" isOpen={openSections.has("factoryBrief")} onToggle={() => toggle("factoryBrief")}>
-            <FactoryBriefPanel onApply={handleApplyFactorySpec}/>
+            <FactoryBriefPanel onApply={handleApplyFactorySpec} onVisualizeRacquet={loadMarketRacquet}/>
           </AccordionSection>
         </div>
       )}
@@ -8874,7 +8908,7 @@ export default function App() {
   const findContent = (
     <div style={{ padding:"0 16px" }}>
       {mode === "manufacturer" ? (
-        <FactoryBriefPanel onApply={handleApplyFactorySpec}/>
+        <FactoryBriefPanel onApply={handleApplyFactorySpec} onVisualizeRacquet={loadMarketRacquet}/>
       ) : (
         <FindRacquetPanel onApply={handleApplyRec} mode={mode}/>
       )}
