@@ -107,6 +107,24 @@ export async function loadBuild(code: string): Promise<LoadedBuildResult> {
   return { ok: true, spec: data.spec as Record<string, unknown>, name: (data.name as string | null) ?? null };
 }
 
+// Update a build in place by its share code. RLS restricts UPDATE to the row's
+// owner, so this only succeeds for the signed-in user's own builds — the number
+// of rows touched is returned so the caller can fall back to a fresh save when
+// the loaded build isn't theirs (e.g. someone else's shared link).
+export async function updateBuildByCode(
+  code: string,
+  spec: Record<string, unknown>
+): Promise<{ ok: true; updated: number } | { ok: false; error: string }> {
+  if (!supabaseConfigured || !supabase) return { ok: false, error: "Not configured." };
+  const { data, error } = await supabase
+    .from("saved_builds")
+    .update({ spec })
+    .eq("code", code.toLowerCase())
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, updated: (data ?? []).length };
+}
+
 // ---- Account library (all filtered by owner explicitly for safety) ----
 
 export async function listMyBuilds(): Promise<
