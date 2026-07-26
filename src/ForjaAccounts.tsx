@@ -128,6 +128,10 @@ const CSS = `
 .fa-cmpbar span{font-size:12.5px;color:#7A7268;font-family:'Inter',sans-serif;}
 .fa-cmpbar button{background:#1A5C2A;color:#fff;border:none;border-radius:9px;padding:11px 18px;font-family:'Barlow Condensed','Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-weight:600;font-size:14px;cursor:pointer;}
 .fa-cmpbar button:disabled{opacity:.45;cursor:default;}
+.fa-dbres{margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:230px;overflow:auto;}
+.fa-dbrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #D4CCB8;background:#FBF8F1;border-radius:9px;font-size:13px;color:#18181B;cursor:pointer;font-family:'Inter',sans-serif;width:100%;}
+.fa-dbrow:hover{background:#fff;}
+.fa-dbrow.on{border-color:#1A5C2A;box-shadow:0 0 0 2px rgba(26,92,42,.16);}
 .fa-cmp-modal{pointer-events:auto;background:#F0EBE0;border:1px solid #D4CCB8;border-radius:16px;width:min(560px,94vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(40,30,15,.3);overflow:hidden;}
 .fa-cmp-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #D4CCB8;}
 .fa-cmp-head h2{font-family:'Barlow Condensed','Inter',sans-serif;font-weight:700;font-size:20px;margin:0;text-transform:uppercase;letter-spacing:.03em;}
@@ -186,10 +190,13 @@ function ForjaAccountsInner() {
   const [confirm, setConfirm] = useState<ConfirmState>(null);
   const [importCode, setImportCode] = useState<string | null>(null);
   const [importDismissed, setImportDismissed] = useState(false);
-  // Compare mode
+  // Compare mode — the compare set can mix the user's own builds with market
+  // racquets pulled from the database search, so each item carries its own spec.
+  type CmpItem = { key: string; kind: "build" | "racquet"; name: string; spec: any };
   const [compareMode, setCompareMode] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<CmpItem[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [dbQuery, setDbQuery] = useState("");
   const pinRefs = useRef<(HTMLInputElement | null)[]>([]);
   const toastTimer = useRef<number | undefined>(undefined);
 
@@ -200,13 +207,25 @@ function ForjaAccountsInner() {
   };
 
   const MAX_CMP = 3;
-  const toggleSelect = (id: string) =>
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= MAX_CMP ? prev : [...prev, id]));
+  const toggleSelect = (item: CmpItem) =>
+    setSelected((prev) => {
+      const i = prev.findIndex((x) => x.key === item.key);
+      if (i >= 0) return prev.filter((x) => x.key !== item.key);
+      return prev.length >= MAX_CMP ? prev : [...prev, item];
+    });
   const exitCompare = () => {
     setCompareMode(false);
     setSelected([]);
     setCompareOpen(false);
+    setDbQuery("");
   };
+  // Market-racquet catalog exposed by the main app (raw specs). Filtered live
+  // by the database search box in compare mode.
+  const catalog: { id: string; brand: string; model: string; level?: string; priceTier?: string; spec: any }[] =
+    ((typeof window !== "undefined" && (window as any).__palalabCatalog) || []) as any[];
+  const dbResults = dbQuery.trim().length >= 1
+    ? catalog.filter((r) => `${r.brand} ${r.model}`.toLowerCase().includes(dbQuery.trim().toLowerCase())).slice(0, 8)
+    : [];
 
   useEffect(() => {
     let mounted = true;
@@ -414,11 +433,12 @@ function ForjaAccountsInner() {
 
   const buildCard = (b: LibraryBuild) => {
     if (compareMode) {
-      const idx = selected.indexOf(b.id);
+      const key = `build:${b.id}`;
+      const idx = selected.findIndex((x) => x.key === key);
       const on = idx >= 0;
       const col = CMP_COLORS[idx] || "#1A5C2A";
       return (
-        <div className={"fa-card fa-cmp" + (on ? " on" : "")} key={b.id} onClick={() => toggleSelect(b.id)}>
+        <div className={"fa-card fa-cmp" + (on ? " on" : "")} key={b.id} onClick={() => toggleSelect({ key, kind: "build", name: b.name || "Untitled build", spec: b.spec })}>
           <div className="fa-ck" style={{ borderColor: on ? col : "#C0B8A4", background: on ? col : "transparent" }}>{on ? idx + 1 : ""}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="nm">{b.name || "Untitled build"}</div>
@@ -534,7 +554,27 @@ function ForjaAccountsInner() {
                 </div>
               </div>
               {compareMode ? (
-                <div className="fa-hint">Select 2–3 builds to compare side by side.</div>
+                <div style={{ padding: "12px 22px 2px" }}>
+                  <div className="fa-hint" style={{ margin: "0 0 8px" }}>Pick 2–3 to compare — your builds below, or search the database:</div>
+                  <input className="fa-in" placeholder="Search racquets — brand or model…" value={dbQuery}
+                    onChange={(e) => setDbQuery(e.target.value)} style={{ padding: "10px 12px", fontSize: 14 }} />
+                  {dbResults.length > 0 && (
+                    <div className="fa-dbres">
+                      {dbResults.map((r) => {
+                        const key = `racquet:${r.id}`;
+                        const idx = selected.findIndex((x) => x.key === key);
+                        const on = idx >= 0;
+                        return (
+                          <button key={r.id} className={"fa-dbrow" + (on ? " on" : "")}
+                            onClick={() => toggleSelect({ key, kind: "racquet", name: `${r.brand} ${r.model}`, spec: r.spec })}>
+                            <span className="fa-ck" style={{ width: 22, height: 22, fontSize: 12, borderColor: on ? (CMP_COLORS[idx] || "#1A5C2A") : "#C0B8A4", background: on ? (CMP_COLORS[idx] || "#1A5C2A") : "transparent" }}>{on ? idx + 1 : "+"}</span>
+                            <span style={{ flex: 1, textAlign: "left" }}>{r.brand} {r.model}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button className="fa-newp" onClick={askNewProject}>+ New project</button>
               )}
@@ -584,9 +624,8 @@ function ForjaAccountsInner() {
 
       {/* Compare overlay */}
       {compareOpen && (() => {
-        const chosen = selected.map((id) => builds.find((b) => b.id === id)).filter(Boolean) as LibraryBuild[];
         const scorer = (window as any).__palalabScoreSpec as ((spec: any) => any) | undefined;
-        const data = chosen.map((b, i) => ({ b, color: CMP_COLORS[i] || "#7A7268", r: typeof scorer === "function" ? scorer(b.spec) : null }));
+        const data = selected.map((it, i) => ({ it, color: CMP_COLORS[i] || "#7A7268", r: typeof scorer === "function" ? scorer(it.spec) : null }));
         const n = data.length;
         const gcols = `86px repeat(${n}, minmax(0,1fr))`;
         const metrics: [string, string][] = [["power", "Power"], ["control", "Control"], ["comfort", "Comfort"], ["sweetSpot", "Sweet Spot"], ["stability", "Stability"], ["spin", "Spin"], ["durability", "Durability"]];
@@ -615,7 +654,7 @@ function ForjaAccountsInner() {
                   <>
                     <div className="fa-cmp-legend">
                       {data.map((d) => (
-                        <div className="lg" key={d.b.id}><span className="chip" style={{ background: d.color }} />{d.b.name || "Untitled build"}</div>
+                        <div className="lg" key={d.it.key}><span className="chip" style={{ background: d.color }} />{d.it.name || "Untitled"}{d.it.kind === "racquet" && <span style={{ fontSize: 10, color: "#7A7268", fontWeight: 400, marginLeft: 6 }}>· database</span>}</div>
                       ))}
                     </div>
                     <CompareRadar series={data.map((d) => ({ color: d.color, vals: metrics.map(([k]) => (d.r ? d.r.scores[k] ?? 0 : 0)) }))} />
@@ -626,7 +665,7 @@ function ForjaAccountsInner() {
                         {data.map((d) => {
                           const v = d.r ? d.r.scores[k] ?? 0 : 0;
                           return (
-                            <div className="cell" key={d.b.id}>
+                            <div className="cell" key={d.it.key}>
                               <div className="barwrap"><div className="bar" style={{ width: `${(v / 5) * 100}%`, background: d.color }} /></div>
                               <span className="num" style={{ color: d.color }}>{v.toFixed(1)}</span>
                             </div>
@@ -642,7 +681,7 @@ function ForjaAccountsInner() {
                         <div className="fa-cmp-row" style={{ gridTemplateColumns: gcols }} key={lab}>
                           <div className="lab">{lab}</div>
                           {data.map((d, i) => (
-                            <div className="cell spec" key={d.b.id} style={{ fontWeight: same ? 400 : 700, color: same ? "#4A4540" : d.color }}>{vals[i]}</div>
+                            <div className="cell spec" key={d.it.key} style={{ fontWeight: same ? 400 : 700, color: same ? "#4A4540" : d.color }}>{vals[i]}</div>
                           ))}
                         </div>
                       );

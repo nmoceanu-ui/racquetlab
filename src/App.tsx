@@ -8058,6 +8058,20 @@ export default function App() {
     };
   }, []);
 
+  // Expose the market-racquet catalog (raw specs) so the account overlay's
+  // Compare view can search the database and drop real racquets in next to the
+  // user's own builds — each catalog spec is scored through the same
+  // __palalabScoreSpec engine, so the comparison is apples-to-apples.
+  useEffect(() => {
+    (window as any).__palalabCatalog = (MARKET_RACQUETS as any[]).map((r) => ({
+      id: r.id, brand: r.brand, model: r.model, level: r.level, priceTier: r.priceTier,
+      spec: {
+        shapeId: r.shapeId, coreId: r.coreId, faceId: r.faceId, frameId: r.frameId,
+        surfaceId: r.surfaceId, weightG: r.weightG, balanceCm: r.balanceCm, thicknessMm: r.thicknessMm,
+      },
+    }));
+  }, []);
+
   // --- Reverse solver (drag target scores -> materials) ---
   const [rsOpen, setRsOpen] = useState(true);
   const [rsLib, setRsLib] = useState<any[] | null>(null);
