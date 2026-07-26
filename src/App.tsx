@@ -596,25 +596,15 @@ function RacquetFaceMini({ shape, holes, holeDiameterMm = 9, size = 128 }:
   const cx = VB * 0.5, cy = VB * 0.44;
   const a = VB * 0.36, b = shape === "round" ? VB * 0.4 : (shape === "diamond" || shape === "diamond-wide") ? VB * 0.4 : VB * 0.37;
   const pxPerMm = (a * 2) / 255;
-  const diamondPts = (cx) + "," + (cy - b) + " " + (cx + a) + "," + (cy) + " " + (cx) + "," + (cy + b) + " " + (cx - a) + "," + (cy);
-  const teardropD = "M " + cx + "," + (cy - b)
-    + " C " + (cx + a * 0.88) + "," + (cy - b * 0.4) + " " + (cx + a) + "," + (cy + b * 0.15) + " " + (cx + a * 0.5) + "," + (cy + b * 0.75)
-    + " C " + (cx + a * 0.25) + "," + (cy + b) + " " + cx + "," + (cy + b) + " " + cx + "," + (cy + b)
-    + " C " + cx + "," + (cy + b) + " " + (cx - a * 0.25) + "," + (cy + b) + " " + (cx - a * 0.5) + "," + (cy + b * 0.75)
-    + " C " + (cx - a) + "," + (cy + b * 0.15) + " " + (cx - a * 0.88) + "," + (cy - b * 0.4) + " " + cx + "," + (cy - b) + " Z";
-  const outline = shape === "round"
-    ? <ellipse cx={cx} cy={cy} rx={a} ry={b} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />
-    : (shape === "diamond" || shape === "diamond-wide")
-    ? <polygon points={diamondPts} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />
-    : <path d={teardropD} fill="#EFEBDD" stroke="#C0B8A4" strokeWidth="2.5" />;
+  const outlineD = headOutlinePath(shape, cx, cy - b, a, 2 * b);
   return (
     <svg viewBox={"0 0 " + VB + " " + VB} width={size} height={size} style={{ display: "block" }}>
-      {outline}
+      <path d={outlineD} fill="#EFEBDD" stroke="#B0A68E" strokeWidth="2.5" />
       {holes.map((h, i) => {
         const d = (typeof h.d === "number" && h.d > 0) ? h.d : holeDiameterMm;
-        const r = Math.max(1.6, (d * pxPerMm) / 2);
+        const r = Math.max(1.8, (d * pxPerMm) / 2);
         const isPort = typeof h.d === "number" && h.d > holeDiameterMm + 0.01;
-        return <circle key={i} cx={cx + h.x * a} cy={cy + h.y * b} r={r} fill="#fff" stroke={isPort ? "#2563EB" : "#B0A68E"} strokeWidth={isPort ? 1.4 : 0.8} />;
+        return <circle key={i} cx={cx + h.x * a} cy={cy + h.y * b} r={r} fill="#F4F0E6" stroke={isPort ? "#2563EB" : "#5A5348"} strokeWidth={isPort ? 1.7 : 1.4} />;
       })}
     </svg>
   );
@@ -3770,6 +3760,36 @@ function straightenBezierPath(d: string, straightness: number): string {
   return out;
 }
 
+// Build a closed outline through the given points with straight edges and rounded corners,
+// emitted as all-cubic beziers (M/C/Z) so it composes with straightenBezierPath.
+// Used for the angular "diamond" head — a rounded hexagon widest in the upper
+// third that tapers to a narrow base meeting the throat, like a real racquet.
+function roundedPolyBezier(pts: [number, number][], r: number): string {
+  const n = pts.length;
+  const lp = (a: [number, number], bb: [number, number], t: number): [number, number] => [a[0] + (bb[0] - a[0]) * t, a[1] + (bb[1] - a[1]) * t];
+  const len = (a: [number, number], bb: [number, number]) => Math.hypot(bb[0] - a[0], bb[1] - a[1]);
+  const F = (v: number) => v.toFixed(1);
+  const P1: [number, number][] = [], P2: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n], cur = pts[i], next = pts[(i + 1) % n];
+    const r1 = Math.min(r, len(prev, cur) * 0.45), r2 = Math.min(r, len(cur, next) * 0.45);
+    P1[i] = lp(cur, prev, r1 / len(prev, cur));
+    P2[i] = lp(cur, next, r2 / len(cur, next));
+  }
+  let d = "M " + F(P1[0][0]) + " " + F(P1[0][1]);
+  for (let i = 0; i < n; i++) {
+    const cur = pts[i];
+    const q1: [number, number] = [P1[i][0] + 2 / 3 * (cur[0] - P1[i][0]), P1[i][1] + 2 / 3 * (cur[1] - P1[i][1])];
+    const q2: [number, number] = [P2[i][0] + 2 / 3 * (cur[0] - P2[i][0]), P2[i][1] + 2 / 3 * (cur[1] - P2[i][1])];
+    d += " C " + F(q1[0]) + " " + F(q1[1]) + ", " + F(q2[0]) + " " + F(q2[1]) + ", " + F(P2[i][0]) + " " + F(P2[i][1]);
+    const nP1 = P1[(i + 1) % n];
+    const e1: [number, number] = [P2[i][0] + (nP1[0] - P2[i][0]) / 3, P2[i][1] + (nP1[1] - P2[i][1]) / 3];
+    const e2: [number, number] = [P2[i][0] + 2 * (nP1[0] - P2[i][0]) / 3, P2[i][1] + 2 * (nP1[1] - P2[i][1]) / 3];
+    d += " C " + F(e1[0]) + " " + F(e1[1]) + ", " + F(e2[0]) + " " + F(e2[1]) + ", " + F(nP1[0]) + " " + F(nP1[1]);
+  }
+  return d + " Z";
+}
+
 function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight, sideProfile?) {
   const straightness = sideProfile === "straight" ? 0.82 : sideProfile === "soft-straight" ? 0.45 : 0;
   const ww = halfWidthMax, t = topY, b = topY + headHeight;
@@ -3779,13 +3799,24 @@ function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight, sideProfile?
     return wrap(`M ${cx} ${t} C ${cx+ww*0.74} ${t}, ${cx+ww} ${t+headHeight*0.22}, ${cx+ww} ${mid} C ${cx+ww} ${b-headHeight*0.22}, ${cx+ww*0.74} ${b}, ${cx} ${b} C ${cx-ww*0.74} ${b}, ${cx-ww} ${b-headHeight*0.22}, ${cx-ww} ${mid} C ${cx-ww} ${t+headHeight*0.22}, ${cx-ww*0.74} ${t}, ${cx} ${t} Z`);
   }
   if (shape === "diamond") {
-    const mid = t + headHeight * 0.32;
-    return wrap(`M ${cx} ${t+6} C ${cx+ww*0.32} ${t-2}, ${cx+ww*0.78} ${t+headHeight*0.05}, ${cx+ww*0.94} ${mid-headHeight*0.05} C ${cx+ww*1.02} ${mid+headHeight*0.02}, ${cx+ww*0.86} ${mid+headHeight*0.14}, ${cx+ww*0.7} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.7} ${b-headHeight*0.12} C ${cx-ww*0.86} ${mid+headHeight*0.14}, ${cx-ww*1.02} ${mid+headHeight*0.02}, ${cx-ww*0.94} ${mid-headHeight*0.05} C ${cx-ww*0.78} ${t+headHeight*0.05}, ${cx-ww*0.32} ${t-2}, ${cx} ${t+6} Z`);
+    // Angular diamond: rounded-hexagon head widest in the upper third (~0.34),
+    // wide gentle tip, near-straight sides tapering to a narrow base (~0.40) that
+    // meets the throat. Traced from real diamond padel racquets.
+    const A: [number, number][] = [
+      [cx - ww * 0.62, t + headHeight * 0.03], [cx + ww * 0.62, t + headHeight * 0.03],
+      [cx + ww * 1.0, t + headHeight * 0.34], [cx + ww * 0.86, t + headHeight * 0.65], [cx + ww * 0.40, t + headHeight * 0.99],
+      [cx - ww * 0.40, t + headHeight * 0.99], [cx - ww * 0.86, t + headHeight * 0.65], [cx - ww * 1.0, t + headHeight * 0.34],
+    ];
+    return wrap(roundedPolyBezier(A, ww * 0.26));
   }
   if (shape === "diamond-wide") {
-    // Same peak position as standard diamond but wider through the shoulders — the defining geometric difference
-    const mid = t + headHeight * 0.30;
-    return wrap(`M ${cx} ${t+6} C ${cx+ww*0.38} ${t-2}, ${cx+ww*0.88} ${t+headHeight*0.05}, ${cx+ww*1.0} ${mid-headHeight*0.03} C ${cx+ww*1.06} ${mid+headHeight*0.04}, ${cx+ww*0.92} ${mid+headHeight*0.16}, ${cx+ww*0.72} ${b-headHeight*0.12} C ${cx+ww*0.58} ${b-headHeight*0.02}, ${cx+ww*0.3} ${b+2}, ${cx} ${b+4} C ${cx-ww*0.3} ${b+2}, ${cx-ww*0.58} ${b-headHeight*0.02}, ${cx-ww*0.72} ${b-headHeight*0.12} C ${cx-ww*0.92} ${mid+headHeight*0.16}, ${cx-ww*1.06} ${mid+headHeight*0.04}, ${cx-ww*1.0} ${mid-headHeight*0.03} C ${cx-ww*0.88} ${t+headHeight*0.05}, ${cx-ww*0.38} ${t-2}, ${cx} ${t+6} Z`);
+    // Same angular head as the diamond but fuller through the shoulders and base.
+    const A: [number, number][] = [
+      [cx - ww * 0.64, t + headHeight * 0.03], [cx + ww * 0.64, t + headHeight * 0.03],
+      [cx + ww * 1.0, t + headHeight * 0.32], [cx + ww * 0.94, t + headHeight * 0.64], [cx + ww * 0.44, t + headHeight * 0.99],
+      [cx - ww * 0.44, t + headHeight * 0.99], [cx - ww * 0.94, t + headHeight * 0.64], [cx - ww * 1.0, t + headHeight * 0.32],
+    ];
+    return wrap(roundedPolyBezier(A, ww * 0.28));
   }
   const mid = t + headHeight * 0.42;
   return wrap(`M ${cx} ${t} C ${cx+ww*0.86} ${t+2}, ${cx+ww} ${mid-headHeight*0.18}, ${cx+ww*0.95} ${mid} C ${cx+ww*0.88} ${b-headHeight*0.2}, ${cx+ww*0.46} ${b-4}, ${cx} ${b} C ${cx-ww*0.46} ${b-4}, ${cx-ww*0.88} ${b-headHeight*0.2}, ${cx-ww*0.95} ${mid} C ${cx-ww} ${mid-headHeight*0.18}, ${cx-ww*0.86} ${t+2}, ${cx} ${t} Z`);
@@ -4198,7 +4229,7 @@ function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, sideProfile, 
           <circle cx={cx} cy={sweet.y} r={3} fill="#1A5C2A"/>
         </g>
       )}
-      <path d={`M ${cx-halfWidth*0.5} ${headBottomY-6} Q ${cx-outerThroatHalf-6} ${throatNeckY+16}, ${cx-outerThroatHalf} ${bridgeTopY} M ${cx+halfWidth*0.5} ${headBottomY-6} Q ${cx+outerThroatHalf+6} ${throatNeckY+16}, ${cx+outerThroatHalf} ${bridgeTopY}`} fill="none" stroke={frameRimStyle.color} strokeWidth="2.5" strokeLinecap="round"/>
+      <path d={`M ${cx-halfWidth*0.4} ${headBottomY-6} Q ${cx-outerThroatHalf-6} ${throatNeckY+16}, ${cx-outerThroatHalf} ${bridgeTopY} M ${cx+halfWidth*0.4} ${headBottomY-6} Q ${cx+outerThroatHalf+6} ${throatNeckY+16}, ${cx+outerThroatHalf} ${bridgeTopY}`} fill="none" stroke={frameRimStyle.color} strokeWidth="2.5" strokeLinecap="round"/>
       <path d={`M ${cx-outerThroatHalf} ${bridgeTopY} L ${cx+outerThroatHalf} ${bridgeTopY} L ${cx+innerNeckHalf} ${bridgeBottomY} L ${cx-innerNeckHalf} ${bridgeBottomY} Z`} fill={bridgeId==="closed"?tint:"none"} stroke={frameRimStyle.color} strokeWidth="2.5" strokeLinejoin="round"/>
       {bridgeId === "open" && beamOrientation === "vertical" && (
         <g>
@@ -4456,7 +4487,7 @@ function RacquetIllustration3D({
   // Head half-width at its own bottom edge (where the throat taper
   // begins), sampled from the actual outline geometry rather than
   // assumed, so the join always matches the selected shape exactly.
-  const headBottomHalfWidth = halfWidth * ((shape === "diamond" || shape === "diamond-wide") ? 0.5 : shape === "teardrop" ? 0.46 : 0.74);
+  const headBottomHalfWidth = halfWidth * (shape === "diamond" ? 0.40 : shape === "diamond-wide" ? 0.44 : shape === "teardrop" ? 0.46 : 0.74);
 
   const throatHalfWidthAt = (y: number) => {
     const t = Math.max(0, Math.min(1, (y - throatTopY) / (throatBottomY - throatTopY)));
