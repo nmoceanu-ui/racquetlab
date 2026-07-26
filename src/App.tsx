@@ -3723,29 +3723,51 @@ function sweetSpotPosLabel(shapeId, balanceCm) {
 // line between its endpoints (so curves become straight edges — the Siux-style
 // angular sides). Purely visual: the sweet-spot/stability math uses the raw
 // head box, not this path, so straightening never perturbs the scores.
+// Straighten a closed bezier outline's SIDES while keeping its CORNERS rounded.
+// A naive chord-straighten (pulling every control point onto its chord) turns a
+// smooth head into a sharp kite/rhombus with pointed corners that don't flow
+// into the throat. Instead, for each edge we keep the first/last ~20% curved
+// (so the tangent at every anchor is preserved → the corner stays rounded) and
+// straighten only the middle ~60% toward its chord by `straightness`. The result
+// is straight sides with rounded corners and a continuous perimeter, at a very
+// similar face area to the curved original.
 function straightenBezierPath(d: string, straightness: number): string {
   if (!straightness) return d;
   const s = Math.max(0, Math.min(1, straightness));
   const nums = (str: string) => str.trim().split(/[ ,]+/).map(Number);
   const tokens = d.match(/[MCZ][^MCZ]*/gi) || [];
-  let curX = 0, curY = 0, startX = 0, startY = 0;
-  const lerp = (a: number, bb: number) => a + (bb - a) * s;
-  const out: string[] = [];
+  type P = [number, number];
+  const segs: { p0: P; c1: P; c2: P; p1: P }[] = [];
+  let cur: P = [0, 0];
   for (const tk of tokens) {
     const cmd = tk[0].toUpperCase();
-    if (cmd === "M") { const [x, y] = nums(tk.slice(1)); curX = startX = x; curY = startY = y; out.push(`M ${x} ${y}`); }
-    else if (cmd === "Z") { out.push("Z"); curX = startX; curY = startY; }
-    else if (cmd === "C") {
-      const p = nums(tk.slice(1)); // x1 y1 x2 y2 x y
-      const ex = p[4], ey = p[5];
-      // straight-line control points at 1/3 and 2/3 of the chord
-      const s1x = curX + (ex - curX) / 3, s1y = curY + (ey - curY) / 3;
-      const s2x = curX + 2 * (ex - curX) / 3, s2y = curY + 2 * (ey - curY) / 3;
-      out.push(`C ${lerp(p[0], s1x).toFixed(1)} ${lerp(p[1], s1y).toFixed(1)}, ${lerp(p[2], s2x).toFixed(1)} ${lerp(p[3], s2y).toFixed(1)}, ${ex} ${ey}`);
-      curX = ex; curY = ey;
-    }
+    if (cmd === "M") { const p = nums(tk.slice(1)); cur = [p[0], p[1]]; }
+    else if (cmd === "C") { const p = nums(tk.slice(1)); segs.push({ p0: cur, c1: [p[0], p[1]], c2: [p[2], p[3]], p1: [p[4], p[5]] }); cur = [p[4], p[5]]; }
   }
-  return out.join(" ");
+  if (!segs.length) return d;
+  const lp = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const split = (P0: P, P1: P, P2: P, P3: P, t: number): [P[], P[]] => {
+    const a = lp(P0, P1, t), b = lp(P1, P2, t), c = lp(P2, P3, t);
+    const d1 = lp(a, b, t), e = lp(b, c, t), f = lp(d1, e, t);
+    return [[P0, a, d1, f], [f, e, c, P3]];
+  };
+  const t1 = 0.20, t2 = 0.80;
+  const F = (n: number) => n.toFixed(1);
+  let out = "M " + F(segs[0].p0[0]) + " " + F(segs[0].p0[1]);
+  for (const sg of segs) {
+    const [Lc, R1] = split(sg.p0, sg.c1, sg.c2, sg.p1, t1);
+    const tt = (t2 - t1) / (1 - t1);
+    const [Mc, Rc] = split(R1[0] as P, R1[1] as P, R1[2] as P, R1[3] as P, tt);
+    const m0 = Mc[0], m3 = Mc[3];
+    const sc1: P = [m0[0] + (m3[0] - m0[0]) / 3, m0[1] + (m3[1] - m0[1]) / 3];
+    const sc2: P = [m0[0] + 2 * (m3[0] - m0[0]) / 3, m0[1] + 2 * (m3[1] - m0[1]) / 3];
+    const M1 = lp(Mc[1], sc1, s), M2 = lp(Mc[2], sc2, s);
+    out += " C " + F(Lc[1][0]) + " " + F(Lc[1][1]) + ", " + F(Lc[2][0]) + " " + F(Lc[2][1]) + ", " + F(Lc[3][0]) + " " + F(Lc[3][1]);
+    out += " C " + F(M1[0]) + " " + F(M1[1]) + ", " + F(M2[0]) + " " + F(M2[1]) + ", " + F(Mc[3][0]) + " " + F(Mc[3][1]);
+    out += " C " + F(Rc[1][0]) + " " + F(Rc[1][1]) + ", " + F(Rc[2][0]) + " " + F(Rc[2][1]) + ", " + F(Rc[3][0]) + " " + F(Rc[3][1]);
+  }
+  out += " Z";
+  return out;
 }
 
 function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight, sideProfile?) {
