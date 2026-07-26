@@ -86,9 +86,9 @@ const GRIP_SHAPES = [
 // feedback. "Standard" is the neutral default so every existing racquet scores
 // exactly as before (no bias); only builds that opt in get the deviation.
 const EDGE_PROFILES = [
-  { id: "rounded", label: "Rounded (Babolat-style)", note: "Softened, tube-like outer frame edge. Flexes and damps slightly more than a boxed section, so the frame feels a touch softer and more comfortable and sends less buzz to the arm. The corner-free profile is a weaker stress riser, so it resists chipping and cracking, and it glances off the back/side glass more cleanly. The trade: marginally less aerodynamic and less of the crisp, ultra-connected feedback a squared edge gives. Babolat competes here on control and comfort feel rather than a sharp-edge story." },
+  { id: "rounded", label: "Rounded", note: "Softened, tube-like outer frame edge. Flexes and damps slightly more than a boxed section, so the frame feels a touch softer and more comfortable and sends less buzz to the arm. The corner-free profile is a weaker stress riser, so it resists chipping and cracking, and it glances off the back/side glass more cleanly. The trade: marginally less aerodynamic and less of the crisp, ultra-connected feedback a squared edge gives. A control-and-comfort-oriented edge rather than a sharp-feedback one." },
   { id: "standard", label: "Standard", note: "A conventional edge — neither deliberately rounded nor sharply squared. The neutral middle ground and the default: no change to the scored trade-offs." },
-  { id: "sharp", label: "Sharp / boxy (Nox-style)", note: "A squared, well-defined box-section edge. Structurally stiffer in bending, so impact transmits more directly for a crisp, 'connected' feel with more feedback, and the profiled edge is engineered for airflow — on a heavy, head-heavy frame swung hard it converts to real head speed and smash power (the same aero logic Nox markets on its profiled frames). The trade: it buzzes more (stiff frames send more vibration, which is why Nox pairs boxy carbon frames with dedicated damping) and its exposed corner is a stress riser that chips more easily unless reinforced." },
+  { id: "sharp", label: "Sharp / boxy", note: "A squared, well-defined box-section edge. Structurally stiffer in bending, so impact transmits more directly for a crisp, 'connected' feel with more feedback, and the profiled edge is engineered for airflow — on a heavy, head-heavy frame swung hard it converts to real head speed and smash power (the same aerodynamic logic behind profiled-edge frames). The trade: it buzzes more (stiff frames send more vibration, which is why boxy carbon frames are usually paired with dedicated damping) and its exposed corner is a stress riser that chips more easily unless reinforced." },
 ];
 
 // Head-shape SIDE geometry — how curved vs straight/angular the head's side
@@ -102,7 +102,7 @@ const EDGE_PROFILES = [
 const SIDE_PROFILES = [
   { id: "curved", label: "Curved sides", note: "Smoothly bowed side edges — the conventional look on most padel moulds. Balanced twistweight and aerodynamics." },
   { id: "soft-straight", label: "Semi-straight", note: "Partly flattened sides — a subtle move toward a more geometric outline. A little more perimeter mass at the widest point for extra off-centre stability and a slightly wider sweet spot." },
-  { id: "straight", label: "Straight sides (Siux-style)", note: "Distinctly straight, angular side edges running more directly between tip, shoulder and throat. Concentrates the most perimeter mass at the widest zone → the highest twistweight and off-centre stability and the widest sweet spot of the three, at a small aerodynamic cost from the flatter, larger side profile." },
+  { id: "straight", label: "Straight sides", note: "Distinctly straight, angular side edges running more directly between tip, shoulder and throat. Concentrates the most perimeter mass at the widest zone → the highest twistweight and off-centre stability and the widest sweet spot of the three, at a small aerodynamic cost from the flatter, larger side profile." },
 ];
 
 const SHAPES = [
@@ -114,7 +114,7 @@ const SHAPES = [
 
 const BRIDGE_TYPES = [
   { id: "open", label: "Open Bridge", note: "Throat area contains one or more composite struts spanning a gap rather than being filled solid. Reduces material and weight in throat zone, lowering center of mass slightly toward handle and reducing overall weight. Aerodynamically, an open bridge offers marginally less resistance on downswing — air passes through the gap. With fewer throat cross-sections carrying torsional load, transmits slightly less torsional rigidity from handle to head — some players describe this as more 'wrist feel' or 'touch' because the connection is slightly less rigid. Specific strut geometry (number, orientation, cross-section) determines structural properties within the open bridge category." },
-  { id: "closed", label: "Closed Bridge", note: "Throat area completely filled — solid structural transition from head to handle. Maximum torsional rigidity. Players experience this as more 'connected' or 'direct' — grip adjustments translate more immediately to face angle changes. Weight slightly higher than open bridge. Vibration from ball contact travels through the closed throat more efficiently to the handle — closed bridge can increase perceived impact harshness versus open bridge. Preferred for stability-focused builds. Bullpadel's PrismLock on the Neuron 02 uses a specific closed-bridge geometry triangulating the throat for torsional optimization." },
+  { id: "closed", label: "Closed Bridge", note: "Throat area completely filled — solid structural transition from head to handle. Maximum torsional rigidity. Players experience this as more 'connected' or 'direct' — grip adjustments translate more immediately to face angle changes. Weight slightly higher than open bridge. Vibration from ball contact travels through the closed throat more efficiently to the handle — closed bridge can increase perceived impact harshness versus open bridge. Preferred for stability-focused builds. Some closed-bridge designs triangulate the throat further for torsional optimization." },
 ];
 
 const BEAM_COUNT_OPTIONS = [
@@ -3106,7 +3106,7 @@ function computeFactoryBrief(input: FactoryBriefInput): FactoryBriefResult {
       rationale.push(`Priority: control. Shape defaulted to round — round's central mass distribution naturally centers the sweet spot without any further tuning.`);
     } else {
       const shapeNote = shapeId === "diamond"
-        ? `Becomes a control-oriented diamond through the levers below — the Nox AT10 Genius approach: diamond frame, control materials. Balance brought well down; soft core and flexible face do the rest.`
+        ? `Becomes a control-oriented diamond through the levers below — a control-diamond approach: diamond frame, control materials. Balance brought well down; soft core and flexible face do the rest.`
         : shapeId === "teardrop"
         ? `Teardrop tuned fully toward control side through materials and balance.`
         : `Round already favors control; materials push it further.`;
@@ -5463,7 +5463,7 @@ const LANYARD_LOCKS = [
   { id: "ratchet", label: "Ratchet dial (premium)", sweat: 0, comfort: 0, security: 2, durability: -1, note: "Click-to-tighten micro-adjust, holds absolutely, glove-friendly. Complex, adds a rigid puck, and BOA-style dials are patented (would need a clean-room equivalent)." },
 ];
 const LANYARD_ATTACH = [
-  { id: "detachable", label: "Detachable / swappable", sweat: 1, comfort: 0, security: 0, durability: 1, note: "Pop it off to wash or swap when sweaty — like Wilson Zipcord / Babolat Smart Buttcap / NOX SmartStrap. Best for hygiene and customization; keep the coupling clear of their patents." },
+  { id: "detachable", label: "Detachable / swappable", sweat: 1, comfort: 0, security: 0, durability: 1, note: "Pop it off to wash or swap when sweaty. Best for hygiene and customization." },
   { id: "fixed", label: "Fixed-in", sweat: 0, comfort: 0, security: 1, durability: 0, note: "Anchored inside the buttcap — simpler, one less failure point, but can't be removed to wash or replace." },
 ];
 
@@ -7841,7 +7841,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
       <div style={{ marginTop: 12 }}>
         <p style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7268", marginBottom: 6 }}>Quick fill patterns</p>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["vstrip", "Vertical strip"], ["standard", "Standard grid"], ["dense", "Dense grid"], ["airports", "Air ports (OXDOG)"]].map(([id, label]) => (
+          {[["clear", "Clear all"], ["head1", "1 hole"], ["center4", "4 center"], ["center14", "14 center"], ["ring", "Ring"], ["vstrip", "Vertical strip"], ["standard", "Standard grid"], ["dense", "Dense grid"], ["airports", "Air ports"]].map(([id, label]) => (
             <button key={id} onClick={() => applyPreset(id)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #D4CCB8", background: "#fff", color: "#4A4540", fontSize: 11, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>{label}</button>
           ))}
         </div>
