@@ -8,7 +8,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   ResponsiveContainer, PolarRadiusAxis
 } from "recharts";
-import { saveBuild, loadBuild } from "./lib/builds";
+import { saveBuild, loadBuild, updateBuildByCode } from "./lib/builds";
 import { supabaseConfigured } from "./lib/supabase";
 import { analytics } from "./lib/analytics";
 // Factory brief tracks: best-performance / best-value / market-gap / innovation
@@ -7894,6 +7894,8 @@ export default function App() {
   const [shareError, setShareError] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "error">("idle");
   const [loadedName, setLoadedName] = useState<string | null>(null); // name of the build opened from a library/share link
+  const [loadedCode, setLoadedCode] = useState<string | null>(null); // its share code, so edits can update the same row in place
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   // Accordion state
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["shape"]));
@@ -7936,6 +7938,7 @@ export default function App() {
       if (typeof s.balanceCm === "number") setBalanceCm(s.balanceCm);
       if (typeof s.gripCircMm === "number") setGripCircMm(s.gripCircMm);
       if (result.name) setLoadedName(result.name);
+      setLoadedCode(code);
       setLoadStatus("idle");
       setActiveTab("view");
       analytics.buildLoaded(code);
@@ -7976,6 +7979,28 @@ export default function App() {
     // for a fresh save if the person keeps editing.
     setTimeout(() => setShareStatus("idle"), 4000);
   }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
+
+  // Save edits back onto the currently-loaded build in place (same share code),
+  // instead of spawning a new library entry. RLS only lets a user overwrite
+  // their own builds; if the loaded build isn't theirs, this quietly falls back
+  // to a normal Save & Share so nothing is lost.
+  const handleUpdateBuild = useCallback(async () => {
+    if (!loadedCode) return;
+    setUpdateStatus("saving");
+    const spec = {
+      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile,
+      bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
+      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
+    };
+    const res = await updateBuildByCode(loadedCode, spec);
+    if (res.ok && res.updated > 0) {
+      setUpdateStatus("saved");
+      setTimeout(() => setUpdateStatus("idle"), 3000);
+    } else {
+      setUpdateStatus("idle");
+      handleSaveBuild();
+    }
+  }, [loadedCode, shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, handleSaveBuild]);
 
   const shape = SHAPES.find(s => s.id === shapeId)!;
   const core = CORE_MATERIALS.find(c => c.id === coreId)!;
@@ -8763,6 +8788,27 @@ export default function App() {
           <div className={"header-actions" + (activeTab === "home" ? " mobile-hide" : "")} style={{ display:"flex", alignItems:"center", gap:10 }}>
           {/* Install app (Add to Home Screen) — hides itself once installed */}
           <InstallButton />
+          {/* Update this build in place — only when a saved build is loaded */}
+          {loadedCode && supabaseConfigured && (
+            <button
+              onClick={handleUpdateBuild}
+              disabled={updateStatus === "saving"}
+              title="Save these edits back onto this build"
+              className={(activeTab === "home" || activeTab === "find") ? "mobile-hide" : ""}
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+                border: "1px solid rgba(26,92,42,0.35)",
+                background: updateStatus === "saved" ? "rgba(26,92,42,0.15)" : "#1A5C2A",
+                color: updateStatus === "saved" ? "#1A5C2A" : "#FFFFFF",
+                fontSize: 12, fontWeight: 700, cursor: updateStatus === "saving" ? "default" : "pointer",
+                fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em", textTransform: "uppercase",
+                WebkitTapHighlightColor: "transparent", flexShrink: 0,
+              }}
+            >
+              {updateStatus === "saving" ? <Loader2 size={13} className="spin" /> : updateStatus === "saved" ? <CheckCircle2 size={13} /> : <Download size={13} />}
+              {updateStatus === "saved" ? "Updated" : updateStatus === "saving" ? "Saving…" : "Update build"}
+            </button>
+          )}
           {/* Save & Share */}
           <button
             onClick={handleSaveBuild}
