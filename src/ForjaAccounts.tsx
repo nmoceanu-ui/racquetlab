@@ -599,6 +599,7 @@ function ForjaAccountsInner() {
           ["Frame", (d) => (d.r ? d.r.summary.frame : "—")],
           ["Surface", (d) => (d.r ? d.r.summary.surface : "—")],
           ["Throat", (d) => (d.r ? d.r.summary.throat : "—")],
+          ["Edge", (d) => (d.r ? (d.r.summary.edge ?? "Standard") : "—")],
         ];
         const anyScored = data.some((d) => d.r);
         return (

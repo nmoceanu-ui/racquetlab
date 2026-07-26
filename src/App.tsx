@@ -74,6 +74,23 @@ const GRIP_SHAPES = [
   { id: "anatomical", label: "Anatomical / Contoured Handle", sides: 0, note: "Handle shaped to conform to the natural grip geometry of the human hand — wider in the palm contact zone, narrower at the finger wrap zone, with a slight contour following the natural curl of a relaxed gripping hand. Identical principle to ergonomic tools (power drills, surgical instruments, bicycle grips) where fitting the tool to the hand reduces required grip force. Lower required grip force = less forearm muscle tension = less fatigue and lower injury risk. Engineering is well-established in ergonomics literature. In tennis, explored by Wilson and Tecnifibre but not mainstream. In padel, no commercial examples. Significant ergonomic innovation opportunity, particularly for the arm-care segment.", manufacturingNote: "Requires custom handle mold (potentially both left-hand and right-hand versions). Investment in ergonomic design and hand anthropometry data for target market. Cost premium over standard octagonal: primarily tooling and design, not per-unit materials." },
 ];
 
+// Frame edge geometry — the rounded (Babolat-style) vs sharp/boxy (Nox-style)
+// profile of the outer frame. A real, cross-checked trade-off: a squared box
+// section is stiffer in bending and presents a profiled edge brands tune for
+// airflow (Nox markets "profiled edges to increase aerodynamics"), giving a
+// crisper, more connected feel and faster head speed on a hard swing — but it
+// buzzes more (needs damping) and its exposed corner is a stress riser that
+// chips more easily (Nox reinforces the frame-into-face to counter cracking).
+// A rounded profile flexes and damps a touch more (softer, comfier), resists
+// chipping, and glances off the glass cleaner, at a small cost to aero/stiff
+// feedback. "Standard" is the neutral default so every existing racquet scores
+// exactly as before (no bias); only builds that opt in get the deviation.
+const EDGE_PROFILES = [
+  { id: "rounded", label: "Rounded (Babolat-style)", note: "Softened, tube-like outer frame edge. Flexes and damps slightly more than a boxed section, so the frame feels a touch softer and more comfortable and sends less buzz to the arm. The corner-free profile is a weaker stress riser, so it resists chipping and cracking, and it glances off the back/side glass more cleanly. The trade: marginally less aerodynamic and less of the crisp, ultra-connected feedback a squared edge gives. Babolat competes here on control and comfort feel rather than a sharp-edge story." },
+  { id: "standard", label: "Standard", note: "A conventional edge — neither deliberately rounded nor sharply squared. The neutral middle ground and the default: no change to the scored trade-offs." },
+  { id: "sharp", label: "Sharp / boxy (Nox-style)", note: "A squared, well-defined box-section edge. Structurally stiffer in bending, so impact transmits more directly for a crisp, 'connected' feel with more feedback, and the profiled edge is engineered for airflow — on a heavy, head-heavy frame swung hard it converts to real head speed and smash power (the same aero logic Nox markets on its profiled frames). The trade: it buzzes more (stiff frames send more vibration, which is why Nox pairs boxy carbon frames with dedicated damping) and its exposed corner is a stress riser that chips more easily unless reinforced." },
+];
+
 const SHAPES = [
   { id: "round", label: "Round", balanceRange: "low (closer to handle, typically 24.0–25.2cm)", sweetSpot: "Large, centered — typically 25–35mm radius", power: 2, control: 5, forgiveness: 5, note: "The round head places mass symmetrically around the face center, with the center of mass closest to the handle of any shape. Lowest swingweight (easiest to accelerate) and most centered sweet spot. Off-center hits cause less face rotation because twistweight (resistance to face twist) is maximized when mass is distributed symmetrically — round heads have higher effective twistweight per gram than diamond shapes. Power ceiling is lower not because 'round = soft' but because balance point is lower: power transfer on a smash scales with (M × d²) where d is the distance from pivot point to the mass. Lower balance = smaller d = lower effective swing mass = less smash power. The round is not 'just for beginners' — it is optimal for net-forward defensive players, arm-sensitive players, and any style prioritizing touch and placement over raw smash output.", bestFor: "Beginners, defensive players, net specialists, arm/shoulder sensitivity, high-frequency recreational play" },
   { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, typically 25.4–26.2cm", sweetSpot: "Medium, shifted slightly toward tip — typically 20–28mm radius", power: 4, control: 4, forgiveness: 3, note: "A geometric compromise — narrower at the base (throat) and wider at the tip — shifting mass slightly upward from round while keeping a wider midsection than diamond. Balance point between the two extremes. Sweet spot shifts slightly higher in the face, matching where most padel smashes actually contact the face. Swingweight moderate — easier to accelerate than diamond, heavier-feeling than round. Twistweight still reasonable — the wide midsection prevents the extreme face narrowing of a pure diamond, keeping some twistweight for mishit forgiveness. Most commercially versatile shape — majority of intermediate and advanced padel racquets globally. Advanced players who primarily play baseline control rallies often find teardrop satisfying: the power uplift versus round is significant while the control penalty versus diamond is modest.", bestFor: "Intermediate to advanced players, all-court play, the most commercially versatile specification" },
@@ -679,7 +696,7 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, 
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }) {
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile }) {
   const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
@@ -789,6 +806,27 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   const holeAeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
   const holeAeroBonus = (Math.min(openPct, 20) / 20) * holeAeroBias * 0.9;
   out.power = Math.round(Math.min(5, out.power + holeAeroBonus) * 10) / 10;
+  // Frame edge geometry (rounded ↔ sharp). Applied as small post-average
+  // deltas so "standard" (the default, and every existing racquet) is exactly
+  // unchanged — no bias — while opting into rounded/sharp shifts the honest
+  // trade-off. Sharp/boxy = stiffer & more connected (+control) but harsher
+  // (−comfort) and more chip-prone (−durability), plus an aero head-speed power
+  // bonus that, like the hole/throat aero, only shows up on a heavy head-heavy
+  // frame swung hard. Rounded = comfier and more durable, a touch less crisp
+  // and less aerodynamic.
+  const clampS = (v: number) => Math.round(Math.max(1, Math.min(5, v)) * 10) / 10;
+  if (edgeProfile === "sharp") {
+    const edgeAero = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6)) * 0.4;
+    out.control = clampS(out.control + 0.2);
+    out.comfort = clampS(out.comfort - 0.3);
+    out.durability = clampS(out.durability - 0.3);
+    out.power = clampS(out.power + edgeAero);
+  } else if (edgeProfile === "rounded") {
+    out.comfort = clampS(out.comfort + 0.3);
+    out.durability = clampS(out.durability + 0.3);
+    out.control = clampS(out.control - 0.15);
+    out.power = clampS(out.power - 0.1);
+  }
   out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
   return out;
 }
@@ -3661,8 +3699,14 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId, leadChannel = true }) {
+function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId, edgeProfile, leadChannel = true }) {
   const STROKE = "#2A2620"; // darker, higher-contrast outline (was #4A4540, too faint)
+  // Edge geometry drives how tightly the frame's leading edge is radiused in
+  // this side cross-section: a rounded (Babolat-style) profile curves over a
+  // longer span (softer corner); a sharp/boxy (Nox-style) profile snaps to a
+  // crisp, near-square corner.
+  const edgeCurve = edgeProfile === "sharp" ? 0.04 : edgeProfile === "rounded" ? 0.22 : 0.12;
+  const edgeJoin = edgeProfile === "sharp" ? "miter" : "round";
   const tFrac = (thicknessMm - 28) / (38 - 28);
   const bodyThickness = 16 + tFrac * 20;
   const faceVisual = FACE_VISUAL[faceId] || FACE_VISUAL["carbon-12k"];
@@ -3694,7 +3738,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   const headEndX = startX + headLen, throatEndX = headEndX + throatLen, handleEndX = throatEndX + handleLen;
   const headThick = bodyThickness, throatThick = bodyThickness * 0.55, handleThick = bodyThickness * 0.62;
   const topAt = (x) => {
-    if (x <= headEndX) { const t = (x - startX) / headLen; const round = Math.min(1, t / 0.12); return midY - (headThick / 2) * round; }
+    if (x <= headEndX) { const t = (x - startX) / headLen; const round = Math.min(1, t / edgeCurve); return midY - (headThick / 2) * round; }
     if (x <= throatEndX) { const t = (x - headEndX) / throatLen; return midY - (headThick/2) + t*(headThick/2 - throatThick/2); }
     return midY - throatThick/2 + ((handleThick - throatThick)/2) * Math.min(1, (x-throatEndX)/10);
   };
@@ -3747,7 +3791,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
           continuous outline from head through throat into the grip,
           rather than a dark solid blob everything else disappears into.
           Conventional solid frames keep the material face tint. */}
-      <path d={silhouette} fill={showHollowSection ? coreTint : faceTint} stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "3" : "2"} strokeLinejoin="round"/>
+      <path d={silhouette} fill={showHollowSection ? coreTint : faceTint} stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "3" : "2"} strokeLinejoin={edgeJoin}/>
 
       {/* For hollow/honeycomb/clamshell frames: show the internal void */}
       {showHollowSection && (
@@ -3848,7 +3892,7 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
 
       {/* Sheen + outline */}
       <path d={silhouette} fill="url(#profileSheen)"/>
-      <path d={silhouette} fill="none" stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "2.5" : "2"} strokeLinejoin="round"/>
+      <path d={silhouette} fill="none" stroke={showHollowSection ? frameBorderColor : STROKE} strokeWidth={showHollowSection ? "2.5" : "2"} strokeLinejoin={edgeJoin}/>
 
       {/* Frame construction badge */}
       {showHollowSection && (
@@ -3883,8 +3927,12 @@ function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm
   );
 }
 
-function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
+function RacquetDiagram({ shape, faceId, gripShapeId, edgeProfile, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj, faceObj, frameObj, bridgeId, beamCount, beamOrientation, mode }) {
   const STROKE = "#4A4540";
+  // Frame edge geometry: a sharp/boxy profile renders with mitred corners and a
+  // crisp inner chamfer line; a rounded profile keeps soft joins and gets a
+  // light highlight suggesting a radiused edge catching light.
+  const edgeJoin = edgeProfile === "sharp" ? "miter" : "round";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
   const outline = headOutlinePath(shape, cx, topY, halfWidth, headHeight);
@@ -3967,7 +4015,9 @@ function RacquetDiagram({ shape, faceId, gripShapeId, holes, holeDiameterMm, len
   return (
     <svg viewBox="0 -22 460 662" width="100%" height="100%" style={{display:"block"}}>
       <defs><clipPath id="headClip"><path d={outline}/></clipPath></defs>
-      <path d={outline} fill={tint} stroke={frameRimStyle.color} strokeWidth={frameRimStyle.width} strokeLinejoin="round"/>
+      <path d={outline} fill={tint} stroke={frameRimStyle.color} strokeWidth={frameRimStyle.width} strokeLinejoin={edgeJoin}/>
+      {edgeProfile === "sharp" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6)} fill="none" stroke={frameRimStyle.color} strokeWidth="1.4" strokeLinejoin="miter" opacity="0.75"/>}
+      {edgeProfile === "rounded" && <path d={headOutlinePath(shape, cx, topY+3, halfWidth-4, headHeight-6)} fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinejoin="round" opacity="0.5"/>}
       {faceVisual.coverage > 0 ? (
         <g clipPath="url(#headClip)">
           {weaveLinesA.map((h, i) => <line key={"a" + i} x1={h.x1} y1={h.y1} x2={h.x2} y2={h.y2} stroke={faceVisual.weaveColor} strokeWidth="1" opacity="0.5" />)}
@@ -4176,6 +4226,7 @@ function RacquetIllustration3D({
   faceId,
   surfaceId,
   gripShapeId,
+  edgeProfile,
   holes,
   holeDiameterMm,
   lengthMm,
@@ -4190,6 +4241,7 @@ function RacquetIllustration3D({
   beamCount,
   beamOrientation,
 }) {
+  const edgeJoin = edgeProfile === "sharp" ? "miter" : "round";
   const cx = 230, topY = 30, headHeight = 290;
   const halfWidth = Math.min(148, (widthMm / 260) * 148);
 
@@ -4539,6 +4591,8 @@ function RacquetIllustration3D({
           is fully hidden; no rotation, so it stays perfectly aligned
           with the throat beneath it */}
       <path d={outline} fill="url(#rimGrad3d)" />
+      {edgeProfile === "sharp" && <path d={innerOutline} fill="none" stroke="#2A2620" strokeWidth="1.4" strokeLinejoin="miter" opacity="0.55"/>}
+      {edgeProfile === "rounded" && <path d={innerOutline} fill="none" stroke="#FFFFFF" strokeWidth="2.6" strokeLinejoin="round" opacity="0.4"/>}
       <path d={innerOutline} fill="url(#faceGrad3d)" />
 
       {/* Surface texture — kept deliberately subtle (low opacity, small
@@ -7792,6 +7846,7 @@ export default function App() {
   const [surfaceId, setSurfaceId] = useState("rough");
   const [gripId, setGripId] = useState("pu-grip");
   const [gripShapeId, setGripShapeId] = useState("octagonal");
+  const [edgeProfile, setEdgeProfile] = useState("standard");
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
@@ -7851,6 +7906,7 @@ export default function App() {
       if (typeof s.surfaceId === "string") setSurfaceId(s.surfaceId);
       if (typeof s.gripId === "string") setGripId(s.gripId);
       if (typeof s.gripShapeId === "string") setGripShapeId(s.gripShapeId);
+      if (typeof s.edgeProfile === "string") setEdgeProfile(s.edgeProfile);
       if (typeof s.bridgeId === "string") setBridgeId(s.bridgeId);
       if (typeof s.beamCount === "number") setBeamCount(s.beamCount);
       if (typeof s.beamOrientation === "string") setBeamOrientation(s.beamOrientation);
@@ -7877,7 +7933,7 @@ export default function App() {
     setShareStatus("saving");
     setShareError(null);
     const spec = {
-      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId,
+      shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
     };
@@ -7905,7 +7961,7 @@ export default function App() {
     // Reset back to idle after a few seconds so the button is reusable
     // for a fresh save if the person keeps editing.
     setTimeout(() => setShareStatus("idle"), 4000);
-  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
 
   const shape = SHAPES.find(s => s.id === shapeId)!;
   const core = CORE_MATERIALS.find(c => c.id === coreId)!;
@@ -7915,7 +7971,7 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
+  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
@@ -7946,8 +8002,10 @@ export default function App() {
       const thk = typeof g.thicknessMm === "number" ? g.thicknessMm : 38;
       const hls = Array.isArray(g.holes) ? g.holes : [];
       const hd = typeof g.holeDiameterMm === "number" ? g.holeDiameterMm : 9;
-      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk });
+      const edge = typeof g.edgeProfile === "string" ? g.edgeProfile : "standard";
+      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge });
       const bridgeLabel = (BRIDGE_TYPES.find(b => b.id === bId)?.label) ?? bId;
+      const edgeLabel = (EDGE_PROFILES.find(e => e.id === edge)?.label) ?? edge;
       const cap = (x: string) => (x ? x[0].toUpperCase() + x.slice(1) : x);
       return {
         scores: sc,
@@ -7955,6 +8013,7 @@ export default function App() {
           shape: shp.label, weightG: wG, balanceCm: bal,
           core: cor.label, face: fac.label, frame: frm.label, surface: srf.label,
           throat: bId === "closed" ? bridgeLabel : `${bridgeLabel} · ${cap(bOr)} · ${bCt}`,
+          edge: edgeLabel,
         },
       };
     };
@@ -8043,7 +8102,7 @@ export default function App() {
 
   // Shared diagram props
   const diagramProps = {
-    shape: shapeId, faceId, surfaceId, gripShapeId, holes, holeDiameterMm,
+    shape: shapeId, faceId, surfaceId, gripShapeId, edgeProfile, holes, holeDiameterMm,
     lengthMm, widthMm, thicknessMm, balanceCm, weightG, coreObj: core, faceObj: face, frameObj: frame,
     bridgeId, beamCount, beamOrientation,
   };
@@ -8148,6 +8207,11 @@ export default function App() {
           <MaterialNote text={frame.note}/>
         )}
         {mode === "manufacturer" && !(frame as any).experimental && <ManufacturingNote text={(frame as any).manufacturingNote}/>}
+        <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid rgba(0,0,0,0.045)" }}>
+          <p style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268", marginBottom:8 }}>Frame Edge Profile</p>
+          <ToggleGroup options={EDGE_PROFILES.map(e=>({id:e.id, label:e.label}))} value={edgeProfile} onChange={setEdgeProfile}/>
+          <p style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, marginTop:8, fontFamily:"Inter, sans-serif" }}>{EDGE_PROFILES.find(e=>e.id===edgeProfile)?.note}</p>
+        </div>
       </AccordionSection>
 
       {/* Hollow Frame Innovation — the complete experimental track in one
@@ -8270,7 +8334,7 @@ export default function App() {
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
             {diagramMode === "profile" ? (
-              <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId}/>
+              <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId} edgeProfile={edgeProfile}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />
             ) : (
