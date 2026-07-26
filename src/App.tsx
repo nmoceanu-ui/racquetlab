@@ -7115,6 +7115,7 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
                 const rr = MARKET_RACQUETS.find((x) => x.id === id);
                 setExistingMoldRacquetId(id || null);
                 if (rr) setExistingShapeId(rr.shapeId);
+                if (rr && onVisualizeRacquet) onVisualizeRacquet(rr); // picking a mould immediately renders it in the visualiser
                 setApplied(false);
               }}
               style={{ width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13.5, cursor: "pointer" }}
