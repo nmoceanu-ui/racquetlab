@@ -429,7 +429,7 @@ function buildLib(g) {
         for (const frame of FRAME_MATERIALS)
           for (const surface of SURFACE_TEXTURES) {
             const scores = computeScores({ shape, core, face, frame, surface, grip: base.grip, bridgeId: base.bridgeId, beamOrientation: base.beamOrientation, beamCount: base.beamCount, holes: base.holes, holeDiameterMm: base.holeDiameterMm, weightG: base.weightG, balanceCm: base.balanceCm, widthMm: base.widthMm, thicknessMm: base.thicknessMm });
-            lib.push({ shapeId: shape.id, coreId: core.id, faceId: face.id, frameId: frame.id, surfaceId: surface.id, scores });
+            lib.push([shape.id, core.id, face.id, frame.id, surface.id, scores.power, scores.control, scores.comfort, scores.sweetSpot, scores.durability, scores.spin, scores.stability]);
           }
   return lib;
 }
@@ -452,7 +452,7 @@ export default async function handler(req, res) {
     if (!body || typeof body !== "object") body = {};
     const lib = buildLib(body);
     res.statusCode = 200;
-    res.end(JSON.stringify({ count: lib.length, library: lib }));
+    res.end(JSON.stringify({ count: lib.length, cols: ["shapeId","coreId","faceId","frameId","surfaceId","power","control","comfort","sweetSpot","durability","spin","stability"], library: lib }));
   } catch (e) {
     res.statusCode = 500;
     res.end(JSON.stringify({ error: "reverse_failed", detail: String((e && e.message) || e) }));
