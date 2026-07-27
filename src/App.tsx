@@ -822,164 +822,7 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, 
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }) {
-  const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
-  const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
-  const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
-  add("power", shape.power); add("control", shape.control); add("sweetSpot", shape.forgiveness);
-  add("power", core.power); add("control", core.control); add("comfort", core.comfort); add("sweetSpot", core.sweetSpot); add("durability", core.durability);
-  add("power", face.power); add("control", face.control); add("comfort", face.comfort); add("durability", face.durability);
-  add("durability", frame.stiffness >= 4 ? 5 : frame.stiffness); add("comfort", 6 - frame.stiffness);
-  // Surface texture is not just a spin lever: a SMOOTH face gives the cleanest,
-  // most predictable energy transfer (flat power + control) and wears slowest,
-  // while raised/rough textures buy spin at a small cost in clean power, exit
-  // predictability and durability (raised structures chip; big honeycomb also
-  // drags). This is why many elite attack frames (e.g. the Viper) run smoother
-  // and generate spin from technique — so texture now trades off, not free spin.
-  add("spin", surface.spin);
-  add("power", surface.power ?? 3.5);
-  add("control", surface.control ?? 3.5);
-  add("durability", surface.durability ?? 3.5);
-  add("comfort", grip.vibrationDamp);
-  // Throat/bridge — real trade-offs (researched against pro usage + physics):
-  //  • closed/solid throat: most connected control + torsional stability + direct
-  //    power transfer, but harsh (low comfort) and no aero help;
-  //  • open + vertical strut: the attacking-diamond choice (Coello/Lebrón) — an
-  //    open throat cuts drag so the head accelerates faster → more effective smash
-  //    power, plus throat flex damps shock (comfort/touch); it gives up frame
-  //    control/torsional stiffness;
-  //  • open + diagonal X-brace: max control + anti-twist, but stiffer/heavier and
-  //    less comfortable/aero;
-  //  • open + horizontal tie: firm smash base + off-centre hold, at an aero cost.
-  //  More struts stiffen (control↑) but cost comfort and swing-speed (power↑ from
-  //  aero fades). No option is strictly best — it depends what you're optimizing.
-  {
-    let bP, bC, bCf, bD;
-    const bc = beamCount ?? 2;
-    if (bridgeId === "closed") { bP = 4; bC = 5; bCf = 1.5; bD = 5; }
-    else if (beamOrientation === "diagonal") { bP = 3; bC = 4.5; bCf = 2.5; bD = 4.5; }
-    else if (beamOrientation === "horizontal") { bP = 4; bC = 3.5; bCf = 3; bD = 3.5; }
-    else { bP = 4.5; bC = 3; bCf = 4; bD = 3; } // open + vertical
-    if (bridgeId !== "closed") { bC += (bc - 2) * 0.5; bCf += (2 - bc) * 0.5; bP += (2 - bc) * 0.35; bD += (bc - 2) * 0.4; }
-    // Aerodynamics: the faster the head travels (heavier + more head-heavy = a
-    // hard attacking swing), the more an OPEN throat's lower drag converts into
-    // real smash power, and the more a solid CLOSED throat's drag saps it. On a
-    // light, head-light control build the swing is slow and this washes out —
-    // which is why the pro attacking diamonds run open+vertical for head speed.
-    const aeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
-    bP += (bridgeId === "closed" ? -aeroBias * 0.9 : (1 - (bc - 1) * 0.12) * aeroBias * 0.9); // each extra strut adds a little drag
-    const cl = v => Math.max(1, Math.min(5, v));
-    add("power", cl(bP)); add("control", cl(bC)); add("comfort", cl(bCf)); add("durability", cl(bD));
-  }
 
-  // Real geometric hole physics — replaces the old five-bucket holeEffect
-  // lookup table. Uses exact piecewise-linear interpolation through the same
-  // five reference points the old table produced, so every existing
-  // racquet's scores are byte-identical after migration, while any real
-  // hole arrangement in between or beyond those references now computes a
-  // genuine value instead of snapping to the nearest of five presets.
-  const faceWidthMm = widthMm ?? 255;
-  const faceHeightMm = faceWidthMm * 1.14;
-  const openPct = computeHoleOpenAreaPct(holes ?? [], holeDiameterMm ?? 9, faceWidthMm, faceHeightMm);
-  const { centerFrac, edgeFrac } = computeHoleCenterEdgeSplit(holes ?? []);
-  const holePower = piecewiseLerp(openPct, HOLE_POWER_CURVE);
-  const holeControl = piecewiseLerp(openPct, HOLE_CONTROL_CURVE);
-  const holeComfort = piecewiseLerp(openPct, HOLE_COMFORT_CURVE);
-  const holeSweetSpotBase = piecewiseLerp(openPct, HOLE_SWEETSPOT_CURVE);
-  // Center concentration adds the same sweet-spot boost the old "centered"
-  // pattern label applied (+4 in a 1-9 additive scale ≈ +1.3 average),
-  // scaled continuously by how center-concentrated the real pattern is.
-  const holeSweetSpot = Math.max(1, Math.min(5, holeSweetSpotBase + centerFrac * 1.3));
-  add("power", holePower); add("control", holeControl); add("comfort", holeComfort); add("sweetSpot", holeSweetSpot);
-  // Edge-concentrated patterns trade a little sweet-spot size for reduced
-  // perimeter mass (previously documented in the old pattern-style "edge" entry, before migrating to real coordinates) — this
-  // mirrors the old pattern-specific adjustment but now driven by the real
-  // fraction of holes actually near the edge rather than a fixed label.
-  if (edgeFrac > 0.5) add("sweetSpot", -1 * edgeFrac);
-
-  if (weightG !== undefined) {
-    if (weightG >= 374) { add("power", 4); add("control", 2); add("comfort", 2); }
-    else if (weightG >= 362) { add("power", 3); add("control", 3); add("comfort", 3); }
-    else { add("power", 2); add("control", 4); add("comfort", 4); }
-  }
-  if (balanceCm !== undefined) {
-    if (balanceCm >= 26.5) { add("power", 4); add("control", 2); }
-    else if (balanceCm >= 25.3) { add("power", 3); add("control", 3); }
-    else { add("power", 2); add("control", 4); }
-  }
-  if (widthMm !== undefined) {
-    if (widthMm >= 250) add("sweetSpot", 4);
-    else if (widthMm >= 230) add("sweetSpot", 3);
-    else add("sweetSpot", 2);
-  }
-  if (thicknessMm !== undefined) {
-    if (thicknessMm >= 37) { add("power", 3); add("comfort", 2); }
-    else if (thicknessMm >= 33) { add("power", 3); add("comfort", 3); }
-    else { add("power", 2); add("comfort", 4); }
-  }
-  const out: any = {};
-  ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
-    out[k] = n[k] ? Math.round((s[k] / n[k]) * 10) / 10 : 0;
-  });
-  // Hole aerodynamics. Open face area cuts air drag on the downswing, so on a
-  // heavy, head-heavy frame swung hard the head accelerates faster → real
-  // effective smash power. This partly offsets the face-softening power loss
-  // that holes otherwise impose (HOLE_POWER_CURVE above), which is why real
-  // attacking diamonds are heavily perforated rather than bare-faced. It scales
-  // with the same weight × head-heaviness "swing intensity" as the throat aero
-  // and saturates past ~20% open — on a light, head-light control frame the
-  // swing is slow so this washes out, and holes stay a pure forgiveness lever.
-  const holeAeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
-  const holeAeroBonus = (Math.min(openPct, 20) / 20) * holeAeroBias * 0.9;
-  out.power = Math.round(Math.min(5, out.power + holeAeroBonus) * 10) / 10;
-  // Frame-thickness aerodynamics. A thinner frame presents a smaller frontal
-  // cross-section, so it cuts less air on the downswing → faster head speed →
-  // more effective smash power. Like the hole/throat/edge aero, this only cashes
-  // in on a heavy, head-heavy frame swung hard (holeAeroBias); on a light control
-  // frame the swing is too slow, so thinness there instead just buys flex,
-  // comfort and a bigger sweet spot (already handled in the averaged thickness
-  // term and the sweet-spot radius factor above). Baseline 38mm = no bonus,
-  // scaling to the 28mm structural floor. This is the signal that tells a factory
-  // to go thinner for an attacking frame: swing speed, not touch.
-  const thinFactor = Math.max(0, Math.min(1, (38 - (thicknessMm ?? 38)) / 10));
-  const thickAeroBonus = thinFactor * holeAeroBias * 0.6;
-  out.power = Math.round(Math.min(5, out.power + thickAeroBonus) * 10) / 10;
-  // Frame edge geometry (rounded ↔ sharp). Applied as small post-average
-  // deltas so "standard" (the default, and every existing racquet) is exactly
-  // unchanged — no bias — while opting into rounded/sharp shifts the honest
-  // trade-off. Sharp/boxy = stiffer & more connected (+control) but harsher
-  // (−comfort) and more chip-prone (−durability), plus an aero head-speed power
-  // bonus that, like the hole/throat aero, only shows up on a heavy head-heavy
-  // frame swung hard. Rounded = comfier and more durable, a touch less crisp
-  // and less aerodynamic.
-  const clampS = (v: number) => Math.round(Math.max(1, Math.min(5, v)) * 10) / 10;
-  if (edgeProfile === "sharp") {
-    const edgeAero = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6)) * 0.4;
-    out.control = clampS(out.control + 0.2);
-    out.comfort = clampS(out.comfort - 0.3);
-    out.durability = clampS(out.durability - 0.3);
-    out.power = clampS(out.power + edgeAero);
-  } else if (edgeProfile === "rounded") {
-    out.comfort = clampS(out.comfort + 0.3);
-    out.durability = clampS(out.durability + 0.3);
-    out.control = clampS(out.control - 0.15);
-    out.power = clampS(out.power - 0.1);
-  }
-  out.stability = Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, beamCount, widthMm: widthMm ?? 230, weightG }) * 5 * 10) / 10;
-  // Head-shape side geometry. Straighter/more-angular sides carry more of the
-  // perimeter mass out to the widest zone → higher twistweight (off-centre
-  // stability) and a broader sweet spot, at a small aero cost. "curved" (the
-  // default) is neutral so nothing existing changes — no bias.
-  if (sideProfile === "straight") {
-    out.stability = clampS(out.stability + 0.25);
-    out.sweetSpot = clampS(out.sweetSpot + 0.2);
-    out.power = clampS(out.power - 0.1);
-  } else if (sideProfile === "soft-straight") {
-    out.stability = clampS(out.stability + 0.12);
-    out.sweetSpot = clampS(out.sweetSpot + 0.1);
-  }
-  return out;
-}
 
 // Reverse of the finder quiz: read a build's SCORES back into the plain
 // language the questionnaire speaks — the style it suits, the shots it
@@ -8304,60 +8147,18 @@ export default function App() {
   const stabilityPct = useMemo(() => Math.round(computeStability({ core, face, frame, bridgeId, beamOrientation, widthMm, weightG }) * 100), [core, face, frame, bridgeId, beamOrientation, widthMm, weightG]);
   const fto_flagged = ["graphene","kevlar-reinforced"].includes(faceId) || holes.length > 0 || coreId === "hybrid-core";
 
-  // Expose a spec scorer on window so the account overlay (a separate React
-  // tree in ForjaAccounts) can score saved builds with the real engine for the
-  // "Compare builds" view. Takes a raw saved spec, returns {scores, summary}.
-  useEffect(() => {
-    (window as any).__palalabScoreSpec = (raw: any) => {
-      const g = raw || {};
-      const shp = SHAPES.find(s => s.id === g.shapeId) || SHAPES.find(s => s.id === "teardrop")!;
-      const cor = CORE_MATERIALS.find(c => c.id === g.coreId) || CORE_MATERIALS.find(c => c.id === "eva-medium")!;
-      const fac = FACE_MATERIALS.find(f => f.id === g.faceId) || FACE_MATERIALS.find(f => f.id === "carbon-12k")!;
-      const frm = FRAME_MATERIALS.find(f => f.id === g.frameId) || FRAME_MATERIALS.find(f => f.id === "hybrid-frame")!;
-      const srf = SURFACE_TEXTURES.find(s => s.id === g.surfaceId) || SURFACE_TEXTURES.find(s => s.id === "rough")!;
-      const grp = GRIP_MATERIALS.find(gr => gr.id === g.gripId) || GRIP_MATERIALS.find(gr => gr.id === "pu-grip")!;
-      const bId = typeof g.bridgeId === "string" ? g.bridgeId : "open";
-      const bOr = typeof g.beamOrientation === "string" ? g.beamOrientation : "vertical";
-      const bCt = typeof g.beamCount === "number" ? g.beamCount : 2;
-      const wG = typeof g.weightG === "number" ? g.weightG : 365;
-      const bal = typeof g.balanceCm === "number" ? g.balanceCm : 25.8;
-      const wid = typeof g.widthMm === "number" ? g.widthMm : 255;
-      const thk = typeof g.thicknessMm === "number" ? g.thicknessMm : 38;
-      const hls = Array.isArray(g.holes) ? g.holes : [];
-      const hd = typeof g.holeDiameterMm === "number" ? g.holeDiameterMm : 9;
-      const edge = typeof g.edgeProfile === "string" ? g.edgeProfile : "standard";
-      const side = typeof g.sideProfile === "string" ? g.sideProfile : "curved";
-      const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge, sideProfile: side });
-      const bridgeLabel = (BRIDGE_TYPES.find(b => b.id === bId)?.label) ?? bId;
-      const edgeLabel = (EDGE_PROFILES.find(e => e.id === edge)?.label) ?? edge;
-      const sideLabel = (SIDE_PROFILES.find(sp => sp.id === side)?.label) ?? side;
-      const cap = (x: string) => (x ? x[0].toUpperCase() + x.slice(1) : x);
-      return {
-        scores: sc,
-        summary: {
-          shape: shp.label, weightG: wG, balanceCm: bal,
-          core: cor.label, face: fac.label, frame: frm.label, surface: srf.label,
-          throat: bId === "closed" ? bridgeLabel : `${bridgeLabel} · ${cap(bOr)} · ${bCt}`,
-          edge: edgeLabel,
-          side: sideLabel,
-        },
-      };
-    };
-  }, []);
 
-  // Expose the market-racquet catalog (raw specs) so the account overlay's
-  // Compare view can search the database and drop real racquets in next to the
-  // user's own builds — each catalog spec is scored through the same
-  // __palalabScoreSpec engine, so the comparison is apples-to-apples.
+
+  const [baselineScoresState, setBaselineScoresState] = useState<any>(null);
   useEffect(() => {
-    (window as any).__palalabCatalog = (MARKET_RACQUETS as any[]).map((r) => ({
-      id: r.id, brand: r.brand, model: r.model, level: r.level, priceTier: r.priceTier,
-      spec: {
-        shapeId: r.shapeId, coreId: r.coreId, faceId: r.faceId, frameId: r.frameId,
-        surfaceId: r.surfaceId, weightG: r.weightG, balanceCm: r.balanceCm, thicknessMm: r.thicknessMm,
-      },
-    }));
-  }, []);
+    const top = matchedRacquets[0];
+    if (mode !== "manufacturer" || !top || top.matchPct < 85) { setBaselineScoresState(null); return; }
+    const rr = top.racquet;
+    let cancelled = false;
+    fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ shapeId: rr.shapeId, coreId: rr.coreId, faceId: rr.faceId, frameId: rr.frameId, surfaceId: rr.surfaceId, gripId: GRIP_MATERIALS[0].id, bridgeId: "open", beamOrientation: "vertical", holes: generateLegacyHoleGrid("standard", "even", rr.shapeId), holeDiameterMm: 9, weightG: rr.weightG, balanceCm: rr.balanceCm, widthMm: 255, thicknessMm: rr.thicknessMm ?? 38 }) })
+      .then((res) => res.json()).then((j) => { if (!cancelled && j && j.scores) setBaselineScoresState(j.scores); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [mode, matchedRacquets]);
 
   // --- Reverse solver (drag target scores -> materials) ---
   const [rsOpen, setRsOpen] = useState(true);
@@ -8809,12 +8610,8 @@ export default function App() {
         const topMatch = matchedRacquets[0];
         if (!topMatch || topMatch.matchPct < 85) return null;
         const r = topMatch.racquet;
-        const baselineCore = CORE_MATERIALS.find(m => m.id === r.coreId);
-        const baselineFace = FACE_MATERIALS.find(m => m.id === r.faceId);
-        const baselineFrame = FRAME_MATERIALS.find(m => m.id === r.frameId);
-        const baselineSurface = SURFACE_TEXTURES.find(m => m.id === r.surfaceId);
-        if (!baselineCore || !baselineFace || !baselineFrame || !baselineSurface) return null;
-        const baselineScores = computeScores({ shape: r.shapeId, core: baselineCore, face: baselineFace, frame: baselineFrame, surface: baselineSurface, grip: GRIP_MATERIALS[0], bridgeId: "open", beamOrientation: "vertical", holes: generateLegacyHoleGrid("standard", "even", r.shapeId), holeDiameterMm: 9, weightG: r.weightG, balanceCm: r.balanceCm, widthMm: 255, thicknessMm: r.thicknessMm ?? 38 });
+        const baselineScores = baselineScoresState;
+        if (!baselineScores) return null;
         const categories: { key: keyof typeof scores; label: string }[] = [
           { key: "power", label: "Power" },
           { key: "control", label: "Control" },
