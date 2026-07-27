@@ -1035,27 +1035,20 @@ const RS_LABELS = [
   { key: "durability", label: "Durability" },
 ];
 
-function buildReverseLibrary(base: any) {
-  const lib: any[] = [];
-  for (const shape of SHAPES)
-    for (const core of CORE_MATERIALS)
-      for (const face of FACE_MATERIALS)
-        for (const frame of FRAME_MATERIALS)
-          for (const surface of SURFACE_TEXTURES) {
-            const scores = computeScores({
-              shape, core, face, frame, surface, grip: base.grip,
-              bridgeId: base.bridgeId, beamOrientation: base.beamOrientation, beamCount: base.beamCount,
-              holes: base.holes, holeDiameterMm: base.holeDiameterMm,
-              weightG: base.weightG, balanceCm: base.balanceCm,
-              widthMm: base.widthMm, thicknessMm: base.thicknessMm,
-            });
-            lib.push({
-              shapeId: shape.id, coreId: core.id, faceId: face.id, frameId: frame.id, surfaceId: surface.id,
-              oem: estimateOEMCost({ faceId: face.id, coreId: core.id, frameId: frame.id, surfaceId: surface.id, gripId: base.grip.id }),
-              scores,
-            });
-          }
-  return lib;
+const SB_REVERSE_URL = "https://bofdpdhxmxcspuatvnbd.supabase.co/functions/v1/reverse-library";
+const SB_REVERSE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZmRwZGh4bXhjc3B1YXR2bmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MjEwODQsImV4cCI6MjA5ODA5NzA4NH0.Cu44OwNG1RN3F43h9xQAk_2Kom1_q7oAaOU0dWYDi50";
+async function fetchReverseLibrary(base: any): Promise<any[]> {
+  try {
+    const r = await fetch(SB_REVERSE_URL, { method: "POST", headers: { "content-type": "application/json", "apikey": SB_REVERSE_ANON, "Authorization": "Bearer " + SB_REVERSE_ANON }, body: JSON.stringify(base) });
+    const j = await r.json();
+    if (!j || !Array.isArray(j.library)) return [];
+    const gid = base.gripId;
+    return j.library.map((e: any[]) => ({
+      shapeId: e[0], coreId: e[1], faceId: e[2], frameId: e[3], surfaceId: e[4],
+      oem: estimateOEMCost({ faceId: e[2], coreId: e[1], frameId: e[3], surfaceId: e[4], gripId: gid }),
+      scores: { power: e[5], control: e[6], comfort: e[7], sweetSpot: e[8], durability: e[9], spin: e[10], stability: e[11] },
+    }));
+  } catch (_e) { return []; }
 }
 
 // Find the library spec whose scores are closest to the target, weighting the
@@ -8375,7 +8368,7 @@ export default function App() {
   const [rsNote, setRsNote] = useState("");
   const currentOem = useMemo(() => estimateOEMCost({ faceId, coreId, frameId, surfaceId, gripId }), [faceId, coreId, frameId, surfaceId, gripId]);
   const openReverseSolve = () => {
-    setRsLib(buildReverseLibrary({ grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }));
+    fetchReverseLibrary({ gripId, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }).then(setRsLib);
     setRsScores({ ...scores }); setRsSolved(null); setRsNote(""); setRsOpen(true);
   };
   const rsSlide = (key: string, val: number) => {
@@ -8402,7 +8395,7 @@ export default function App() {
   // mid-drag on (rsSolved holds that pending preview).
   useEffect(() => {
     if (!rsOpen || rsSolved) return;
-    setRsLib(buildReverseLibrary({ grip, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }));
+    fetchReverseLibrary({ gripId, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm }).then(setRsLib);
     setRsScores({ ...scores });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rsOpen, rsSolved, scores, gripId, bridgeId, beamOrientation, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm]);
