@@ -1,4 +1,4 @@
-undefined// PalaLab scoring engine - SERVER-ONLY (Vercel Edge Function).
+// PalaLab scoring engine - SERVER-ONLY (Vercel Edge Function).
 // Trade-secret core: material tables plus scoring math.
 // Must never be imported by client code or shipped in the browser bundle.
 export const config = { runtime: "edge" };
