@@ -581,10 +581,76 @@ function racquetHasPorts(note?: string): boolean {
   const n = note.toLowerCase();
   return n.includes("air port") || n.includes("air-port") || n.includes("airport") || n.includes("double-size hole") || n.includes("double size hole") || n.includes("oversize");
 }
-function racquetHoleLayout(shape: string, hasPorts: boolean): HolePoint[] {
-  const grid = generateLegacyHoleGrid("standard", "even", shape);
-  if (!hasPorts) return grid;
-  return grid.map(h => (Math.sqrt(h.x * h.x + h.y * h.y) > 0.55 ? { ...h, d: 13 } : h));
+function inFaceShape(shape: string, x: number, y: number): boolean {
+  const dist = Math.sqrt(x * x + y * y);
+  if (shape === "round") return dist < 0.9;
+  if (shape === "diamond" || shape === "diamond-wide") return (Math.abs(x) + Math.abs(y * 1.05)) < 0.9;
+  const halfW = y < 0 ? 0.9 - y * 0.22 : 0.9 - y * 0.48;
+  return (x * x) / (halfW * halfW) + y * y < 0.92;
+}
+// A full-face grid of ~count holes clipped to the shape — the standard padel
+// perforation. Optional oversized outer ports for models documented to use them.
+function perfGrid(shape: string, count: number, ports = false): HolePoint[] {
+  const cols = Math.max(5, Math.round(Math.sqrt(count) * 1.2));
+  const rows = Math.max(5, Math.ceil(count / cols) + 3);
+  const pts: HolePoint[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = cols > 1 ? ((c / (cols - 1)) - 0.5) * 1.55 : 0;
+      const y = rows > 1 ? ((r / (rows - 1)) - 0.5) * 1.58 : 0;
+      if (!inFaceShape(shape, x, y)) continue;
+      pts.push(ports && Math.sqrt(x * x + y * y) > 0.62 ? { x, y, d: 13 } : { x, y });
+    }
+  }
+  return pts;
+}
+// Concentric rings around the sweet spot — the circular / concentric family.
+function perfRings(shape: string): HolePoint[] {
+  const pts: HolePoint[] = [{ x: 0, y: -0.05 }];
+  const rings: [number, number][] = [[0.26, 7], [0.5, 12], [0.74, 17], [0.95, 20]];
+  for (const [rad, n] of rings) {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const x = rad * Math.cos(a), y = -0.05 + rad * Math.sin(a) * 1.08;
+      if (inFaceShape(shape, x, y)) pts.push({ x, y });
+    }
+  }
+  return pts;
+}
+// Diamond/rhombus cluster — rows widest at the sweet spot, tapering top and bottom.
+function perfRhombus(shape: string): HolePoint[] {
+  const pts: HolePoint[] = [];
+  const rows = 11;
+  for (let r = 0; r < rows; r++) {
+    const ty = (r / (rows - 1)) - 0.5;
+    const y = ty * 1.5;
+    const w = (1 - Math.abs(ty) * 1.7) * 0.8;
+    if (w <= 0) continue;
+    const nc = Math.max(1, Math.round(w * 12));
+    for (let c = 0; c < nc; c++) {
+      const x = nc > 1 ? ((c / (nc - 1)) - 0.5) * w * 2 : 0;
+      if (inFaceShape(shape, x, y)) pts.push({ x, y });
+    }
+  }
+  return pts;
+}
+// Pick a representative perforation for a catalog racquet: the correct pattern
+// FAMILY and a density that tracks the model's character, from its shape and
+// description. Documented distinctive patterns (concentric rings, rhombus, air
+// ports) are matched from the model's own notes; everything else gets a shape-
+// appropriate full-face grid. Visualisation only — comparison scoring keeps a
+// single uniform grid so no racquet gets an engineered advantage.
+function racquetHoleLayout(r: any): HolePoint[] {
+  if (!r) return perfGrid("teardrop", 46);
+  const shape: string = r.shapeId || "teardrop";
+  const note: string = (r.note || "").toLowerCase();
+  if (racquetHasPorts(r.note)) return perfGrid(shape, 40, true);
+  if (/concentric|circular hole|ring pattern|round hole pattern/.test(note)) return perfRings(shape);
+  if (/rhombus|diamond-shaped hole|diamond hole/.test(note)) return perfRhombus(shape);
+  const controlish = shape === "round" || /control|soft|comfort|forgiv|maneuver|large sweet/.test(note);
+  const powerish = shape === "diamond" || shape === "diamond-wide" || /power|smash|attack|stiff|hard/.test(note);
+  const count = controlish ? 52 : powerish ? 40 : 46;
+  return perfGrid(shape, count);
 }
 
 // Compact read-only face diagram — draws a racquet's shape outline and its
@@ -7169,7 +7235,7 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
                     </div>
                   </div>
                   <div style={{ flexShrink: 0, textAlign: "center", width: 116 }}>
-                    <RacquetFaceMini shape={mold.shapeId} holes={racquetHoleLayout(mold.shapeId, racquetHasPorts(mold.note))} size={110} />
+                    <RacquetFaceMini shape={mold.shapeId} holes={racquetHoleLayout(mold)} size={110} />
                     <div style={{ fontSize: 9.5, color: "#7A7268", fontFamily: "Inter, sans-serif", marginTop: 3, lineHeight: 1.35 }}>Representative perforation{racquetHasPorts(mold.note) ? " · air ports" : ""}</div>
                   </div>
                 </div>
@@ -8387,7 +8453,7 @@ export default function App() {
     if (typeof r.thicknessMm === "number") setThicknessMm(r.thicknessMm);
     setWidthMm(255);
     setEdgeProfile("standard"); setSideProfile("curved");
-    setHolesRaw(racquetHoleLayout(r.shapeId, racquetHasPorts(r.note)));
+    setHolesRaw(racquetHoleLayout(r));
     setHoleDiameterMm(9);
     setLoadedName((r.brand ? r.brand + " " : "") + r.model);
     setLoadedCode(null);
