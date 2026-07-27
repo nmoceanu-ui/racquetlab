@@ -8293,7 +8293,15 @@ export default function App() {
   const grip = GRIP_MATERIALS.find(g => g.id === gripId)!;
   const bridge = BRIDGE_TYPES.find(b => b.id === bridgeId)!;
 
-  const scores = useMemo(() => computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }), [shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile]);
+  const [scores, setScores] = useState<any>({ power: 3, control: 3, comfort: 3, sweetSpot: 3, durability: 3, spin: 3, stability: 3 });
+  useEffect(() => {
+    let cancelled = false;
+    const t = setTimeout(() => {
+      fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }) })
+        .then((r) => r.json()).then((jj) => { if (!cancelled && jj && jj.scores) setScores(jj.scores); }).catch(() => {});
+    }, 160);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
