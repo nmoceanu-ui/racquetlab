@@ -1,6 +1,6 @@
 api/reverse-library.ts// PalaLab reverse-solver library - SERVER-ONLY (Vercel Edge Function).
 // Runs the material-combination score sweep server-side so the engine stays off the client.
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs", maxDuration: 15 };
 const CORE_MATERIALS = [
   { id: "eva-soft", label: "EVA Foam — Soft", density: "20–25 kg/m³", hardnessShoreC: "30–40°C", power: 2, control: 4, comfort: 5, sweetSpot: 5, durability: 3, note: "Ethylene-vinyl acetate foam at its lowest commercial density for padel. Compresses significantly under ball impact, giving long dwell time and a wide sweet spot. Absorbs ~30–40% of impact energy as heat rather than returning it to the ball — controlled feel, gentle on the arm. Shore C 30–40° is the QC spec to request from factories. Primary failure mode: foam cell collapse over time — soft EVA wears faster than hard EVA under equivalent loads. Royal Padel M27 Poly uses PE (see below) for even softer feel, but soft EVA is the most common arm-friendly core.", bestFor: "Beginners, recreational, arm/elbow sensitivity, defensive play", manufacturingNote: "Standard OEM. EVA foam blanks cut or molded then wrapped in carbon during co-cure. Specify Shore C range, not just 'soft'." },
   { id: "eva-medium", label: "EVA Foam — Medium", density: "25–32 kg/m³", hardnessShoreC: "40–55°C", power: 3, control: 3, comfort: 3, sweetSpot: 4, durability: 4, note: "The industry default — majority of padel racquets produced globally. Compresses and rebounds quickly, splitting power/control. Multiple brands (Bullpadel MultiEva, Head Power Foam mid-range) tune within this zone with proprietary density gradients. The 'medium' label covers a meaningful range — 26 kg/m³ vs 31 kg/m³ is perceptible on direct comparison. Request Shore C confirmation (40–55°) rather than relying on supplier's 'medium' designation.", bestFor: "Intermediate players, all-round builds, highest commercial volume", manufacturingNote: "Readily available from all major EVA suppliers. Cost-neutral vs soft." },
@@ -434,17 +434,19 @@ function buildLib(g) {
   return lib;
 }
 
-const CORS = { "content-type": "application/json", "cache-control": "no-store", "access-control-allow-origin": "*", "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "content-type" };
+const setCors = (res) => { res.setHeader("access-control-allow-origin", "*"); res.setHeader("access-control-allow-methods", "POST, OPTIONS"); res.setHeader("access-control-allow-headers", "content-type"); res.setHeader("content-type", "application/json"); };
 
-export default async function handler(req) {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST base as JSON" }), { status: 405, headers: CORS });
-  let body = {};
-  try { body = await req.json(); } catch (e) { body = {}; }
+export default function handler(req, res) {
+  setCors(res);
+  if (req.method === "OPTIONS") { res.status(204).end(); return; }
+  if (req.method !== "POST") { res.status(405).json({ error: "POST base as JSON" }); return; }
+  let body = req.body;
+  if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  if (!body || typeof body !== "object") body = {};
   try {
     const lib = buildLib(body);
-    return new Response(JSON.stringify({ count: lib.length, library: lib }), { status: 200, headers: CORS });
+    res.status(200).json({ count: lib.length, library: lib });
   } catch (e) {
-    return new Response(JSON.stringify({ error: "reverse_failed", detail: String((e && e.message) || e) }), { status: 500, headers: CORS });
+    res.status(500).json({ error: "reverse_failed", detail: String((e && e.message) || e) });
   }
 }
