@@ -434,19 +434,27 @@ function buildLib(g) {
   return lib;
 }
 
-const setCors = (res) => { res.setHeader("access-control-allow-origin", "*"); res.setHeader("access-control-allow-methods", "POST, OPTIONS"); res.setHeader("access-control-allow-headers", "content-type"); res.setHeader("content-type", "application/json"); };
-
-export default function handler(req, res) {
-  setCors(res);
-  if (req.method === "OPTIONS") { res.status(204).end(); return; }
-  if (req.method !== "POST") { res.status(405).json({ error: "POST base as JSON" }); return; }
-  let body = req.body;
-  if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
-  if (!body || typeof body !== "object") body = {};
+export default async function handler(req, res) {
+  res.setHeader("access-control-allow-origin", "*");
+  res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+  res.setHeader("access-control-allow-headers", "content-type");
+  res.setHeader("content-type", "application/json");
+  if (req.method === "OPTIONS") { res.statusCode = 204; res.end(); return; }
+  if (req.method !== "POST") { res.statusCode = 405; res.end(JSON.stringify({ error: "POST base as JSON" })); return; }
   try {
+    let body = req.body;
+    if (body === undefined || body === null) {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      try { body = JSON.parse(raw); } catch (e) { body = {}; }
+    }
+    if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+    if (!body || typeof body !== "object") body = {};
     const lib = buildLib(body);
-    res.status(200).json({ count: lib.length, library: lib });
+    res.statusCode = 200;
+    res.end(JSON.stringify({ count: lib.length, library: lib }));
   } catch (e) {
-    res.status(500).json({ error: "reverse_failed", detail: String((e && e.message) || e) });
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: "reverse_failed", detail: String((e && e.message) || e) }));
   }
 }
