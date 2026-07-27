@@ -421,9 +421,10 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
 function buildLib(g) {
   g = g || {};
   const grip = GRIP_MATERIALS.find((x) => x.id === g.gripId) || GRIP_MATERIALS.find((x) => x.id === "pu-grip");
+  const SHP = g.onlyShapeId ? SHAPES.filter((s) => s.id === g.onlyShapeId) : SHAPES;
   const base = { grip, bridgeId: g.bridgeId, beamOrientation: g.beamOrientation, beamCount: g.beamCount, holes: Array.isArray(g.holes) ? g.holes : [], holeDiameterMm: g.holeDiameterMm, weightG: g.weightG, balanceCm: g.balanceCm, widthMm: g.widthMm, thicknessMm: g.thicknessMm };
   const lib = [];
-  for (const shape of SHAPES)
+  for (const shape of SHP)
     for (const core of CORE_MATERIALS)
       for (const face of FACE_MATERIALS)
         for (const frame of FRAME_MATERIALS)
