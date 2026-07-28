@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, PolarRadiusAxis
 } from "recharts";
 import { saveBuild, loadBuild, updateBuildByCode } from "./lib/builds";
-import { supabaseConfigured } from "./lib/supabase";
+import { supabaseConfigured, supabase } from "./lib/supabase";
 import { analytics } from "./lib/analytics";
 // Factory brief tracks: best-performance / best-value / market-gap / innovation
 
@@ -341,6 +341,37 @@ const SURFACE_OEM_COST_DELTA: Record<string, number> = {
   "xl-honeycomb": 14, // large-cell raised honeycomb requires specialized mold tooling
   "hybrid-texture": 16, // two-zone finishing (masking or second mold pass) adds cost
 };
+
+const STRIPE_LINKS: Record<string, string> = { pro: "", factory: "" }; // paste Stripe Payment Link URLs to enable checkout
+function UpgradeModal({ plan, onClose }: { plan: "pro" | "factory"; onClose: () => void }) {
+  const plans: any = {
+    pro: { name: "Pro", price: "$12", period: "/mo", tag: "For players", features: ["Unlimited saved builds", "Reverse-solver simulations", "Compare builds side-by-side", "Export specs to PDF", "Everything in Free"] },
+    factory: { name: "Factory", price: "$49", period: "/mo", tag: "For manufacturers & brands", features: ["Everything in Pro", "Factory brief + production specs", "Manufacturing notes on every material", "OEM cost + retail estimates", "FTO / QC guidance", "Reverse-solve to material combinations"] },
+  };
+  const p = plans[plan];
+  const link = STRIPE_LINKS[plan];
+  return (
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(20,25,20,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+      <div style={{ background: "#F0EBE0", borderRadius: 16, maxWidth: 420, width: "100%", padding: 24, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif" }}>{p.tag}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#2A2621", fontFamily: "'Barlow Condensed', sans-serif" }}>PalaLab {p.name}</div>
+          </div>
+          <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", color: "#7A7268" }}>×</button>
+        </div>
+        <div style={{ margin: "8px 0 16px" }}><span style={{ fontSize: 34, fontWeight: 800, color: "#1A5C2A" }}>{p.price}</span><span style={{ color: "#7A7268", fontSize: 14 }}>{p.period}</span></div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+          {p.features.map((ft: string, i: number) => (<div key={i} style={{ display: "flex", gap: 8, fontSize: 13.5, color: "#4A4540" }}><span style={{ color: "#1A5C2A", fontWeight: 700 }}>✓</span>{ft}</div>))}
+        </div>
+        {link
+          ? (<a href={link} target="_blank" rel="noopener noreferrer" style={{ display: "block", textAlign: "center", background: "#1A5C2A", color: "#F0EBE0", padding: "12px", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.05em", textTransform: "uppercase" }}>Upgrade to {p.name}</a>)
+          : (<div style={{ textAlign: "center", color: "#7A7268", fontSize: 12.5, padding: "12px", background: "rgba(0,0,0,0.03)", borderRadius: 10 }}>Checkout activating soon.</div>)}
+        <div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: "#9A9288" }}>Cancel anytime.</div>
+      </div>
+    </div>
+  );
+}
 
 function estimateOEMCost({ faceId, coreId, frameId, surfaceId, gripId }: { faceId: string; coreId: string; frameId: string; surfaceId: string; gripId: string }): number {
   return BASE_OEM_COST
@@ -7961,6 +7992,21 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
 
 export default function App() {
   const [mode, setMode] = useState<"player"|"manufacturer">("player");
+  const [tier, setTier] = useState<"free"|"pro"|"factory">("free");
+  const [upgradePlan, setUpgradePlan] = useState<null | "pro" | "factory">(null);
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("subscriptions").select("tier,status").eq("user_id", user.id).maybeSingle();
+        if (!cancelled && data && data.status === "active" && (data.tier === "pro" || data.tier === "factory")) setTier(data.tier);
+      } catch (_e) {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const [activeTab, setActiveTab] = useState<"home"|"find"|"build"|"view"|"scores">(
     () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("b")) ? "view" : "home"
   );
@@ -8066,6 +8112,19 @@ export default function App() {
   }, []);
 
   const handleSaveBuild = useCallback(async () => {
+    if (supabaseConfigured) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: sub } = await supabase.from("subscriptions").select("tier,status").eq("user_id", user.id).maybeSingle();
+          const paid = !!(sub && sub.status === "active" && (sub.tier === "pro" || sub.tier === "factory"));
+          if (!paid) {
+            const { count } = await supabase.from("saved_builds").select("id", { count: "exact", head: true }).eq("owner", user.id);
+            if ((count ?? 0) >= 1) { setUpgradePlan("pro"); return; }
+          }
+        }
+      } catch (_e) {}
+    }
     setShareStatus("saving");
     setShareError(null);
     const spec = {
@@ -8973,10 +9032,11 @@ export default function App() {
               : "Save & Share (soon)"}
           </button>
 
+          {upgradePlan && <UpgradeModal plan={upgradePlan} onClose={() => setUpgradePlan(null)} />}
           {/* Mode toggle */}
           <div className={(activeTab === "build" || activeTab === "find") ? "" : "mobile-hide"} style={{ display:"flex", gap:4, background:"rgba(0,0,0,0.04)", padding:3, borderRadius:8, border:"1px solid rgba(0,0,0,0.05)" }}>
             {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Factory",icon:<Wrench size={12}/>}].map(m => (
-              <button key={m.id} onClick={() => { setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
+              <button key={m.id} onClick={() => { if (m.id === "manufacturer" && tier !== "factory") { setUpgradePlan("factory"); return; } setMode(m.id as any); analytics.modeChanged(m.id); }} style={{
                 display:"flex", alignItems:"center", gap:5, padding:"5px 10px", borderRadius:6, border:"none",
                 background: mode===m.id ? "#1A5C2A" : "transparent",
                 color: mode===m.id ? "#F0EBE0" : "#7A7268",
