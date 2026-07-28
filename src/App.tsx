@@ -342,6 +342,7 @@ const SURFACE_OEM_COST_DELTA: Record<string, number> = {
   "hybrid-texture": 16, // two-zone finishing (masking or second mold pass) adds cost
 };
 
+const ADMIN_EMAILS = ["n.moceanu@gmail.com"]; // owner override — always full (Factory) access, never gated
 const STRIPE_LINKS: Record<string, string> = { pro: "", factory: "" }; // paste Stripe Payment Link URLs to enable checkout
 function UpgradeModal({ plan, onClose }: { plan: "pro" | "factory"; onClose: () => void }) {
   const plans: any = {
@@ -8001,6 +8002,7 @@ export default function App() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+        if (ADMIN_EMAILS.includes((user.email || "").toLowerCase())) { if (!cancelled) setTier("factory"); return; }
         const { data } = await supabase.from("subscriptions").select("tier,status").eq("user_id", user.id).maybeSingle();
         if (!cancelled && data && data.status === "active" && (data.tier === "pro" || data.tier === "factory")) setTier(data.tier);
       } catch (_e) {}
@@ -8115,7 +8117,7 @@ export default function App() {
     if (supabaseConfigured) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        if (user && !ADMIN_EMAILS.includes((user.email || "").toLowerCase())) {
           const { data: sub } = await supabase.from("subscriptions").select("tier,status").eq("user_id", user.id).maybeSingle();
           const paid = !!(sub && sub.status === "active" && (sub.tier === "pro" || sub.tier === "factory"));
           if (!paid) {
