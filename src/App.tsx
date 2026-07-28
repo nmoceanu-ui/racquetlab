@@ -7111,9 +7111,17 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
               style={{ width: "100%", padding: "11px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13.5, cursor: "pointer" }}
             >
               <option value="">Select a racquet mold…</option>
-              {MARKET_RACQUETS.map((r) => (
-                <option key={r.id} value={r.id}>{r.brand} {r.model} — {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm</option>
-              ))}
+              {(() => {
+                const byBrand: Record<string, any[]> = {};
+                MARKET_RACQUETS.forEach((r: any) => { (byBrand[r.brand] = byBrand[r.brand] || []).push(r); });
+                return Object.keys(byBrand).sort((a, b) => a.localeCompare(b)).map((brand) => (
+                  <optgroup key={brand} label={brand + " (" + byBrand[brand].length + ")"}>
+                    {byBrand[brand].map((r: any) => (
+                      <option key={r.id} value={r.id}>{r.model} — {r.shapeId} · {r.weightG}g · {r.balanceCm}cm · {r.thicknessMm}mm</option>
+                    ))}
+                  </optgroup>
+                ));
+              })()}
             </select>
             {existingMoldRacquetId && (() => {
               const mold = MARKET_RACQUETS.find(r => r.id === existingMoldRacquetId)!;
