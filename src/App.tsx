@@ -8222,7 +8222,7 @@ export default function App() {
   const [thicknessMm, setThicknessMm] = useState(38);
   const [weightG, setWeightG] = useState(365);
   const [balanceCm, setBalanceCm] = useState(25.8);
-  const [gripCircMm, setgripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design] = useState(38);
+  const [gripCircMm, setGripCircMm] = useState(38);
 
   // Save & Share state
   const [shareStatus, setShareStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
