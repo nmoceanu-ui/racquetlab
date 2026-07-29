@@ -221,8 +221,23 @@ function ForjaAccountsInner() {
   };
   // Market-racquet catalog exposed by the main app (raw specs). Filtered live
   // by the database search box in compare mode.
-  const catalog: { id: string; brand: string; model: string; level?: string; priceTier?: string; spec: any }[] =
-    ((typeof window !== "undefined" && (window as any).__palalabCatalog) || []) as any[];
+  const [catalog, setCatalog] = useState<{ id: string; brand: string; model: string; level?: string; priceTier?: string; note?: string; shapeId?: string; spec: any }[]>([]);
+  useEffect(() => { fetch("/api/catalog").then((r) => r.json()).then((j) => setCatalog(j && j.racquets ? j.racquets : [])).catch(() => {}); }, []);
+  const [scoredMap, setScoredMap] = useState<Record<string, any>>({});
+  useEffect(() => {
+    if (!compareOpen) return;
+    let cancelled = false;
+    Promise.all(selected.map((it) =>
+      fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(it.spec) })
+        .then((r) => r.json()).then((j) => ({ key: it.key, r: j })).catch(() => ({ key: it.key, r: null }))
+    )).then((results) => {
+      if (cancelled) return;
+      const m: Record<string, any> = {};
+      results.forEach((x) => { m[x.key] = x.r; });
+      setScoredMap(m);
+    });
+    return () => { cancelled = true; };
+  }, [compareOpen, selected]);
   const dbResults = dbQuery.trim().length >= 1
     ? catalog.filter((r) => `${r.brand} ${r.model}`.toLowerCase().includes(dbQuery.trim().toLowerCase())).slice(0, 8)
     : [];
@@ -629,8 +644,7 @@ function ForjaAccountsInner() {
 
       {/* Compare overlay */}
       {compareOpen && (() => {
-        const scorer = (window as any).__palalabScoreSpec as ((spec: any) => any) | undefined;
-        const data = selected.map((it, i) => ({ it, color: CMP_COLORS[i] || "#7A7268", r: typeof scorer === "function" ? scorer(it.spec) : null }));
+        const data = selected.map((it, i) => ({ it, color: CMP_COLORS[i] || "#7A7268", r: scoredMap[it.key] || null }));
         const n = data.length;
         const gcols = `86px repeat(${n}, minmax(0,1fr))`;
         const metrics: [string, string][] = [["power", "Power"], ["control", "Control"], ["comfort", "Comfort"], ["sweetSpot", "Sweet Spot"], ["stability", "Stability"], ["spin", "Spin"], ["durability", "Durability"]];
