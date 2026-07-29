@@ -3837,18 +3837,19 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount }: { shapeId: string; bridgeId?: string; beamOrientation?: string; beamCount?: number }) {
-  const [face, setFace] = useState("#242430");
-  const [frame, setFrame] = useState("#101015");
-  const [throatC, setThroatC] = useState("#c0472a");
-  const [grip, setGrip] = useState("#e9e3d4");
-  const [accent, setAccent] = useState("#e0b34a");
-  const [pattern, setPattern] = useState("solid");
+function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design, setDesign }: { shapeId: string; bridgeId?: string; beamOrientation?: string; beamCount?: number; design: any; setDesign: (u:any)=>void }) {
+  const D = design || {};
+  const face = D.face || "#242430", frame = D.frame || "#101015", throatC = D.throatC || "#c0472a", grip = D.grip || "#e9e3d4", accent = D.accent || "#e0b34a", pattern = D.pattern || "solid", layers = D.layers || [];
+  const setFace = (v:any) => setDesign((d:any)=>({ ...d, face:v }));
+  const setFrame = (v:any) => setDesign((d:any)=>({ ...d, frame:v }));
+  const setThroatC = (v:any) => setDesign((d:any)=>({ ...d, throatC:v }));
+  const setGrip = (v:any) => setDesign((d:any)=>({ ...d, grip:v }));
+  const setAccent = (v:any) => setDesign((d:any)=>({ ...d, accent:v }));
+  const setPattern = (v:any) => setDesign((d:any)=>({ ...d, pattern:v }));
+  const setLayers = (fn:any) => setDesign((d:any)=>({ ...d, layers: typeof fn==="function" ? fn(d.layers||[]) : fn }));
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{x:number;y:number}>({ x: 0, y: 0 });
-  const [layers, setLayers] = useState<any[]>([]);
   const [selId, setSelId] = useState<number|null>(null);
-  const idRef = useRef(1);
   const wrapRef = useRef<HTMLDivElement|null>(null);
   const dragRef = useRef<any>(null);
   useEffect(() => { if (typeof document !== "undefined" && !document.getElementById("pd-fonts")) { const l = document.createElement("link"); l.id = "pd-fonts"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600&family=Playfair+Display:wght@700&family=Pacifico&family=Barlow+Condensed:wght@600&display=swap"; document.head.appendChild(l); } }, []);
@@ -3908,8 +3909,8 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount }: { sh
   const onDown = (e:any) => { const p=toRoot(e); const g=e.target.closest && e.target.closest("[data-layer]"); if(g){ const id=+g.getAttribute("data-layer"); const it=layers.find((l:any)=>l.id===id); setSelId(id); dragRef.current={mode:"layer",id,sx:p.x,sy:p.y,ox:it.x,oy:it.y}; } else { setSelId(null); dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; } try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){} };
   const onMove = (e:any) => { const d=dragRef.current; if(!d) return; const p=toRoot(e); if(d.mode==="layer"){ setLayers((ls:any[])=>ls.map((l:any)=>l.id===d.id?{...l,x:Math.round(d.ox+(p.x-d.sx)/zoom),y:Math.round(d.oy+(p.y-d.sy)/zoom)}:l)); } else { setPan({x:d.px+(p.x-d.sx),y:d.py+(p.y-d.sy)}); } };
   const onUp = (e:any) => { dragRef.current=null; try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_e){} };
-  const addText = () => { const id=++idRef.current; setLayers((ls:any[])=>[...ls,{id,type:"text",text:"New text",x:340,y:150,font:"'Barlow Condensed',sans-serif",size:30,color:"#ffffff",rot:0}]); setSelId(id); };
-  const addImage = (e:any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; const id=++idRef.current; setLayers((ls:any[])=>[...ls,{id,type:"image",href:ev.target.result,baseW:Math.round(img.width*base),baseH:Math.round(img.height*base),x:340,y:230,scale:1,rot:0,opacity:1}]); setSelId(id); }; img.src=ev.target.result; }; rd.readAsDataURL(f); e.target.value=""; };
+  const addText = () => { const id=(layers.reduce((mx:number,l:any)=>Math.max(mx,l.id||0),0)+1); setLayers((ls:any[])=>[...ls,{id,type:"text",text:"New text",x:340,y:150,font:"'Barlow Condensed',sans-serif",size:30,color:"#ffffff",rot:0}]); setSelId(id); };
+  const addImage = (e:any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; const id=(layers.reduce((mx:number,l:any)=>Math.max(mx,l.id||0),0)+1); setLayers((ls:any[])=>[...ls,{id,type:"image",href:ev.target.result,baseW:Math.round(img.width*base),baseH:Math.round(img.height*base),x:340,y:230,scale:1,rot:0,opacity:1}]); setSelId(id); }; img.src=ev.target.result; }; rd.readAsDataURL(f); e.target.value=""; };
   const sel:any = selId!=null ? layers.find((l:any)=>l.id===selId) : null;
   const upd = (patch:any) => setLayers((ls:any[])=>ls.map((l:any)=>l.id===selId?{...l,...patch}:l));
   const del = () => { setLayers((ls:any[])=>ls.filter((l:any)=>l.id!==selId)); setSelId(null); };
@@ -8189,6 +8190,7 @@ export default function App() {
   const [counterweightG, setCounterweightG] = useState(0);
   const [handleLengthMm, setHandleLengthMm] = useState(215);
   const [coreGradient, setCoreGradient] = useState(0);
+  const [design, setDesign] = useState<any>(() => ({ face:"#242430", frame:"#101015", throatC:"#c0472a", grip:"#e9e3d4", accent:"#e0b34a", pattern:"solid", layers:[] }));
   const [aiBrief, setAiBrief] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiConcept, setAiConcept] = useState<any>(null);
@@ -8272,6 +8274,12 @@ export default function App() {
       if (typeof s.weightG === "number") setWeightG(s.weightG);
       if (typeof s.balanceCm === "number") setBalanceCm(s.balanceCm);
       if (typeof s.gripCircMm === "number") setGripCircMm(s.gripCircMm);
+      if (typeof s.dampening === "number") setDampening(s.dampening);
+      if (typeof s.stiffnessAdj === "number") setStiffnessAdj(s.stiffnessAdj);
+      if (typeof s.counterweightG === "number") setCounterweightG(s.counterweightG);
+      if (typeof s.handleLengthMm === "number") setHandleLengthMm(s.handleLengthMm);
+      if (typeof s.coreGradient === "number") setCoreGradient(s.coreGradient);
+      if (s.design && typeof s.design === "object") setDesign(s.design);
       if (result.name) setLoadedName(result.name);
       setLoadedCode(code);
       setLoadStatus("idle");
@@ -8300,7 +8308,7 @@ export default function App() {
     const spec = {
       shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
-      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
+      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design,
     };
     const result = await saveBuild(spec);
     if (!result.ok) {
@@ -8338,7 +8346,7 @@ export default function App() {
     const spec = {
       shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
-      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm,
+      lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design,
     };
     const res = await updateBuildByCode(loadedCode, spec);
     if (res.ok && res.updated > 0) {
@@ -8348,7 +8356,7 @@ export default function App() {
       setUpdateStatus("idle");
       handleSaveBuild();
     }
-  }, [loadedCode, shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, handleSaveBuild]);
+  }, [loadedCode, shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design, handleSaveBuild]);
 
   const shape = SHAPES.find(s => s.id === shapeId)!;
   const core = CORE_MATERIALS.find(c => c.id === coreId)!;
@@ -8827,7 +8835,7 @@ export default function App() {
       <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1.5px solid #D4CCB8", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 28%, #E8E2D4, #C8C0B0)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" || diagramMode === "design" ? "100%" : 220 }}>
-            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} bridgeId={bridgeId} beamOrientation={beamOrientation} beamCount={beamCount} />) : diagramMode === "profile" ? (
+            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} bridgeId={bridgeId} beamOrientation={beamOrientation} beamCount={beamCount} design={design} setDesign={setDesign} />) : diagramMode === "profile" ? (
               <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId} edgeProfile={edgeProfile}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />
