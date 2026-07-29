@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   ChevronDown, AlertTriangle, Sparkles, BarChart3,
   Wrench, Eye, Layers, Ruler, GitFork, Grid3x3,
@@ -3836,6 +3836,109 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // ---------------------------------------------------------------------------
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
+
+function RacquetDesigner({ shapeId }: { shapeId: string }) {
+  const [shape, setShape] = useState<string>(shapeId || "teardrop");
+  const [face, setFace] = useState("#26262c");
+  const [frame, setFrame] = useState("#111114");
+  const [throatC, setThroatC] = useState("#33333a");
+  const [grip, setGrip] = useState("#ece7d9");
+  const [accent, setAccent] = useState("#1a5c2a");
+  const [pattern, setPattern] = useState("solid");
+  const [model, setModel] = useState("");
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState<{x:number;y:number}>({ x: 0, y: 0 });
+  const [art, setArt] = useState<any>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const dragRef = useRef<any>(null);
+  const CX = 340, CY = 210;
+  const facePath = (s: string) => s === "round"
+    ? "M340 42C262 42 210 104 210 176C210 258 276 302 340 302C404 302 470 258 470 176C470 104 418 42 340 42Z"
+    : s === "diamond"
+    ? "M340 40C300 46 236 118 236 176C236 236 302 302 340 308C378 302 444 236 444 176C444 118 380 46 340 40Z"
+    : "M340 40C268 44 224 96 222 166C220 244 292 306 340 306C388 306 460 244 458 166C456 96 412 44 340 40Z";
+  const lum = (hex: string) => { let c = hex.replace("#",""); if (c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; const r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16); return (0.299*r+0.587*g+0.114*b)/255; };
+  const toSvg = (e: any) => { const svg=svgRef.current!; const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const r=p.matrixTransform(svg.getScreenCTM()!.inverse()); return { x:r.x, y:r.y }; };
+  const onDown = (e: any) => { const p=toSvg(e); const onArt = art && e.target.closest && e.target.closest("#pd_artg"); if (onArt) dragRef.current={mode:"art",sx:p.x,sy:p.y,ax:art.x,ay:art.y}; else dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_e){} };
+  const onMove = (e: any) => { const d=dragRef.current; if(!d) return; const p=toSvg(e); if(d.mode==="art") setArt((a:any)=> a ? {...a, x:d.ax+(p.x-d.sx)/zoom, y:d.ay+(p.y-d.sy)/zoom} : a); else setPan({ x:d.px+(p.x-d.sx), y:d.py+(p.y-d.sy) }); };
+  const onUp = (e: any) => { dragRef.current=null; try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(_e){} };
+  const onFile = (e: any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=150/m; setArt({ href:ev.target.result, baseW:Math.round(img.width*base), baseH:Math.round(img.height*base), x:340, y:176, scale:1, rot:0, opacity:1, region:"face" }); }; img.src=ev.target.result; }; rd.readAsDataURL(f); };
+  const fitFace = () => setArt((a:any)=> a ? {...a, scale: Math.round((200/Math.max(a.baseW,a.baseH))*100)/100, x:340, y:176, rot:0, region:"face"} : a);
+  const download = () => { const svg=svgRef.current; if(!svg) return; const s=new XMLSerializer().serializeToString(svg); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=1360; c.height=920; const ctx=c.getContext("2d")!; ctx.drawImage(img,0,0,1360,920); URL.revokeObjectURL(url); try { const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=c.toDataURL("image/png"); a.click(); } catch(_e){} }; img.src=url; };
+  const fp = facePath(shape);
+  const camS = zoom, tx = CX*(1-camS)+pan.x, ty = CY*(1-camS)+pan.y;
+  const faceFill = pattern==="gradient" ? "url(#pd_grad)" : face;
+  const textCol = lum(face) > 0.5 ? "#15151a" : "#f4f1e8";
+  const lbl: any = { fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif", display:"flex", flexDirection:"column", gap:4 };
+  const fld: any = { width:"100%", marginTop:2, padding:"7px 8px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 };
+  const col: any = { width:"100%", height:32, padding:2, border:"1px solid rgba(0,0,0,0.1)", borderRadius:6, background:"#DDD7C8" };
+  const btn: any = { padding:"8px 12px", borderRadius:8, border:"1px solid #1A5C2A", background:"#fff", color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.04em", textTransform:"uppercase", fontSize:12, cursor:"pointer" };
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+      <svg ref={svgRef} viewBox="0 0 680 460" width="100%" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ display:"block", cursor:"grab", touchAction:"none", userSelect:"none", background:"#EDE8DC", borderRadius:12 }}>
+        <defs>
+          <clipPath id="pd_fc"><path d={fp} /></clipPath>
+          <clipPath id="pd_tc"><path d="M300 300L380 300L360 372L320 372Z" /></clipPath>
+          <linearGradient id="pd_grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={accent} /><stop offset="1" stopColor={face} /></linearGradient>
+          <pattern id="pd_stripe" width="26" height="26" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="26" height="26" fill={face} /><rect width="13" height="26" fill={accent} /></pattern>
+        </defs>
+        <g transform={"translate("+tx+" "+ty+") scale("+camS+")"}>
+          <rect x={323} y={352} width={34} height={98} rx={10} fill={grip} />
+          <g stroke="rgba(0,0,0,0.18)" strokeWidth={1.5}>
+            <line x1={323} y1={366} x2={357} y2={374} /><line x1={323} y1={380} x2={357} y2={388} /><line x1={323} y1={394} x2={357} y2={402} /><line x1={323} y1={408} x2={357} y2={416} /><line x1={323} y1={422} x2={357} y2={430} />
+          </g>
+          <rect x={319} y={444} width={42} height={10} rx={4} fill={frame} />
+          <path d="M300 300C304 326 314 348 328 366L340 366C328 342 316 320 314 298Z" fill={throatC} />
+          <path d="M380 300C376 326 366 348 352 366L340 366C352 342 364 320 366 298Z" fill={throatC} />
+          <path d={fp} fill={faceFill} stroke={frame} strokeWidth={15} strokeLinejoin="round" />
+          {pattern==="split" && <rect x={200} y={176} width={280} height={150} fill={accent} clipPath="url(#pd_fc)" />}
+          {pattern==="stripes" && <rect x={200} y={30} width={280} height={300} fill="url(#pd_stripe)" clipPath="url(#pd_fc)" />}
+          {pattern==="halo" && (<><circle cx={340} cy={176} r={86} fill="none" stroke={accent} strokeWidth={10} clipPath="url(#pd_fc)" /><circle cx={340} cy={176} r={58} fill="none" stroke={accent} strokeWidth={6} opacity={0.7} clipPath="url(#pd_fc)" /></>)}
+          {model && <text x={340} y={286} textAnchor="middle" fontFamily="'Barlow Condensed', sans-serif" fontWeight={500} fontSize={22} letterSpacing={2} fill={textCol}>{model.toUpperCase()}</text>}
+          {art && (
+            <g id="pd_artg" style={{ cursor:"move" }}>
+              <g transform={"translate("+art.x+" "+art.y+") rotate("+art.rot+") scale("+art.scale+")"} clipPath={art.region==="face"?"url(#pd_fc)":art.region==="throat"?"url(#pd_tc)":undefined}>
+                <image href={art.href} x={-art.baseW/2} y={-art.baseH/2} width={art.baseW} height={art.baseH} opacity={art.opacity} preserveAspectRatio="xMidYMid meet" />
+              </g>
+            </g>
+          )}
+        </g>
+      </svg>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:10 }}>
+        <label style={lbl}>Head shape<select value={shape} onChange={e=>setShape(e.target.value)} style={fld}><option value="teardrop">Teardrop</option><option value="round">Round</option><option value="diamond">Diamond</option></select></label>
+        <label style={lbl}>Face pattern<select value={pattern} onChange={e=>setPattern(e.target.value)} style={fld}><option value="solid">Solid</option><option value="gradient">Gradient</option><option value="split">Split</option><option value="stripes">Stripes</option><option value="halo">Halo</option></select></label>
+        <label style={lbl}>Model name<input type="text" maxLength={16} value={model} onChange={e=>setModel(e.target.value)} placeholder="Triton Pro" style={fld} /></label>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(84px, 1fr))", gap:10 }}>
+        <label style={lbl}>Face<input type="color" value={face} onChange={e=>setFace(e.target.value)} style={col} /></label>
+        <label style={lbl}>Frame<input type="color" value={frame} onChange={e=>setFrame(e.target.value)} style={col} /></label>
+        <label style={lbl}>Throat<input type="color" value={throatC} onChange={e=>setThroatC(e.target.value)} style={col} /></label>
+        <label style={lbl}>Grip<input type="color" value={grip} onChange={e=>setGrip(e.target.value)} style={col} /></label>
+        <label style={lbl}>Accent<input type="color" value={accent} onChange={e=>setAccent(e.target.value)} style={col} /></label>
+      </div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:10, alignItems:"center", padding:"10px", background:"#F2EFE7", borderRadius:10 }}>
+        <label style={{ ...btn, display:"inline-flex", alignItems:"center", gap:6 }}>Upload artwork<input type="file" accept="image/*" onChange={onFile} style={{ display:"none" }} /></label>
+        <label style={{ ...lbl, flexDirection:"row", alignItems:"center", gap:6 }}>On<select value={art?art.region:"face"} onChange={e=>setArt((a:any)=>a?{...a,region:e.target.value}:a)} disabled={!art} style={{ ...fld, width:"auto", marginTop:0 }}><option value="face">Face</option><option value="throat">Throat</option><option value="free">Anywhere</option></select></label>
+        <button type="button" onClick={fitFace} disabled={!art} style={btn}>Fit to face</button>
+        <button type="button" onClick={()=>setArt(null)} disabled={!art} style={btn}>Remove</button>
+      </div>
+      {art && (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Size</span><input type="range" min={10} max={280} value={Math.round(art.scale*100)} onChange={e=>setArt((a:any)=>({ ...a, scale:(+e.target.value)/100 }))} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Rotate</span><input type="range" min={-180} max={180} value={art.rot} onChange={e=>setArt((a:any)=>({ ...a, rot:+e.target.value }))} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Opacity</span><input type="range" min={10} max={100} value={Math.round(art.opacity*100)} onChange={e=>setArt((a:any)=>({ ...a, opacity:(+e.target.value)/100 }))} style={{ flex:1 }} /></div>
+          <span style={{ fontSize:12, color:"#7A7268" }}>Drag the artwork on the racquet to move it.</span>
+        </div>
+      )}
+      <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:12 }}>
+        <span style={{ fontSize:12, color:"#7A7268" }}>Zoom</span>
+        <input type="range" min={60} max={260} value={Math.round(zoom*100)} onChange={e=>setZoom((+e.target.value)/100)} style={{ flex:1, minWidth:120 }} />
+        <button type="button" onClick={()=>{ setZoom(1); setPan({ x:0, y:0 }); }} style={btn}>Reset view</button>
+        <button type="button" onClick={download} style={btn}>Download PNG</button>
+      </div>
+    </div>
+  );
+}
 
 function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId, edgeProfile, leadChannel = true }) {
   const STROKE = "#2A2620"; // darker, higher-contrast outline (was #4A4540, too faint)
@@ -8658,7 +8761,7 @@ export default function App() {
     <div>
       {/* View mode toggle */}
       <div style={{ display:"flex", gap:6, padding:"12px 16px" }}>
-        {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}].map(m => (
+        {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}, ...(mode === "manufacturer" ? [{id:"design",label:"Design"}] : [])].map(m => (
           <button key={m.id} onClick={() => { setDiagramMode(m.id as any); analytics.diagramModeChanged(m.id); }} style={{
             flex:1, padding:"9px 6px", borderRadius:8,
             border: `1px solid ${diagramMode===m.id ? "rgba(26,92,42,0.4)" : "rgba(0,0,0,0.045)"}`,
@@ -8674,8 +8777,8 @@ export default function App() {
       {/* Diagram */}
       <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1.5px solid #D4CCB8", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 28%, #E8E2D4, #C8C0B0)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
-          <div style={{ width: diagramMode === "profile" ? "100%" : 220 }}>
-            {diagramMode === "profile" ? (
+          <div style={{ width: diagramMode === "profile" || diagramMode === "design" ? "100%" : 220 }}>
+            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} />) : diagramMode === "profile" ? (
               <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId} edgeProfile={edgeProfile}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />
