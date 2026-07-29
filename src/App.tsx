@@ -8058,6 +8058,11 @@ export default function App() {
   const [gripShapeId, setGripShapeId] = useState("octagonal");
   const [edgeProfile, setEdgeProfile] = useState("standard");
   const [sideProfile, setSideProfile] = useState("curved");
+  const [dampening, setDampening] = useState(0);
+  const [stiffnessAdj, setStiffnessAdj] = useState(0);
+  const [counterweightG, setCounterweightG] = useState(0);
+  const [handleLengthMm, setHandleLengthMm] = useState(215);
+  const [coreGradient, setCoreGradient] = useState(0);
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
@@ -8227,11 +8232,11 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     const t = setTimeout(() => {
-      fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }) })
+      fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient }) })
         .then((r) => r.json()).then((jj) => { if (!cancelled && jj && jj.scores) setScores(jj.scores); }).catch(() => {});
     }, 160);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile]);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient]);
   const geometryPhysics = useMemo(() => computeGeometryPhysics({ lengthMm, widthMm, weightG, balanceCm, shape: shapeId }), [lengthMm, widthMm, weightG, balanceCm, shapeId]);
   const materialPhysics = useMemo(() => computeRelativeMaterialPhysics({ coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation }), [coreId, frameId, faceId, gripId, thicknessMm, bridgeId, beamOrientation]);
   const matchedRacquets = useMemo(
@@ -8348,7 +8353,7 @@ export default function App() {
     setBalanceCm(Math.round(r.balanceCm * 10) / 10);
     if (typeof r.thicknessMm === "number") setThicknessMm(r.thicknessMm);
     setWidthMm(255);
-    setEdgeProfile("standard"); setSideProfile("curved");
+    setEdgeProfile("standard"); setSideProfile("curved"); setDampening(0); setStiffnessAdj(0); setCounterweightG(0); setHandleLengthMm(215); setCoreGradient(0); setGripCircMm(38);
     setHolesRaw(racquetHoleLayout(r));
     setHoleDiameterMm(9);
     setLoadedName((r.brand ? r.brand + " " : "") + r.model);
@@ -8438,6 +8443,15 @@ export default function App() {
         {mode === "manufacturer" && <ManufacturingNote text={(core as any).manufacturingNote}/>}
         <BestForTag text={core.bestFor}/>
         <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
+      </AccordionSection>
+
+      {/* Feel & Comfort tuning */}
+      <AccordionSection id="feel" icon={<Ruler size={15}/>} label="Feel & Comfort" isOpen={openSections.has("feel")} onToggle={() => toggle("feel")}>
+        <SliderField label="Comfort / Dampening" value={dampening} onChange={setDampening} min={0} max={10} explanation={"Vibration-absorbing insert (rubber / soft resin). Higher = softer and more arm-friendly, with slightly less pop. 0 = none."} />
+        <SliderField label="Frame Stiffness" value={stiffnessAdj} onChange={setStiffnessAdj} min={-3} max={3} step={1} explanation={"Overrides the frame's natural flex. Stiffer (right) adds power but is harsher; softer (left) is comfier with more control. 0 = as the frame material."} />
+        <SliderField label="Handle Counterweight" value={counterweightG} onChange={setCounterweightG} min={0} max={25} suffix=" g" explanation={"Mass placed deep in the handle. Lowers swingweight (more maneuverable) and adds stability + damping, for a little less smash plow. 0 = none."} />
+        <SliderField label="Handle Length" value={handleLengthMm} onChange={setHandleLengthMm} min={195} max={235} suffix=" mm" explanation={"Longer handle = more leverage and reach, especially on two-handed backhands, with slightly less one-handed precision. 215 = standard."} />
+        <SliderField label="Core Gradient (soft centre / firm rim)" value={coreGradient} onChange={setCoreGradient} min={0} max={10} explanation={"Differential core density. Higher = a bigger sweet spot and more off-centre stability, with a little less pop. 0 = uniform core."} />
       </AccordionSection>
 
       {/* Dimensions */}
@@ -8767,6 +8781,16 @@ export default function App() {
         <ScoreBar label="Stability (Off-Center Resistance)" val={scores.stability}/>
         <ScoreBar label="Spin Potential" val={scores.spin}/>
         <ScoreBar label="Durability" val={scores.durability}/>
+        <div style={{ display:"flex", gap:20, marginTop:12, paddingTop:12, borderTop:"1px solid rgba(0,0,0,0.08)" }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268" }}>Arm-Friendliness</div>
+            <div style={{ fontSize:22, fontWeight:700, color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif" }}>{typeof scores.armFriendliness === "number" ? scores.armFriendliness : "—"}<span style={{ fontSize:12, color:"#7A7268", fontWeight:600 }}> / 100</span></div>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"#7A7268" }}>Swingweight</div>
+            <div style={{ fontSize:22, fontWeight:700, color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif" }}>{typeof scores.swingweight === "number" ? scores.swingweight : "—"}<span style={{ fontSize:12, color:"#7A7268", fontWeight:600 }}> index</span></div>
+          </div>
+        </div>
         <p style={{ fontSize:11, color:"#7A7268", lineHeight:1.5, marginTop:12, fontFamily:"Inter, sans-serif" }}>
           Index is a directional model derived from published material characteristics, not a lab-measured value. Use it to compare configurations, not as a guaranteed spec.
         </p>
