@@ -8063,6 +8063,10 @@ export default function App() {
   const [counterweightG, setCounterweightG] = useState(0);
   const [handleLengthMm, setHandleLengthMm] = useState(215);
   const [coreGradient, setCoreGradient] = useState(0);
+  const [aiBrief, setAiBrief] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiConcept, setAiConcept] = useState<any>(null);
+  const [aiErr, setAiErr] = useState("");
   const [bridgeId, setBridgeId] = useState("open");
   const [beamCount, setBeamCount] = useState(2);
   const [beamOrientation, setBeamOrientation] = useState("vertical");
@@ -8361,6 +8365,38 @@ export default function App() {
     setActiveTab("view");
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
   }, []);
+  const runAiConcept = useCallback(async () => {
+    const brief = aiBrief.trim();
+    if (!brief) return;
+    setAiBusy(true); setAiErr(""); setAiConcept(null);
+    try {
+      const cur = { shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient };
+      const resp = await fetch("https://bofdpdhxmxcspuatvnbd.supabase.co/functions/v1/ai-spec", { method: "POST", headers: { "content-type": "application/json", apikey: SB_REVERSE_ANON, Authorization: "Bearer " + SB_REVERSE_ANON }, body: JSON.stringify({ mode: "factory", freeText: brief, currentSpec: cur }) });
+      const jj = await resp.json();
+      if (jj && jj.ok) setAiConcept(jj); else setAiErr((jj && (jj.detail || jj.error)) || "Could not generate a concept — try rephrasing.");
+    } catch (e) { setAiErr("Network error — please try again."); }
+    setAiBusy(false);
+  }, [aiBrief, shapeId, coreId, faceId, frameId, surfaceId, gripId, bridgeId, beamOrientation, beamCount, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient]);
+  const applyAiConcept = useCallback(() => {
+    const a = aiConcept && aiConcept.adjustments; if (!a) return;
+    const ok = (arr: any[], v: any) => typeof v === "string" && arr.some((x: any) => x.id === v);
+    if (ok(SHAPES, a.shapeId)) setShapeId(a.shapeId);
+    if (ok(CORE_MATERIALS, a.coreId)) setCoreId(a.coreId);
+    if (ok(FACE_MATERIALS, a.faceId)) setFaceId(a.faceId);
+    if (ok(FRAME_MATERIALS, a.frameId)) setFrameId(a.frameId);
+    if (ok(SURFACE_TEXTURES, a.surfaceId)) setSurfaceId(a.surfaceId);
+    if (ok(BRIDGE_TYPES, a.bridgeId)) setBridgeId(a.bridgeId);
+    if (typeof a.weightG === "number") setWeightG(Math.max(350, Math.min(380, Math.round(a.weightG))));
+    if (typeof a.balanceCm === "number") setBalanceCm(Math.max(24, Math.min(27.5, Math.round(a.balanceCm * 10) / 10)));
+    if (typeof a.thicknessMm === "number") setThicknessMm(Math.max(28, Math.min(38, Math.round(a.thicknessMm))));
+    if (typeof a.dampening === "number") setDampening(Math.max(0, Math.min(10, Math.round(a.dampening))));
+    if (typeof a.stiffnessAdj === "number") setStiffnessAdj(Math.max(-3, Math.min(3, Math.round(a.stiffnessAdj))));
+    if (typeof a.counterweightG === "number") setCounterweightG(Math.max(0, Math.min(25, Math.round(a.counterweightG))));
+    if (typeof a.handleLengthMm === "number") setHandleLengthMm(Math.max(195, Math.min(235, Math.round(a.handleLengthMm))));
+    if (typeof a.gripCircMm === "number") setGripCircMm(Math.max(35, Math.min(42, Math.round(a.gripCircMm))));
+    if (typeof a.coreGradient === "number") setCoreGradient(Math.max(0, Math.min(10, Math.round(a.coreGradient))));
+    setActiveTab("view");
+  }, [aiConcept]);
   // Bridge so the Compare drawer (a separate React tree) can trigger a load by id.
   useEffect(() => {
     (window as any).__palalabLoadRacquet = (id: string) => {
@@ -8444,6 +8480,29 @@ export default function App() {
         <BestForTag text={core.bestFor}/>
         <MiniRatingGrid items={[{label:"Power", val:core.power},{label:"Comfort", val:core.comfort},{label:"Sweet Spot", val:core.sweetSpot},{label:"Durability", val:core.durability}]}/>
       </AccordionSection>
+
+      {mode === "manufacturer" && (
+      <AccordionSection id="aiconcept" icon={<Sparkles size={15}/>} label="Concept with AI" isOpen={openSections.has("aiconcept")} onToggle={() => toggle("aiconcept")}>
+        <div style={{ padding: "2px 0 4px" }}>
+          <div style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", marginBottom: 8 }}>Describe the target player, the feel you want, or the problem to solve. The AI proposes material + construction changes within padel's real trade-offs — then you can apply them to the builder.</div>
+          <textarea value={aiBrief} onChange={(e) => setAiBrief(e.target.value)} placeholder="e.g. a control-first diamond for a former tennis player with elbow pain who still wants spin, sub-90 EUR build" style={{ width: "100%", minHeight: 64, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "#DDD7C8", color: "#18181B", fontFamily: "Inter, sans-serif", fontSize: 13, resize: "vertical" }} />
+          <button onClick={runAiConcept} disabled={aiBusy || !aiBrief.trim()} style={{ marginTop: 8, width: "100%", padding: "10px 12px", borderRadius: 8, border: "none", background: (aiBusy || !aiBrief.trim()) ? "#B0A99A" : "#1A5C2A", color: "#fff", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontSize: 13, cursor: (aiBusy || !aiBrief.trim()) ? "default" : "pointer" }}>{aiBusy ? "Designing…" : "Concept with AI"}</button>
+          {aiErr && <div style={{ marginTop: 8, fontSize: 12, color: "#B0361E", fontFamily: "Inter, sans-serif" }}>{aiErr}</div>}
+          {aiConcept && (
+            <div style={{ marginTop: 12, padding: "12px", background: "#F2F8F3", border: "1px solid rgba(26,92,42,0.2)", borderRadius: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1A5C2A", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{aiConcept.summary}</div>
+              {Array.isArray(aiConcept.changed) && aiConcept.changed.length > 0 && (
+                <ul style={{ margin: "0 0 8px", paddingLeft: 18 }}>
+                  {aiConcept.changed.map((c: string, i: number) => <li key={i} style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>{c}</li>)}
+                </ul>
+              )}
+              <div style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.55, fontFamily: "Inter, sans-serif", fontStyle: "italic", marginBottom: 10 }}>{aiConcept.reasoning}</div>
+              <button onClick={applyAiConcept} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #1A5C2A", background: "#fff", color: "#1A5C2A", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontSize: 13, cursor: "pointer" }}>Apply to builder</button>
+            </div>
+          )}
+        </div>
+      </AccordionSection>
+      )}
 
       {/* Feel & Comfort tuning */}
       <AccordionSection id="feel" icon={<Ruler size={15}/>} label="Feel & Comfort" isOpen={openSections.has("feel")} onToggle={() => toggle("feel")}>
