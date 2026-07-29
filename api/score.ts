@@ -426,13 +426,13 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   const _st = typeof stiffnessAdj   === "number" ? Math.max(-3, Math.min(3,  stiffnessAdj))   : 0;
   const _cw = typeof counterweightG === "number" ? Math.max(0,  Math.min(25, counterweightG)) : 0;
   const _hl = typeof handleLengthMm === "number" ? Math.max(195,Math.min(235,handleLengthMm)) : 215;
-  const _gc = typeof gripCircMm     === "number" ? Math.max(94, Math.min(108, gripCircMm))    : 100;
+  const _gc = typeof gripCircMm     === "number" ? Math.max(35, Math.min(42, gripCircMm))     : 38;
   const _cg = typeof coreGradient   === "number" ? Math.max(0,  Math.min(10, coreGradient))   : 0;
   if (_d > 0)   { out.comfort = clampS(out.comfort + (_d/10)*0.6); out.control = clampS(out.control + (_d/10)*0.15); out.power = clampS(out.power - (_d/10)*0.25); }
   if (_st !== 0){ out.power = clampS(out.power + _st*0.12); out.comfort = clampS(out.comfort - _st*0.15); out.durability = clampS(out.durability + _st*0.05); if (_st < 0) out.control = clampS(out.control - _st*0.10); }
   if (_cw > 0)  { out.stability = clampS(out.stability + (_cw/25)*0.3); out.comfort = clampS(out.comfort + (_cw/25)*0.2); out.power = clampS(out.power - (_cw/25)*0.15); }
   if (_hl !== 215){ const _hdn = (_hl - 215)/20; out.power = clampS(out.power + _hdn*0.2); out.control = clampS(out.control - _hdn*0.1); }
-  if (_gc !== 100){ const _gdn = (_gc - 100)/8; out.spin = clampS(out.spin - _gdn*0.25); out.comfort = clampS(out.comfort + _gdn*0.15); out.stability = clampS(out.stability + _gdn*0.1); }
+  if (_gc !== 38){ const _gdn = (_gc - 38)/2; out.spin = clampS(out.spin - _gdn*0.25); out.comfort = clampS(out.comfort + _gdn*0.15); out.stability = clampS(out.stability + _gdn*0.1); }
   if (_cg > 0)  { out.sweetSpot = clampS(out.sweetSpot + (_cg/10)*0.5); out.stability = clampS(out.stability + (_cg/10)*0.3); out.power = clampS(out.power - (_cg/10)*0.2); }
   {
     const _wg = weightG ?? 365, _bc = balanceCm ?? 25.8;
@@ -474,7 +474,7 @@ function scoreSpec(g) {
   const stf = typeof g.stiffnessAdj === "number" ? g.stiffnessAdj : 0;
   const cwt = typeof g.counterweightG === "number" ? g.counterweightG : 0;
   const hln = typeof g.handleLengthMm === "number" ? g.handleLengthMm : 215;
-  const grc = typeof g.gripCircMm === "number" ? g.gripCircMm : 100;
+  const grc = typeof g.gripCircMm === "number" ? g.gripCircMm : 38;
   const cgr = typeof g.coreGradient === "number" ? g.coreGradient : 0;
   const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge, sideProfile: side, dampening: dmp, stiffnessAdj: stf, counterweightG: cwt, handleLengthMm: hln, gripCircMm: grc, coreGradient: cgr });
   const bridgeLabel = (BRIDGE_TYPES.find((b) => b.id === bId) || {}).label || bId;
