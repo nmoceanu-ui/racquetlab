@@ -8618,13 +8618,39 @@ export default function App() {
       </AccordionSection>
       )}
 
-      {/* Feel & Comfort tuning */}
+      {/* Feel & Comfort — factory construction choices */}
       <AccordionSection id="feel" icon={<Ruler size={15}/>} label="Feel & Comfort" isOpen={openSections.has("feel")} onToggle={() => toggle("feel")}>
-        <SliderField label="Comfort / Dampening" value={dampening} onChange={setDampening} min={0} max={10} explanation={"Vibration-absorbing insert (rubber / soft resin). Higher = softer and more arm-friendly, with slightly less pop. 0 = none."} />
-        <SliderField label="Frame Stiffness" value={stiffnessAdj} onChange={setStiffnessAdj} min={-3} max={3} step={1} explanation={"Overrides the frame's natural flex. Stiffer (right) adds power but is harsher; softer (left) is comfier with more control. 0 = as the frame material."} />
-        <SliderField label="Handle Counterweight" value={counterweightG} onChange={setCounterweightG} min={0} max={25} suffix=" g" explanation={"Mass placed deep in the handle. Lowers swingweight (more maneuverable) and adds stability + damping, for a little less smash plow. 0 = none."} />
-        <SliderField label="Handle Length" value={handleLengthMm} onChange={setHandleLengthMm} min={195} max={235} suffix=" mm" explanation={"Longer handle = more leverage and reach, especially on two-handed backhands, with slightly less one-handed precision. 215 = standard."} />
-        <SliderField label="Core Gradient (soft centre / firm rim)" value={coreGradient} onChange={setCoreGradient} min={0} max={10} explanation={"Differential core density. Higher = a bigger sweet spot and more off-centre stability, with a little less pop. 0 = uniform core."} />
+        <div style={{ fontSize:12, color:"#7A7268", lineHeight:1.5, fontFamily:"Inter, sans-serif", marginBottom:10 }}>Real construction choices that tune feel — each is a spec a factory can actually order. The scores on the right update to show the effect.</div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Vibration damping</div>
+          <select value={dampening===0?"none":dampening<=4?"bumper":dampening<=7?"resin":"full"} onChange={e=>setDampening(e.target.value==="none"?0:e.target.value==="bumper"?4:e.target.value==="resin"?7:10)} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 }}>
+            <option value="none">None — bare frame (most direct, harshest)</option>
+            <option value="bumper">Rubber bumper insert (mild shock absorption)</option>
+            <option value="resin">Soft-resin face ply (softer, damped feel)</option>
+            <option value="full">Full damping — bumper + soft resin (max arm comfort)</option>
+          </select>
+          <div style={{ fontSize:12, color:"#7A7268", lineHeight:1.45, marginTop:5, fontFamily:"Inter, sans-serif" }}>A more compliant resin in the face laminate (or a bonded rubber bumper) absorbs impact shock — lower vibration frequency, gentler on the arm, with slightly less pop. This is what drives the Arm-Friendliness score.</div>
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Frame flex (layup)</div>
+          <select value={stiffnessAdj<0?"flex":stiffnessAdj>0?"stiff":"std"} onChange={e=>setStiffnessAdj(e.target.value==="flex"?-2:e.target.value==="stiff"?2:0)} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 }}>
+            <option value="flex">Flexible layup — softer resin / flexier plies</option>
+            <option value="std">Standard — as the frame material</option>
+            <option value="stiff">Stiff layup — high-modulus / stiff resin</option>
+          </select>
+          <div style={{ fontSize:12, color:"#7A7268", lineHeight:1.45, marginTop:5, fontFamily:"Inter, sans-serif" }}>Padel stiffness is measured as dynamic (impact) stiffness and vibration frequency — not tennis RA, which does not apply to a solid pala. A softer resin or flexier layup lowers it (comfier, more control); a high-modulus / stiff-resin layup raises it (more pop, but harsher). Fine-tunes the frame material you chose.</div>
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:11, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"#7A7268", marginBottom:4 }}>Core density profile</div>
+          <select value={coreGradient===0?"uni":coreGradient<=5?"mild":"strong"} onChange={e=>setCoreGradient(e.target.value==="uni"?0:e.target.value==="mild"?5:10)} style={{ width:"100%", padding:"8px 10px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 }}>
+            <option value="uni">Uniform — single-density EVA</option>
+            <option value="mild">Mild dual-density — soft ~25 / firm ~38 kg per m3</option>
+            <option value="strong">Strong dual-density — soft ~22 / firm ~46 kg per m3</option>
+          </select>
+          <div style={{ fontSize:12, color:"#7A7268", lineHeight:1.45, marginTop:5, fontFamily:"Inter, sans-serif" }}>A softer core centre widens the sweet spot while a firmer rim holds stability on off-centre hits — the dual-density approach used in frames like Bullpadel MultiEva and Nox dual-core. Slightly less pop than a single hard core.</div>
+        </div>
+        <SliderField label="Handle counterweight" value={counterweightG} onChange={setCounterweightG} min={0} max={25} suffix=" g" explanation={"Real mass added deep in the handle (lead or tungsten tape). Lowers swingweight for more maneuverability, and adds stability + damping. Roughly 5 g moves swingweight a few points."} />
+        <SliderField label="Handle length" value={handleLengthMm} onChange={setHandleLengthMm} min={195} max={235} suffix=" mm" explanation={"Real handle length; 215 mm is standard. Longer = more leverage and reach (especially two-handed backhands), with slightly less one-handed precision."} />
       </AccordionSection>
 
       {/* Dimensions */}
@@ -8772,7 +8798,7 @@ export default function App() {
     <div>
       {/* View mode toggle */}
       <div style={{ display:"flex", gap:6, padding:"12px 16px" }}>
-        {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}, ...(mode === "manufacturer" ? [{id:"design",label:"Design"}] : [])].map(m => (
+        {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}, ...(mode === "manufacturer" ? [{id:"design",label:"Paint Shop"}] : [])].map(m => (
           <button key={m.id} onClick={() => { setDiagramMode(m.id as any); analytics.diagramModeChanged(m.id); }} style={{
             flex:1, padding:"9px 6px", borderRadius:8,
             border: `1px solid ${diagramMode===m.id ? "rgba(26,92,42,0.4)" : "rgba(0,0,0,0.045)"}`,
