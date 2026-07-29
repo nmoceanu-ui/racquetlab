@@ -7058,7 +7058,7 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
   const [durabilityExpectation, setDurabilityExpectation] = useState<string | null>(SAVED.durabilityExpectation ?? null);
   const [tooling, setTooling] = useState<string | null>(SAVED.tooling ?? null);
   const [existingShapeId, setExistingShapeId] = useState<string | null>(SAVED.existingShapeId ?? null);
-  const [existingMoldRacquetId, setExistingMoldRacquetId] = useState<string | null>(SAVED.existingMoldRacquetId ?? null);
+  const [existingMoldRacquetId, setExistingMoldRacquetId] = useState<string | null>(SAVED.existingMoldRacquetId ?? null); const [moldSearch, setMoldSearch] = useState<string>("");
   const [whatToFix, setWhatToFix] = useState(SAVED.whatToFix ?? "");
   const [targetVolume, setTargetVolume] = useState<string | null>(SAVED.targetVolume ?? null);
   const [applied, setApplied] = useState(false);
@@ -7225,8 +7225,7 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
             <p style={{ fontSize: 12, color: "#7A7268", lineHeight: 1.5, fontFamily: "Inter, sans-serif", margin: "0 0 10px" }}>
               Pick the racquet whose shell you're working within. Shape, width, and thickness lock automatically from this selection — the brief then focuses on what you're changing inside that shell.
             </p>
-            <select
-              value={existingMoldRacquetId ?? ""}
+            <input value={moldSearch} onChange={(e) => setMoldSearch(e.target.value)} placeholder="Search brand or model" style={{ width: "100%", padding: "9px 12px", marginBottom: 8, borderRadius: 8, border: "1px solid rgba(0,0,0,0.18)", background: "#fff", color: "#1A5C2A", fontFamily: "Inter, sans-serif", fontSize: 13, boxSizing: "border-box" }} /><select value={existingMoldRacquetId ?? ""}
               onChange={(e) => {
                 const id = e.target.value;
                 const rr = MARKET_RACQUETS.find((x) => x.id === id);
@@ -7240,7 +7239,7 @@ function FactoryBriefPanel({ onApply, onVisualizeRacquet }) {
               <option value="">Select a racquet mold…</option>
               {(() => {
                 const byBrand: Record<string, any[]> = {};
-                MARKET_RACQUETS.forEach((r: any) => { (byBrand[r.brand] = byBrand[r.brand] || []).push(r); });
+                MARKET_RACQUETS.filter((r: any) => { const q = moldSearch.trim().toLowerCase(); if (!q) return true; return ((r.model || "") + " " + (r.brand || "") + " " + (r.shapeId || "")).toLowerCase().includes(q); }).forEach((r: any) => { (byBrand[r.brand] = byBrand[r.brand] || []).push(r); });
                 return Object.keys(byBrand).sort((a, b) => a.localeCompare(b)).map((brand) => (
                   <optgroup key={brand} label={brand + " (" + byBrand[brand].length + ")"}>
                     {byBrand[brand].map((r: any) => (
