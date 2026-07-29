@@ -3837,11 +3837,10 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetDesigner({ shapeId }: { shapeId: string }) {
-  const [shape, setShape] = useState<string>(shapeId || "teardrop");
+function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount }: { shapeId: string; bridgeId?: string; beamOrientation?: string; beamCount?: number }) {
   const [face, setFace] = useState("#26262c");
   const [frame, setFrame] = useState("#111114");
-  const [throatC, setThroatC] = useState("#33333a");
+  const [throatC, setThroatC] = useState("#2f2f36");
   const [grip, setGrip] = useState("#ece7d9");
   const [accent, setAccent] = useState("#1a5c2a");
   const [pattern, setPattern] = useState("solid");
@@ -3851,50 +3850,62 @@ function RacquetDesigner({ shapeId }: { shapeId: string }) {
   const [art, setArt] = useState<any>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<any>(null);
-  const CX = 340, CY = 210;
+  const CX = 340, CY = 215;
+  const shape = shapeId === "round" ? "round" : (shapeId === "diamond" || shapeId === "diamond-wide") ? "diamond" : "teardrop";
+  const throatType = bridgeId === "closed" ? "closed" : beamOrientation === "diagonal" ? "diagonal" : beamOrientation === "horizontal" ? "horizontal" : "vertical";
+  const beams = Math.max(1, Math.min(3, beamCount || 2));
   const facePath = (s: string) => s === "round"
-    ? "M340 42C262 42 210 104 210 176C210 258 276 302 340 302C404 302 470 258 470 176C470 104 418 42 340 42Z"
+    ? "M340 40C258 40 206 100 206 172C206 244 268 274 340 274C412 274 474 244 474 172C474 100 422 40 340 40Z"
     : s === "diamond"
-    ? "M340 40C300 46 236 118 236 176C236 236 302 302 340 308C378 302 444 236 444 176C444 118 380 46 340 40Z"
-    : "M340 40C268 44 224 96 222 166C220 244 292 306 340 306C388 306 460 244 458 166C456 96 412 44 340 40Z";
+    ? "M340 38C298 44 232 116 232 172C232 226 300 270 340 276C380 270 448 226 448 172C448 116 382 44 340 38Z"
+    : "M340 38C266 42 222 92 222 160C222 224 280 276 340 276C400 276 460 224 460 160C460 92 414 42 340 38Z";
+  const winPath = "M314 258 Q340 272 366 258 L349 356 Q340 362 331 356 Z";
   const lum = (hex: string) => { let c = hex.replace("#",""); if (c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; const r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16); return (0.299*r+0.587*g+0.114*b)/255; };
   const toSvg = (e: any) => { const svg=svgRef.current!; const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const r=p.matrixTransform(svg.getScreenCTM()!.inverse()); return { x:r.x, y:r.y }; };
   const onDown = (e: any) => { const p=toSvg(e); const onArt = art && e.target.closest && e.target.closest("#pd_artg"); if (onArt) dragRef.current={mode:"art",sx:p.x,sy:p.y,ax:art.x,ay:art.y}; else dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_e){} };
   const onMove = (e: any) => { const d=dragRef.current; if(!d) return; const p=toSvg(e); if(d.mode==="art") setArt((a:any)=> a ? {...a, x:d.ax+(p.x-d.sx)/zoom, y:d.ay+(p.y-d.sy)/zoom} : a); else setPan({ x:d.px+(p.x-d.sx), y:d.py+(p.y-d.sy) }); };
   const onUp = (e: any) => { dragRef.current=null; try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(_e){} };
-  const onFile = (e: any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=150/m; setArt({ href:ev.target.result, baseW:Math.round(img.width*base), baseH:Math.round(img.height*base), x:340, y:176, scale:1, rot:0, opacity:1, region:"face" }); }; img.src=ev.target.result; }; rd.readAsDataURL(f); };
-  const fitFace = () => setArt((a:any)=> a ? {...a, scale: Math.round((200/Math.max(a.baseW,a.baseH))*100)/100, x:340, y:176, rot:0, region:"face"} : a);
-  const download = () => { const svg=svgRef.current; if(!svg) return; const s=new XMLSerializer().serializeToString(svg); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=1360; c.height=920; const ctx=c.getContext("2d")!; ctx.drawImage(img,0,0,1360,920); URL.revokeObjectURL(url); try { const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=c.toDataURL("image/png"); a.click(); } catch(_e){} }; img.src=url; };
+  const onFile = (e: any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; setArt({ href:ev.target.result, baseW:Math.round(img.width*base), baseH:Math.round(img.height*base), x:340, y:158, scale:1, rot:0, opacity:1, region:"face" }); }; img.src=ev.target.result; }; rd.readAsDataURL(f); };
+  const fitFace = () => setArt((a:any)=> a ? {...a, scale: Math.round((190/Math.max(a.baseW,a.baseH))*100)/100, x:340, y:158, rot:0, region:"face"} : a);
+  const download = () => { const svg=svgRef.current; if(!svg) return; const s=new XMLSerializer().serializeToString(svg); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=1360; c.height=940; const ctx=c.getContext("2d")!; ctx.drawImage(img,0,0,1360,940); URL.revokeObjectURL(url); try { const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=c.toDataURL("image/png"); a.click(); } catch(_e){} }; img.src=url; };
   const fp = facePath(shape);
   const camS = zoom, tx = CX*(1-camS)+pan.x, ty = CY*(1-camS)+pan.y;
   const faceFill = pattern==="gradient" ? "url(#pd_grad)" : face;
-  const textCol = lum(face) > 0.5 ? "#15151a" : "#f4f1e8";
+  const textCol = lum(face) > 0.55 ? "#15151a" : "#f4f1e8";
+  const braces: any[] = throatType === "closed"
+    ? [<path key="cl" d={winPath} fill={throatC} />]
+    : throatType === "vertical"
+    ? Array.from({ length: beams }).map((_x, i) => { const f = beams===1 ? 0.5 : i/(beams-1); const xt = 326+f*28, xb = 334+f*12; return <path key={"v"+i} d={"M"+xt+" 262 L"+xb+" 352"} fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />; })
+    : throatType === "diagonal"
+    ? [<path key="d1" d="M318 266 L350 350" fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />, <path key="d2" d="M362 266 L330 350" fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />, <circle key="dj" cx={340} cy={324} r={5} fill={throatC} />]
+    : [<path key="h" d="M322 300 L358 300" fill="none" stroke={throatC} strokeWidth={9} strokeLinecap="round" />];
   const lbl: any = { fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif", display:"flex", flexDirection:"column", gap:4 };
   const fld: any = { width:"100%", marginTop:2, padding:"7px 8px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 };
   const col: any = { width:"100%", height:32, padding:2, border:"1px solid rgba(0,0,0,0.1)", borderRadius:6, background:"#DDD7C8" };
   const btn: any = { padding:"8px 12px", borderRadius:8, border:"1px solid #1A5C2A", background:"#fff", color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.04em", textTransform:"uppercase", fontSize:12, cursor:"pointer" };
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-      <svg ref={svgRef} viewBox="0 0 680 460" width="100%" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ display:"block", cursor:"grab", touchAction:"none", userSelect:"none", background:"#EDE8DC", borderRadius:12 }}>
+      <svg ref={svgRef} viewBox="0 0 680 470" width="100%" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ display:"block", cursor:"grab", touchAction:"none", userSelect:"none", background:"#EDE8DC", borderRadius:12 }}>
         <defs>
           <clipPath id="pd_fc"><path d={fp} /></clipPath>
-          <clipPath id="pd_tc"><path d="M300 300L380 300L360 372L320 372Z" /></clipPath>
+          <clipPath id="pd_tc"><path d={winPath} /></clipPath>
           <linearGradient id="pd_grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={accent} /><stop offset="1" stopColor={face} /></linearGradient>
           <pattern id="pd_stripe" width="26" height="26" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="26" height="26" fill={face} /><rect width="13" height="26" fill={accent} /></pattern>
         </defs>
         <g transform={"translate("+tx+" "+ty+") scale("+camS+")"}>
-          <rect x={323} y={352} width={34} height={98} rx={10} fill={grip} />
-          <g stroke="rgba(0,0,0,0.18)" strokeWidth={1.5}>
-            <line x1={323} y1={366} x2={357} y2={374} /><line x1={323} y1={380} x2={357} y2={388} /><line x1={323} y1={394} x2={357} y2={402} /><line x1={323} y1={408} x2={357} y2={416} /><line x1={323} y1={422} x2={357} y2={430} />
+          <rect x={324} y={350} width={32} height={100} rx={10} fill={grip} />
+          <g stroke="rgba(0,0,0,0.16)" strokeWidth={1.5}>
+            <line x1={324} y1={364} x2={356} y2={372} /><line x1={324} y1={378} x2={356} y2={386} /><line x1={324} y1={392} x2={356} y2={400} /><line x1={324} y1={406} x2={356} y2={414} /><line x1={324} y1={420} x2={356} y2={428} /><line x1={324} y1={434} x2={356} y2={442} />
           </g>
-          <rect x={319} y={444} width={42} height={10} rx={4} fill={frame} />
-          <path d="M300 300C304 326 314 348 328 366L340 366C328 342 316 320 314 298Z" fill={throatC} />
-          <path d="M380 300C376 326 366 348 352 366L340 366C352 342 364 320 366 298Z" fill={throatC} />
-          <path d={fp} fill={faceFill} stroke={frame} strokeWidth={15} strokeLinejoin="round" />
-          {pattern==="split" && <rect x={200} y={176} width={280} height={150} fill={accent} clipPath="url(#pd_fc)" />}
-          {pattern==="stripes" && <rect x={200} y={30} width={280} height={300} fill="url(#pd_stripe)" clipPath="url(#pd_fc)" />}
-          {pattern==="halo" && (<><circle cx={340} cy={176} r={86} fill="none" stroke={accent} strokeWidth={10} clipPath="url(#pd_fc)" /><circle cx={340} cy={176} r={58} fill="none" stroke={accent} strokeWidth={6} opacity={0.7} clipPath="url(#pd_fc)" /></>)}
-          {model && <text x={340} y={286} textAnchor="middle" fontFamily="'Barlow Condensed', sans-serif" fontWeight={500} fontSize={22} letterSpacing={2} fill={textCol}>{model.toUpperCase()}</text>}
+          <rect x={320} y={444} width={40} height={10} rx={4} fill={frame} />
+          {braces}
+          <path d="M314 258 L331 356" fill="none" stroke={frame} strokeWidth={13} strokeLinecap="round" />
+          <path d="M366 258 L349 356" fill="none" stroke={frame} strokeWidth={13} strokeLinecap="round" />
+          <path d={fp} fill={faceFill} stroke={frame} strokeWidth={14} strokeLinejoin="round" />
+          {pattern==="split" && <rect x={200} y={158} width={280} height={140} fill={accent} clipPath="url(#pd_fc)" />}
+          {pattern==="stripes" && <rect x={200} y={30} width={280} height={260} fill="url(#pd_stripe)" clipPath="url(#pd_fc)" />}
+          {pattern==="halo" && (<><circle cx={340} cy={158} r={80} fill="none" stroke={accent} strokeWidth={10} clipPath="url(#pd_fc)" /><circle cx={340} cy={158} r={52} fill="none" stroke={accent} strokeWidth={6} opacity={0.7} clipPath="url(#pd_fc)" /></>)}
+          {model && <text x={340} y={256} textAnchor="middle" fontFamily="'Barlow Condensed', sans-serif" fontWeight={500} fontSize={21} letterSpacing={2} fill={textCol}>{model.toUpperCase()}</text>}
           {art && (
             <g id="pd_artg" style={{ cursor:"move" }}>
               <g transform={"translate("+art.x+" "+art.y+") rotate("+art.rot+") scale("+art.scale+")"} clipPath={art.region==="face"?"url(#pd_fc)":art.region==="throat"?"url(#pd_tc)":undefined}>
@@ -3904,8 +3915,8 @@ function RacquetDesigner({ shapeId }: { shapeId: string }) {
           )}
         </g>
       </svg>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:10 }}>
-        <label style={lbl}>Head shape<select value={shape} onChange={e=>setShape(e.target.value)} style={fld}><option value="teardrop">Teardrop</option><option value="round">Round</option><option value="diamond">Diamond</option></select></label>
+      <div style={{ fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif" }}>Throat shown: {throatType==="closed"?"closed bridge":throatType==="vertical"?(beams+" vertical bridge"+(beams>1?"s":"")):throatType==="diagonal"?"X-brace":"horizontal tie"} — from the build throat settings.</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(150px, 1fr))", gap:10 }}>
         <label style={lbl}>Face pattern<select value={pattern} onChange={e=>setPattern(e.target.value)} style={fld}><option value="solid">Solid</option><option value="gradient">Gradient</option><option value="split">Split</option><option value="stripes">Stripes</option><option value="halo">Halo</option></select></label>
         <label style={lbl}>Model name<input type="text" maxLength={16} value={model} onChange={e=>setModel(e.target.value)} placeholder="Triton Pro" style={fld} /></label>
       </div>
@@ -8778,7 +8789,7 @@ export default function App() {
       <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1.5px solid #D4CCB8", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 28%, #E8E2D4, #C8C0B0)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" || diagramMode === "design" ? "100%" : 220 }}>
-            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} />) : diagramMode === "profile" ? (
+            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} bridgeId={bridgeId} beamOrientation={beamOrientation} beamCount={beamCount} />) : diagramMode === "profile" ? (
               <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId} edgeProfile={edgeProfile}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />
