@@ -3838,88 +3838,91 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // ---------------------------------------------------------------------------
 
 function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount }: { shapeId: string; bridgeId?: string; beamOrientation?: string; beamCount?: number }) {
-  const [face, setFace] = useState("#26262c");
-  const [frame, setFrame] = useState("#111114");
-  const [throatC, setThroatC] = useState("#2f2f36");
-  const [grip, setGrip] = useState("#ece7d9");
-  const [accent, setAccent] = useState("#1a5c2a");
+  const [face, setFace] = useState("#242430");
+  const [frame, setFrame] = useState("#101015");
+  const [throatC, setThroatC] = useState("#c0472a");
+  const [grip, setGrip] = useState("#e9e3d4");
+  const [accent, setAccent] = useState("#e0b34a");
   const [pattern, setPattern] = useState("solid");
-  const [model, setModel] = useState("");
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{x:number;y:number}>({ x: 0, y: 0 });
-  const [art, setArt] = useState<any>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [layers, setLayers] = useState<any[]>([]);
+  const [selId, setSelId] = useState<number|null>(null);
+  const idRef = useRef(1);
+  const wrapRef = useRef<HTMLDivElement|null>(null);
   const dragRef = useRef<any>(null);
-  const CX = 340, CY = 215;
+  useEffect(() => { if (typeof document !== "undefined" && !document.getElementById("pd-fonts")) { const l = document.createElement("link"); l.id = "pd-fonts"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600&family=Playfair+Display:wght@700&family=Pacifico&family=Barlow+Condensed:wght@600&display=swap"; document.head.appendChild(l); } }, []);
+  const BG = "#EDE8DC", CX = 340, HT = 486;
+  const CFG: any = { round:{cy:236,rx:186,ry:172,n:2.4,nb:0.05,nt:0.05}, teardrop:{cy:214,rx:166,ry:188,n:2.2,nb:0.30,nt:0.04}, diamond:{cy:224,rx:168,ry:188,n:2.9,nb:0.14,nt:0.12} };
+  const FONTS: any[] = [["'Barlow Condensed',sans-serif","Barlow Condensed"],["Anton,sans-serif","Anton"],["Oswald,sans-serif","Oswald"],["'Playfair Display',serif","Playfair"],["Pacifico,cursive","Pacifico"],["Impact,sans-serif","Impact"],["'Courier New',monospace","Mono"]];
   const shape = shapeId === "round" ? "round" : (shapeId === "diamond" || shapeId === "diamond-wide") ? "diamond" : "teardrop";
   const throatType = bridgeId === "closed" ? "closed" : beamOrientation === "diagonal" ? "diagonal" : beamOrientation === "horizontal" ? "horizontal" : "vertical";
   const beams = Math.max(1, Math.min(3, beamCount || 2));
-  const facePath = (s: string) => s === "round"
-    ? "M340 40C258 40 206 100 206 172C206 244 268 274 340 274C412 274 474 244 474 172C474 100 422 40 340 40Z"
-    : s === "diamond"
-    ? "M340 38C298 44 232 116 232 172C232 226 300 270 340 276C380 270 448 226 448 172C448 116 382 44 340 38Z"
-    : "M340 38C266 42 222 92 222 160C222 224 280 276 340 276C400 276 460 224 460 160C460 92 414 42 340 38Z";
-  const winPath = "M314 258 Q340 272 366 258 L349 356 Q340 362 331 356 Z";
-  const lum = (hex: string) => { let c = hex.replace("#",""); if (c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; const r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16); return (0.299*r+0.587*g+0.114*b)/255; };
-  const toSvg = (e: any) => { const svg=svgRef.current!; const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const r=p.matrixTransform(svg.getScreenCTM()!.inverse()); return { x:r.x, y:r.y }; };
-  const onDown = (e: any) => { const p=toSvg(e); const onArt = art && e.target.closest && e.target.closest("#pd_artg"); if (onArt) dragRef.current={mode:"art",sx:p.x,sy:p.y,ax:art.x,ay:art.y}; else dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_e){} };
-  const onMove = (e: any) => { const d=dragRef.current; if(!d) return; const p=toSvg(e); if(d.mode==="art") setArt((a:any)=> a ? {...a, x:d.ax+(p.x-d.sx)/zoom, y:d.ay+(p.y-d.sy)/zoom} : a); else setPan({ x:d.px+(p.x-d.sx), y:d.py+(p.y-d.sy) }); };
-  const onUp = (e: any) => { dragRef.current=null; try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(_e){} };
-  const onFile = (e: any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; setArt({ href:ev.target.result, baseW:Math.round(img.width*base), baseH:Math.round(img.height*base), x:340, y:158, scale:1, rot:0, opacity:1, region:"face" }); }; img.src=ev.target.result; }; rd.readAsDataURL(f); };
-  const fitFace = () => setArt((a:any)=> a ? {...a, scale: Math.round((190/Math.max(a.baseW,a.baseH))*100)/100, x:340, y:158, rot:0, region:"face"} : a);
-  const download = () => { const svg=svgRef.current; if(!svg) return; const s=new XMLSerializer().serializeToString(svg); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=1360; c.height=940; const ctx=c.getContext("2d")!; ctx.drawImage(img,0,0,1360,940); URL.revokeObjectURL(url); try { const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=c.toDataURL("image/png"); a.click(); } catch(_e){} }; img.src=url; };
-  const fp = facePath(shape);
-  const camS = zoom, tx = CX*(1-camS)+pan.x, ty = CY*(1-camS)+pan.y;
-  const faceFill = pattern==="gradient" ? "url(#pd_grad)" : face;
-  const textCol = lum(face) > 0.55 ? "#15151a" : "#f4f1e8";
-  const braces: any[] = throatType === "closed"
-    ? [<path key="cl" d={winPath} fill={throatC} />]
-    : throatType === "vertical"
-    ? Array.from({ length: beams }).map((_x, i) => { const f = beams===1 ? 0.5 : i/(beams-1); const xt = 326+f*28, xb = 334+f*12; return <path key={"v"+i} d={"M"+xt+" 262 L"+xb+" 352"} fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />; })
-    : throatType === "diagonal"
-    ? [<path key="d1" d="M318 266 L350 350" fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />, <path key="d2" d="M362 266 L330 350" fill="none" stroke={throatC} strokeWidth={8} strokeLinecap="round" />, <circle key="dj" cx={340} cy={324} r={5} fill={throatC} />]
-    : [<path key="h" d="M322 300 L358 300" fill="none" stroke={throatC} strokeWidth={9} strokeLinecap="round" />];
-  const lbl: any = { fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif", display:"flex", flexDirection:"column", gap:4 };
-  const fld: any = { width:"100%", marginTop:2, padding:"7px 8px", borderRadius:8, border:"1px solid rgba(0,0,0,0.1)", background:"#DDD7C8", color:"#18181B", fontFamily:"Inter, sans-serif", fontSize:13 };
-  const col: any = { width:"100%", height:32, padding:2, border:"1px solid rgba(0,0,0,0.1)", borderRadius:6, background:"#DDD7C8" };
-  const btn: any = { padding:"8px 12px", borderRadius:8, border:"1px solid #1A5C2A", background:"#fff", color:"#1A5C2A", fontFamily:"'Barlow Condensed', sans-serif", fontWeight:700, letterSpacing:"0.04em", textTransform:"uppercase", fontSize:12, cursor:"pointer" };
+  const shade = (hex:string,p:number) => { let c=hex.replace("#",""); if(c.length===3)c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; let r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16); const f=p<0?0:255,t=Math.abs(p); r=Math.round((f-r)*t+r);g=Math.round((f-g)*t+g);b=Math.round((f-b)*t+b); return "#"+[r,g,b].map(x=>("0"+x.toString(16)).slice(-2)).join(""); };
+  const esc = (t:string) => (t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const genPts = (dx:number,dy:number) => { const c=CFG[shape]; const rx=c.rx-dx, ry=c.ry-dy, out:any[]=[]; for(let i=0;i<48;i++){ const th=-Math.PI/2+2*Math.PI*i/48; const ct=Math.cos(th),st=Math.sin(th); const ex=(ct<0?-1:1)*Math.pow(Math.abs(ct),2/c.n); const ey=(st<0?-1:1)*Math.pow(Math.abs(st),2/c.n); let f=1; if(st>0)f=1-c.nb*st; else f=1-c.nt*(-st); out.push([CX+rx*f*ex, c.cy+ry*ey]); } return out; };
+  const crPath = (p:any[]) => { const n=p.length; let d="M"+p[0][0].toFixed(1)+" "+p[0][1].toFixed(1); for(let i=0;i<n;i++){ const p0=p[(i-1+n)%n],p1=p[i],p2=p[(i+1)%n],p3=p[(i+2)%n]; d+=" C"+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+" "+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+" "+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+" "+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+" "+p2[0].toFixed(1)+" "+p2[1].toFixed(1); } return d+"Z"; };
+  const holesTop = (cy:number) => { let out=""; const rows:any[]=[[-70,8],[-42,10],[-14,10],[16,10],[44,10],[74,8]]; for(let ri=0;ri<rows.length;ri++){ const yy=cy+rows[ri][0]; const nn=rows[ri][1]; const span=(nn-1)*22; for(let i=0;i<nn;i++){ const xx=CX-span/2+i*22; out+='<circle cx="'+xx+'" cy="'+yy+'" r="5.6" fill="'+BG+'"/><circle cx="'+xx+'" cy="'+(yy+0.7)+'" r="5.6" fill="none" stroke="#000" stroke-width="1.5" opacity="0.28"/><path d="M'+(xx-4.6)+' '+(yy-3)+' A5.6 5.6 0 0 1 '+(xx+4.6)+' '+(yy-3)+'" fill="none" stroke="#fff" stroke-width="1.1" opacity="0.22"/>'; } } return out; };
+  const armStr = (a:any,side:number) => { const ax=a[0],ay=a[1]; const hx=CX+side*17,hix=CX+side*3; const iax=ax-side*22,iay=ay+2; const ox1=ax+(hx-ax)*0.34-side*3,oy1=ay+(HT-ay)*0.34,ox2=ax+(hx-ax)*0.68-side*2,oy2=ay+(HT-ay)*0.68; const ix1=iax+(hix-iax)*0.68-side*2,iy1=iay+(HT-iay)*0.68,ix2=iax+(hix-iax)*0.34-side*3,iy2=iay+(HT-iay)*0.34; return '<path d="M'+ax.toFixed(1)+' '+ay.toFixed(1)+' C'+ox1.toFixed(1)+' '+oy1.toFixed(1)+' '+ox2.toFixed(1)+' '+oy2.toFixed(1)+' '+hx+' '+HT+' L'+hix+' '+HT+' C'+ix1.toFixed(1)+' '+iy1.toFixed(1)+' '+ix2.toFixed(1)+' '+iy2.toFixed(1)+' '+iax.toFixed(1)+' '+iay.toFixed(1)+' Z" fill="url(#pd_frG)"/>'; };
+  const bridgeStr = (aL:any,aR:any) => { const wy0=Math.max(aL[1],aR[1])+22,wy1=HT-14,my=(wy0+wy1)/2; if(throatType==="vertical"){ let b=""; for(let i=0;i<beams;i++){ const fr=beams===1?0.5:i/(beams-1); const xt=CX-15+fr*30, xb=CX-7+fr*14; b+='<path d="M'+xt+' '+wy0+' L'+xb+' '+wy1+'" stroke="'+throatC+'" stroke-width="8" stroke-linecap="round"/>'; } return b; } if(throatType==="diagonal") return '<path d="M'+(CX-24)+' '+wy0+' L'+(CX+11)+' '+wy1+'" stroke="'+throatC+'" stroke-width="7.5" stroke-linecap="round"/><path d="M'+(CX+24)+' '+wy0+' L'+(CX-11)+' '+wy1+'" stroke="'+throatC+'" stroke-width="7.5" stroke-linecap="round"/><circle cx="'+CX+'" cy="'+my+'" r="5" fill="'+throatC+'"/>'; if(throatType==="horizontal") return '<path d="M'+(CX-26)+' '+my+' L'+(CX+26)+' '+my+'" stroke="'+throatC+'" stroke-width="9" stroke-linecap="round"/>'; return ""; };
+  const layerStr = () => { let out=""; layers.forEach((it:any) => { const tr=' transform="rotate('+it.rot+' '+it.x+' '+it.y+')"'; out+='<g data-layer="'+it.id+'" style="cursor:move">'; if(it.type==="text"){ const w=Math.max(24,(it.text||"").length*it.size*0.62),hh=it.size*1.25; out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-it.size*0.82)+'" width="'+w+'" height="'+hh+'" fill="transparent"'+tr+'/>'; out+='<text x="'+it.x+'" y="'+it.y+'" text-anchor="middle" font-family="'+it.font+'" font-size="'+it.size+'" fill="'+it.color+'"'+tr+' style="pointer-events:none">'+esc(it.text)+'</text>'; if(it.id===selId) out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-it.size*0.82)+'" width="'+w+'" height="'+hh+'" rx="3" fill="none" stroke="#2f7cff" stroke-width="1.5" stroke-dasharray="5 4"'+tr+' style="pointer-events:none"/>'; } else { const w=it.baseW*it.scale,hh=it.baseH*it.scale; out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-hh/2)+'" width="'+w+'" height="'+hh+'" fill="transparent"'+tr+'/>'; out+='<g transform="translate('+it.x+' '+it.y+') rotate('+it.rot+') scale('+it.scale+')" opacity="'+it.opacity+'"><image href="'+it.href+'" x="'+(-it.baseW/2)+'" y="'+(-it.baseH/2)+'" width="'+it.baseW+'" height="'+it.baseH+'" preserveAspectRatio="xMidYMid meet" style="pointer-events:none"/></g>'; if(it.id===selId) out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-hh/2)+'" width="'+w+'" height="'+hh+'" rx="3" fill="none" stroke="#2f7cff" stroke-width="1.5" stroke-dasharray="5 4"'+tr+' style="pointer-events:none"/>'; } out+='</g>'; }); return out; };
+  const buildSVG = () => {
+    const c=CFG[shape], cy=c.cy;
+    const head=genPts(0,0), fpts=genPts(13,13);
+    const headD=crPath(head), faceD=crPath(fpts);
+    const aR=head[18], aL=head[30];
+    const camS=zoom, tx=CX*(1-camS)+pan.x, ty=360*(1-camS)+pan.y;
+    const faceFillId = pattern==="gradient" ? "url(#pd_pf)" : face;
+    let overlay="";
+    if(pattern==="split") overlay+='<rect x="150" y="'+cy+'" width="380" height="260" fill="'+accent+'" clip-path="url(#pd_fc)"/>';
+    if(pattern==="stripes") overlay+='<rect x="150" y="40" width="380" height="380" fill="url(#pd_stp)" clip-path="url(#pd_fc)"/>';
+    if(pattern==="halo") overlay+='<circle cx="340" cy="'+cy+'" r="96" fill="none" stroke="'+accent+'" stroke-width="13" clip-path="url(#pd_fc)"/><circle cx="340" cy="'+cy+'" r="60" fill="none" stroke="'+accent+'" stroke-width="8" opacity="0.7" clip-path="url(#pd_fc)"/>';
+    let wrap="";
+    for(let i=0;i<9;i++){ const yy=HT+18+i*18; wrap+='<line x1="326" y1="'+yy+'" x2="354" y2="'+(yy+9)+'"/>'; }
+    let closedT="";
+    if(throatType==="closed"){ const wy0=Math.max(aL[1],aR[1])+14; closedT='<path d="M'+(aL[0]+22)+' '+wy0+' L'+(CX-3)+' '+HT+' L'+(CX+3)+' '+HT+' L'+(aR[0]-22)+' '+wy0+' Z" fill="'+throatC+'"/>'; }
+    return '<svg id="pdsvg" viewBox="0 0 680 720" width="100%" style="display:block;cursor:grab;touch-action:none;user-select:none">'
+      +'<defs><clipPath id="pd_fc"><path d="'+faceD+'"/></clipPath>'
+      +'<linearGradient id="pd_frG" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="'+shade(frame,0.30)+'"/><stop offset="0.5" stop-color="'+frame+'"/><stop offset="1" stop-color="'+shade(frame,-0.35)+'"/></linearGradient>'
+      +'<linearGradient id="pd_faG" x1="0.1" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="'+shade(face,0.16)+'"/><stop offset="0.45" stop-color="'+face+'"/><stop offset="1" stop-color="'+shade(face,-0.22)+'"/></linearGradient>'
+      +'<linearGradient id="pd_pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+accent+'"/><stop offset="1" stop-color="'+face+'"/></linearGradient>'
+      +'<pattern id="pd_stp" width="30" height="30" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="'+face+'"/><rect width="15" height="30" fill="'+accent+'"/></pattern>'
+      +'<radialGradient id="pd_sheen" cx="0.34" cy="0.24" r="0.6"><stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.03"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+      +'<filter id="pd_shf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter></defs>'
+      +'<rect x="0" y="0" width="680" height="720" fill="'+BG+'"/>'
+      +'<g transform="translate('+tx.toFixed(1)+' '+ty.toFixed(1)+') scale('+camS+')">'
+      +'<ellipse cx="346" cy="'+(HT+170)+'" rx="140" ry="24" fill="#000" opacity="0.13" filter="url(#pd_shf)"/>'
+      +armStr(aL,-1)+armStr(aR,1)+bridgeStr(aL,aR)+closedT
+      +'<rect x="326" y="'+(HT-6)+'" width="28" height="200" rx="12" fill="'+grip+'"/>'
+      +'<g stroke="rgba(0,0,0,0.14)" stroke-width="2">'+wrap+'</g>'
+      +'<rect x="322" y="'+(HT+190)+'" width="36" height="12" rx="5" fill="'+shade(frame,-0.2)+'"/>'
+      +'<path d="'+headD+'" fill="url(#pd_frG)"/>'
+      +'<path d="'+faceD+'" fill="url(#pd_faG)"/><path d="'+faceD+'" fill="'+faceFillId+'" fill-opacity="'+(pattern==="gradient"?1:0.55)+'"/>'
+      +overlay
+      +'<path d="'+faceD+'" fill="url(#pd_sheen)"/><path d="'+faceD+'" fill="none" stroke="'+shade(face,-0.5)+'" stroke-width="2.5" opacity="0.5"/>'
+      +layerStr()
+      +'<g clip-path="url(#pd_fc)">'+holesTop(cy)+'</g>'
+      +'</g></svg>';
+  };
+  const toRoot = (e:any) => { const svgEl:any = wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return {x:0,y:0}; const p=svgEl.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const r=p.matrixTransform(svgEl.getScreenCTM().inverse()); return {x:r.x,y:r.y}; };
+  const onDown = (e:any) => { const p=toRoot(e); const g=e.target.closest && e.target.closest("[data-layer]"); if(g){ const id=+g.getAttribute("data-layer"); const it=layers.find((l:any)=>l.id===id); setSelId(id); dragRef.current={mode:"layer",id,sx:p.x,sy:p.y,ox:it.x,oy:it.y}; } else { setSelId(null); dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; } try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){} };
+  const onMove = (e:any) => { const d=dragRef.current; if(!d) return; const p=toRoot(e); if(d.mode==="layer"){ setLayers((ls:any[])=>ls.map((l:any)=>l.id===d.id?{...l,x:Math.round(d.ox+(p.x-d.sx)/zoom),y:Math.round(d.oy+(p.y-d.sy)/zoom)}:l)); } else { setPan({x:d.px+(p.x-d.sx),y:d.py+(p.y-d.sy)}); } };
+  const onUp = (e:any) => { dragRef.current=null; try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_e){} };
+  const addText = () => { const id=++idRef.current; setLayers((ls:any[])=>[...ls,{id,type:"text",text:"New text",x:340,y:150,font:"'Barlow Condensed',sans-serif",size:30,color:"#ffffff",rot:0}]); setSelId(id); };
+  const addImage = (e:any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; const id=++idRef.current; setLayers((ls:any[])=>[...ls,{id,type:"image",href:ev.target.result,baseW:Math.round(img.width*base),baseH:Math.round(img.height*base),x:340,y:230,scale:1,rot:0,opacity:1}]); setSelId(id); }; img.src=ev.target.result; }; rd.readAsDataURL(f); e.target.value=""; };
+  const sel:any = selId!=null ? layers.find((l:any)=>l.id===selId) : null;
+  const upd = (patch:any) => setLayers((ls:any[])=>ls.map((l:any)=>l.id===selId?{...l,...patch}:l));
+  const del = () => { setLayers((ls:any[])=>ls.filter((l:any)=>l.id!==selId)); setSelId(null); };
+  const download = () => { const svgEl:any=wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return; const s=new XMLSerializer().serializeToString(svgEl); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=1020; cv.height=1080; const ctx:any=cv.getContext("2d"); ctx.fillStyle=BG; ctx.fillRect(0,0,1020,1080); ctx.drawImage(img,0,0,1020,1080); URL.revokeObjectURL(url); try{ const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=cv.toDataURL("image/png"); a.click(); }catch(_e){} }; img.src=url; };
+  const lbl:any={fontSize:12,color:"#7A7268",fontFamily:"Inter, sans-serif",display:"flex",flexDirection:"column",gap:4};
+  const fld:any={width:"100%",marginTop:2,padding:"7px 8px",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:"#DDD7C8",color:"#18181B",fontFamily:"Inter, sans-serif",fontSize:13};
+  const col:any={width:"100%",height:32,padding:2,border:"1px solid rgba(0,0,0,0.1)",borderRadius:6,background:"#DDD7C8"};
+  const btn:any={padding:"8px 12px",borderRadius:8,border:"1px solid #1A5C2A",background:"#fff",color:"#1A5C2A",fontFamily:"'Barlow Condensed', sans-serif",fontWeight:700,letterSpacing:"0.04em",textTransform:"uppercase",fontSize:12,cursor:"pointer"};
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-      <svg ref={svgRef} viewBox="0 0 680 470" width="100%" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ display:"block", cursor:"grab", touchAction:"none", userSelect:"none", background:"#EDE8DC", borderRadius:12 }}>
-        <defs>
-          <clipPath id="pd_fc"><path d={fp} /></clipPath>
-          <clipPath id="pd_tc"><path d={winPath} /></clipPath>
-          <linearGradient id="pd_grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={accent} /><stop offset="1" stopColor={face} /></linearGradient>
-          <pattern id="pd_stripe" width="26" height="26" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="26" height="26" fill={face} /><rect width="13" height="26" fill={accent} /></pattern>
-        </defs>
-        <g transform={"translate("+tx+" "+ty+") scale("+camS+")"}>
-          <rect x={324} y={350} width={32} height={100} rx={10} fill={grip} />
-          <g stroke="rgba(0,0,0,0.16)" strokeWidth={1.5}>
-            <line x1={324} y1={364} x2={356} y2={372} /><line x1={324} y1={378} x2={356} y2={386} /><line x1={324} y1={392} x2={356} y2={400} /><line x1={324} y1={406} x2={356} y2={414} /><line x1={324} y1={420} x2={356} y2={428} /><line x1={324} y1={434} x2={356} y2={442} />
-          </g>
-          <rect x={320} y={444} width={40} height={10} rx={4} fill={frame} />
-          {braces}
-          <path d="M314 258 L331 356" fill="none" stroke={frame} strokeWidth={13} strokeLinecap="round" />
-          <path d="M366 258 L349 356" fill="none" stroke={frame} strokeWidth={13} strokeLinecap="round" />
-          <path d={fp} fill={faceFill} stroke={frame} strokeWidth={14} strokeLinejoin="round" />
-          {pattern==="split" && <rect x={200} y={158} width={280} height={140} fill={accent} clipPath="url(#pd_fc)" />}
-          {pattern==="stripes" && <rect x={200} y={30} width={280} height={260} fill="url(#pd_stripe)" clipPath="url(#pd_fc)" />}
-          {pattern==="halo" && (<><circle cx={340} cy={158} r={80} fill="none" stroke={accent} strokeWidth={10} clipPath="url(#pd_fc)" /><circle cx={340} cy={158} r={52} fill="none" stroke={accent} strokeWidth={6} opacity={0.7} clipPath="url(#pd_fc)" /></>)}
-          {model && <text x={340} y={256} textAnchor="middle" fontFamily="'Barlow Condensed', sans-serif" fontWeight={500} fontSize={21} letterSpacing={2} fill={textCol}>{model.toUpperCase()}</text>}
-          {art && (
-            <g id="pd_artg" style={{ cursor:"move" }}>
-              <g transform={"translate("+art.x+" "+art.y+") rotate("+art.rot+") scale("+art.scale+")"} clipPath={art.region==="face"?"url(#pd_fc)":art.region==="throat"?"url(#pd_tc)":undefined}>
-                <image href={art.href} x={-art.baseW/2} y={-art.baseH/2} width={art.baseW} height={art.baseH} opacity={art.opacity} preserveAspectRatio="xMidYMid meet" />
-              </g>
-            </g>
-          )}
-        </g>
-      </svg>
-      <div style={{ fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif" }}>Throat shown: {throatType==="closed"?"closed bridge":throatType==="vertical"?(beams+" vertical bridge"+(beams>1?"s":"")):throatType==="diagonal"?"X-brace":"horizontal tie"} — from the build throat settings.</div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(150px, 1fr))", gap:10 }}>
-        <label style={lbl}>Face pattern<select value={pattern} onChange={e=>setPattern(e.target.value)} style={fld}><option value="solid">Solid</option><option value="gradient">Gradient</option><option value="split">Split</option><option value="stripes">Stripes</option><option value="halo">Halo</option></select></label>
-        <label style={lbl}>Model name<input type="text" maxLength={16} value={model} onChange={e=>setModel(e.target.value)} placeholder="Triton Pro" style={fld} /></label>
-      </div>
+      <div ref={wrapRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ borderRadius:12, overflow:"hidden" }} dangerouslySetInnerHTML={{ __html: buildSVG() }} />
+      <div style={{ fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif" }}>Throat: {throatType==="closed"?"closed bridge":throatType==="vertical"?(beams+" vertical"):throatType==="diagonal"?"X-brace":"horizontal tie"} — from the build. Drag any text or logo to place it; click it to edit.</div>
+      <label style={lbl}>Face pattern<select value={pattern} onChange={e=>setPattern(e.target.value)} style={fld}><option value="solid">Solid</option><option value="gradient">Gradient</option><option value="split">Split</option><option value="stripes">Stripes</option><option value="halo">Halo</option></select></label>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(84px, 1fr))", gap:10 }}>
         <label style={lbl}>Face<input type="color" value={face} onChange={e=>setFace(e.target.value)} style={col} /></label>
         <label style={lbl}>Frame<input type="color" value={frame} onChange={e=>setFrame(e.target.value)} style={col} /></label>
@@ -3928,23 +3931,32 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount }: { sh
         <label style={lbl}>Accent<input type="color" value={accent} onChange={e=>setAccent(e.target.value)} style={col} /></label>
       </div>
       <div style={{ display:"flex", flexWrap:"wrap", gap:10, alignItems:"center", padding:"10px", background:"#F2EFE7", borderRadius:10 }}>
-        <label style={{ ...btn, display:"inline-flex", alignItems:"center", gap:6 }}>Upload artwork<input type="file" accept="image/*" onChange={onFile} style={{ display:"none" }} /></label>
-        <label style={{ ...lbl, flexDirection:"row", alignItems:"center", gap:6 }}>On<select value={art?art.region:"face"} onChange={e=>setArt((a:any)=>a?{...a,region:e.target.value}:a)} disabled={!art} style={{ ...fld, width:"auto", marginTop:0 }}><option value="face">Face</option><option value="throat">Throat</option><option value="free">Anywhere</option></select></label>
-        <button type="button" onClick={fitFace} disabled={!art} style={btn}>Fit to face</button>
-        <button type="button" onClick={()=>setArt(null)} disabled={!art} style={btn}>Remove</button>
+        <button type="button" onClick={addText} style={btn}>+ Add text</button>
+        <label style={{ ...btn, display:"inline-flex", alignItems:"center", gap:6 }}>+ Add image<input type="file" accept="image/*" onChange={addImage} style={{ display:"none" }} /></label>
+        {sel && <button type="button" onClick={del} style={{ ...btn, borderColor:"#B0361E", color:"#B0361E" }}>Delete selected</button>}
       </div>
-      {art && (
+      {sel && sel.type==="text" && (
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Size</span><input type="range" min={10} max={280} value={Math.round(art.scale*100)} onChange={e=>setArt((a:any)=>({ ...a, scale:(+e.target.value)/100 }))} style={{ flex:1 }} /></div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Rotate</span><input type="range" min={-180} max={180} value={art.rot} onChange={e=>setArt((a:any)=>({ ...a, rot:+e.target.value }))} style={{ flex:1 }} /></div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}><span style={{ fontSize:12, color:"#7A7268", width:56 }}>Opacity</span><input type="range" min={10} max={100} value={Math.round(art.opacity*100)} onChange={e=>setArt((a:any)=>({ ...a, opacity:(+e.target.value)/100 }))} style={{ flex:1 }} /></div>
-          <span style={{ fontSize:12, color:"#7A7268" }}>Drag the artwork on the racquet to move it.</span>
+          <input type="text" value={sel.text} onChange={e=>upd({text:e.target.value})} placeholder="Your text" style={fld} />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            <label style={lbl}>Font<select value={sel.font} onChange={e=>upd({font:e.target.value})} style={fld}>{FONTS.map((f:any,i:number)=><option key={i} value={f[0]}>{f[1]}</option>)}</select></label>
+            <label style={lbl}>Color<input type="color" value={sel.color} onChange={e=>upd({color:e.target.value})} style={col} /></label>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={80} value={sel.size} onChange={e=>upd({size:+e.target.value})} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Rotate</span><input type="range" min={-90} max={90} value={sel.rot} onChange={e=>upd({rot:+e.target.value})} style={{ flex:1 }} /></div>
+        </div>
+      )}
+      {sel && sel.type==="image" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={320} value={Math.round(sel.scale*100)} onChange={e=>upd({scale:(+e.target.value)/100})} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Rotate</span><input type="range" min={-180} max={180} value={sel.rot} onChange={e=>upd({rot:+e.target.value})} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Opacity</span><input type="range" min={10} max={100} value={Math.round(sel.opacity*100)} onChange={e=>upd({opacity:(+e.target.value)/100})} style={{ flex:1 }} /></div>
         </div>
       )}
       <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:12 }}>
         <span style={{ fontSize:12, color:"#7A7268" }}>Zoom</span>
         <input type="range" min={60} max={260} value={Math.round(zoom*100)} onChange={e=>setZoom((+e.target.value)/100)} style={{ flex:1, minWidth:120 }} />
-        <button type="button" onClick={()=>{ setZoom(1); setPan({ x:0, y:0 }); }} style={btn}>Reset view</button>
+        <button type="button" onClick={()=>{ setZoom(1); setPan({x:0,y:0}); }} style={btn}>Reset view</button>
         <button type="button" onClick={download} style={btn}>Download PNG</button>
       </div>
     </div>
