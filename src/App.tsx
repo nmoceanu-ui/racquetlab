@@ -8222,7 +8222,7 @@ export default function App() {
   const [thicknessMm, setThicknessMm] = useState(38);
   const [weightG, setWeightG] = useState(365);
   const [balanceCm, setBalanceCm] = useState(25.8);
-  const [gripCircMm, setGripCircMm] = useState(38);
+  const [gripCircMm, setgripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design] = useState(38);
 
   // Save & Share state
   const [shareStatus, setShareStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -8334,7 +8334,7 @@ export default function App() {
     // Reset back to idle after a few seconds so the button is reusable
     // for a fresh save if the person keeps editing.
     setTimeout(() => setShareStatus("idle"), 4000);
-  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm]);
+  }, [shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design]);
 
   // Save edits back onto the currently-loaded build in place (same share code),
   // instead of spawning a new library entry. RLS only lets a user overwrite
