@@ -261,7 +261,7 @@ function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, 
   return { y, r, stability };
 }
 
-function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile }) {
+function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, weightG, balanceCm, widthMm, thicknessMm, edgeProfile, sideProfile, dampening, stiffnessAdj, counterweightG, handleLengthMm, gripCircMm, coreGradient }) {
   const s = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const n = { power: 0, control: 0, comfort: 0, sweetSpot: 0, durability: 0, spin: 0 };
   const add = (key, val) => { if (val === undefined) return; s[key] += val; n[key] += 1; };
@@ -417,6 +417,38 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
     out.stability = clampS(out.stability + 0.12);
     out.sweetSpot = clampS(out.sweetSpot + 0.1);
   }
+
+  // ===================== TUNING LEVERS (all neutral-default -> no-bias) =====================
+  // Each lever below is a post-average delta that is EXACTLY 0 at its neutral default, so every
+  // existing racquet (which sends none of these fields) scores byte-identical. swingweight and
+  // armFriendliness are brand-new derived readouts; they do not touch the 7 comparison scores.
+  const _d  = typeof dampening      === "number" ? Math.max(0,  Math.min(10, dampening))      : 0;
+  const _st = typeof stiffnessAdj   === "number" ? Math.max(-3, Math.min(3,  stiffnessAdj))   : 0;
+  const _cw = typeof counterweightG === "number" ? Math.max(0,  Math.min(25, counterweightG)) : 0;
+  const _hl = typeof handleLengthMm === "number" ? Math.max(195,Math.min(235,handleLengthMm)) : 215;
+  const _gc = typeof gripCircMm     === "number" ? Math.max(94, Math.min(108, gripCircMm))    : 100;
+  const _cg = typeof coreGradient   === "number" ? Math.max(0,  Math.min(10, coreGradient))   : 0;
+  if (_d > 0)   { out.comfort = clampS(out.comfort + (_d/10)*0.6); out.control = clampS(out.control + (_d/10)*0.15); out.power = clampS(out.power - (_d/10)*0.25); }
+  if (_st !== 0){ out.power = clampS(out.power + _st*0.12); out.comfort = clampS(out.comfort - _st*0.15); out.durability = clampS(out.durability + _st*0.05); if (_st < 0) out.control = clampS(out.control - _st*0.10); }
+  if (_cw > 0)  { out.stability = clampS(out.stability + (_cw/25)*0.3); out.comfort = clampS(out.comfort + (_cw/25)*0.2); out.power = clampS(out.power - (_cw/25)*0.15); }
+  if (_hl !== 215){ const _hdn = (_hl - 215)/20; out.power = clampS(out.power + _hdn*0.2); out.control = clampS(out.control - _hdn*0.1); }
+  if (_gc !== 100){ const _gdn = (_gc - 100)/8; out.spin = clampS(out.spin - _gdn*0.25); out.comfort = clampS(out.comfort + _gdn*0.15); out.stability = clampS(out.stability + _gdn*0.1); }
+  if (_cg > 0)  { out.sweetSpot = clampS(out.sweetSpot + (_cg/10)*0.5); out.stability = clampS(out.stability + (_cg/10)*0.3); out.power = clampS(out.power - (_cg/10)*0.2); }
+  {
+    const _wg = weightG ?? 365, _bc = balanceCm ?? 25.8;
+    const _tot = _wg + _cw;
+    const _eff = (_wg * _bc + _cw * 3) / _tot;
+    const _len = _hl / 215;
+    out.swingweight = Math.round(_tot * Math.pow(_eff / 25.8, 2) * _len * 0.822);
+  }
+  {
+    let _af = 25 + (out.comfort / 5) * 60;
+    _af += (_d / 10) * 12;
+    _af += (_cw / 25) * 6;
+    _af -= _st * 4;
+    out.armFriendliness = Math.round(Math.max(0, Math.min(100, _af)));
+  }
+
   return out;
 }
 function scoreSpec(g) {
@@ -438,7 +470,13 @@ function scoreSpec(g) {
   const hd = typeof g.holeDiameterMm === "number" ? g.holeDiameterMm : 9;
   const edge = typeof g.edgeProfile === "string" ? g.edgeProfile : "standard";
   const side = typeof g.sideProfile === "string" ? g.sideProfile : "curved";
-  const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge, sideProfile: side });
+  const dmp = typeof g.dampening === "number" ? g.dampening : 0;
+  const stf = typeof g.stiffnessAdj === "number" ? g.stiffnessAdj : 0;
+  const cwt = typeof g.counterweightG === "number" ? g.counterweightG : 0;
+  const hln = typeof g.handleLengthMm === "number" ? g.handleLengthMm : 215;
+  const grc = typeof g.gripCircMm === "number" ? g.gripCircMm : 100;
+  const cgr = typeof g.coreGradient === "number" ? g.coreGradient : 0;
+  const sc = computeScores({ shape: shp, core: cor, face: fac, frame: frm, surface: srf, grip: grp, bridgeId: bId, beamOrientation: bOr, beamCount: bCt, holes: hls, holeDiameterMm: hd, weightG: wG, balanceCm: bal, widthMm: wid, thicknessMm: thk, edgeProfile: edge, sideProfile: side, dampening: dmp, stiffnessAdj: stf, counterweightG: cwt, handleLengthMm: hln, gripCircMm: grc, coreGradient: cgr });
   const bridgeLabel = (BRIDGE_TYPES.find((b) => b.id === bId) || {}).label || bId;
   const edgeLabel = (EDGE_PROFILES.find((e) => e.id === edge) || {}).label || edge;
   const sideLabel = (SIDE_PROFILES.find((sp) => sp.id === side) || {}).label || side;
