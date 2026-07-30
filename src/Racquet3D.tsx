@@ -28,11 +28,21 @@ export default function Racquet3D(props: {
   const ctrlRef = useRef<any>(null);
   const baseDistRef = useRef<number>(1170);
   const camStateRef = useRef<any>(null);
+  const redrawRef = useRef<(() => void) | null>(null);
+  const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
+  const propsRef = useRef(props);
+  propsRef.current = props;
 
-  // Rebuild the scene on design changes, but NOT on zoom (zoom is handled below
-  // via a ref so dragging the zoom bar doesn't reset the rotation).
-  const { zoom, ...rest } = props;
-  const key = JSON.stringify(rest);
+  const { zoom } = props;
+  // Heavy rebuild only when geometry / materials change...
+  const geoKey = JSON.stringify({
+    shape: props.shape, throatType: props.throatType, beams: props.beams,
+    holes: props.holes, holeR: props.holeR, finish: props.finish,
+    frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors,
+  });
+  // ...but only re-bake the face texture (no rebuild) when these change — keeps
+  // dragging the image size/rotate/opacity perfectly smooth.
+  const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent });
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -63,11 +73,10 @@ export default function Racquet3D(props: {
       return out;
     };
 
-    // svg point (px,py) -> three shape-space (x,y). Flip Y (svg is y-down).
     const S = (px: number, py: number): [number, number] => [px - CX, -(py - CY0)];
 
-    const head = genPts(0, 0);   // outer frame edge
-    const fpts = genPts(13, 13); // inner face edge
+    const head = genPts(0, 0);
+    const fpts = genPts(13, 13);
 
     // ---- renderer / scene / camera ----
     const scene = new THREE.Scene();
@@ -79,7 +88,7 @@ export default function Racquet3D(props: {
     camRef.current = camera;
     baseDistRef.current = camera.position.length();
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(W, H);
     (renderer as any).outputColorSpace = THREE.SRGBColorSpace;
@@ -89,15 +98,15 @@ export default function Racquet3D(props: {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+    controls.dampingFactor = 0.12;
     controls.enablePan = false;
     controls.minDistance = 340;
     controls.maxDistance = 2400;
-    controls.rotateSpeed = 0.9;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 0.9;
     controls.target.set(0, 0, 0);
     ctrlRef.current = controls;
 
-    // restore prior camera orientation across rebuilds; else apply the current zoom
     if (camStateRef.current) {
       camera.position.fromArray(camStateRef.current.pos);
       controls.target.fromArray(camStateRef.current.tgt);
@@ -119,7 +128,6 @@ export default function Racquet3D(props: {
     const group = new THREE.Group();
     scene.add(group);
 
-    // ---- shape helpers ----
     const pathOf = (pts: [number, number][]): THREE.Path => {
       const p = new THREE.Path();
       pts.forEach((pt, i) => { const [x, y] = S(pt[0], pt[1]); if (i === 0) p.moveTo(x, y); else p.lineTo(x, y); });
@@ -159,32 +167,34 @@ export default function Racquet3D(props: {
       b = Math.max(0, Math.round(b * (1 - amt)));
       return "rgb(" + r + "," + g + "," + b + ")";
     };
-
     const setSvgTransform = () => { ctx.setTransform(RES, 0, 0, RES, -sminX * RES, -sminY * RES); };
 
-    const drawBase = () => {
+    // Re-bake the whole face texture from the LATEST props. Images are cached by
+    // href so re-baking (e.g. while dragging size/rotate) never reloads them.
+    const redraw = () => {
+      const P = propsRef.current;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       setSvgTransform();
-      if (props.pattern === "gradient") {
+      if (P.pattern === "gradient") {
         const g = ctx.createLinearGradient(0, sminY, 0, smaxY);
-        g.addColorStop(0, props.face || "#242430");
-        g.addColorStop(1, darken(props.face || "#242430", 0.5));
+        g.addColorStop(0, P.face || "#242430");
+        g.addColorStop(1, darken(P.face || "#242430", 0.5));
         ctx.fillStyle = g;
       } else {
-        ctx.fillStyle = props.face || "#242430";
+        ctx.fillStyle = P.face || "#242430";
       }
       ctx.fillRect(sminX, sminY, sW, sH);
       const cy = c.cy;
-      if (props.pattern === "split") { ctx.fillStyle = props.accent || "#e0b34a"; ctx.fillRect(sminX, cy, sW, smaxY - cy); }
-      if (props.pattern === "halo") {
-        ctx.strokeStyle = props.accent || "#e0b34a"; ctx.lineWidth = 13;
+      if (P.pattern === "split") { ctx.fillStyle = P.accent || "#e0b34a"; ctx.fillRect(sminX, cy, sW, smaxY - cy); }
+      if (P.pattern === "halo") {
+        ctx.strokeStyle = P.accent || "#e0b34a"; ctx.lineWidth = 13;
         ctx.beginPath(); ctx.arc(CX, cy, 96, 0, Math.PI * 2); ctx.stroke();
         ctx.globalAlpha = 0.7; ctx.lineWidth = 8;
         ctx.beginPath(); ctx.arc(CX, cy, 60, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
       }
-      if (props.pattern === "stripes") {
-        ctx.fillStyle = props.accent || "#e0b34a";
+      if (P.pattern === "stripes") {
+        ctx.fillStyle = P.accent || "#e0b34a";
         for (let x = sminX - sH; x < smaxX + sH; x += 44) {
           ctx.beginPath();
           ctx.moveTo(x, sminY); ctx.lineTo(x + 22, sminY);
@@ -192,40 +202,40 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (props.layers || []).forEach((it: any) => {
-        if (it.type !== "text") return;
-        ctx.save();
-        ctx.translate(it.x, it.y);
-        ctx.rotate(((it.rot || 0) * Math.PI) / 180);
-        ctx.font = (it.size || 24) + "px " + (it.font || "sans-serif");
-        ctx.fillStyle = it.color || "#ffffff";
-        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-        ctx.fillText(it.text || "", 0, 0);
-        ctx.restore();
+      (P.layers || []).forEach((it: any) => {
+        if (it.type === "text") {
+          ctx.save();
+          ctx.translate(it.x, it.y);
+          ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          ctx.font = (it.size || 24) + "px " + (it.font || "sans-serif");
+          ctx.fillStyle = it.color || "#ffffff";
+          ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+          ctx.fillText(it.text || "", 0, 0);
+          ctx.restore();
+          return;
+        }
+        if (!it.href) return;
+        let cached = imgCacheRef.current.get(it.href);
+        if (!cached) {
+          const img = new Image(); img.crossOrigin = "anonymous";
+          cached = { img, loaded: false };
+          imgCacheRef.current.set(it.href, cached);
+          img.onload = () => { cached!.loaded = true; redrawRef.current && redrawRef.current(); };
+          img.src = it.href;
+        }
+        if (cached.loaded) {
+          ctx.save();
+          ctx.translate(it.x, it.y);
+          ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          ctx.scale(it.scale || 1, it.scale || 1);
+          ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
+          try { ctx.drawImage(cached.img, -it.baseW / 2, -it.baseH / 2, it.baseW, it.baseH); } catch (e) { /* tainted */ }
+          ctx.restore();
+        }
       });
       texture.needsUpdate = true;
     };
-
-    const drawImageLayer = (it: any, img: HTMLImageElement) => {
-      ctx.save();
-      setSvgTransform();
-      ctx.translate(it.x, it.y);
-      ctx.rotate(((it.rot || 0) * Math.PI) / 180);
-      ctx.scale(it.scale || 1, it.scale || 1);
-      ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
-      try { ctx.drawImage(img, -it.baseW / 2, -it.baseH / 2, it.baseW, it.baseH); } catch (e) { /* tainted */ }
-      ctx.restore();
-      texture.needsUpdate = true;
-    };
-
-    drawBase();
-    (props.layers || []).forEach((it: any) => {
-      if (it.type === "text" || !it.href) return;
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => drawImageLayer(it, img);
-      img.src = it.href;
-    });
+    redrawRef.current = redraw;
 
     // ---- materials (gloss vs matte) ----
     const glossy = props.finish === "gloss";
@@ -258,7 +268,6 @@ export default function Racquet3D(props: {
       uv.needsUpdate = true;
     };
 
-    // ---- hole paths (bored through the face plates) ----
     const holePaths: THREE.Path[] = (props.holes || []).map((h: any) => {
       const [hx, hy] = S(CX + h.x, c.cy + h.y);
       const p = new THREE.Path();
@@ -284,7 +293,7 @@ export default function Racquet3D(props: {
     group.add(foam);
 
     // invisible pick plane over the whole face (for click-to-edit holes)
-    const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     pickMesh.position.z = T / 2 + 0.5;
     group.add(pickMesh);
 
@@ -296,8 +305,8 @@ export default function Racquet3D(props: {
     // ---- throat + grip ----
     const zc = 0;
     const beamDepth = T * 0.62;
-    const AL = S(head[30][0], head[30][1]); // left junction (upper-left of throat)
-    const AR = S(head[18][0], head[18][1]); // right junction (upper-right)
+    const AL = S(head[30][0], head[30][1]);
+    const AR = S(head[18][0], head[18][1]);
     const gripTopL = S(CX - 24, 486);
     const gripTopR = S(CX + 24, 486);
     const gripTopC = S(CX, 486);
@@ -313,14 +322,11 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    // side rails continue the frame down to the grip
     strut(AL, gripTopL, 13, T * 0.7, frameMat);
     strut(AR, gripTopR, 13, T * 0.7, frameMat);
 
-    // throat opening vertical span (under the face, down to the grip)
-    const yT = -46;                    // just under the face
-    const yB = gripTopC[1] + 4;        // just above the grip
-    // x position of a side rail at a given height y (side: -1 left, +1 right)
+    const yT = -46;
+    const yB = gripTopC[1] + 4;
     const railX = (side: number, y: number): number => {
       const A = side < 0 ? AL : AR;
       const G = side < 0 ? gripTopL : gripTopR;
@@ -335,9 +341,8 @@ export default function Racquet3D(props: {
       const g = new THREE.ExtrudeGeometry(sh, { depth: T * 0.62, bevelEnabled: false });
       const m = new THREE.Mesh(g, frameMat); m.position.z = -T * 0.31; group.add(m);
     } else if (props.throatType === "horizontal") {
-      // N stacked horizontal bars, each spanning frame-to-frame (like 1 beam + one under it)
       for (let i = 0; i < N; i++) {
-        const frac = 0.32 + i * 0.26;              // top-to-bottom placement
+        const frac = 0.32 + i * 0.26;
         const y = yT + (yB - yT) * frac;
         strut([railX(-1, y) + 3, y], [railX(1, y) - 3, y], 9, beamDepth, beamMat(i));
       }
@@ -345,7 +350,6 @@ export default function Racquet3D(props: {
       strut([railX(-1, yT), yT], [railX(1, yB), yB], 9, beamDepth, beamMat(0));
       strut([railX(1, yT), yT], [railX(-1, yB), yB], 9, beamDepth, beamMat(1));
     } else {
-      // vertical: N parallel struts straight up the middle of the throat, not touching
       const offs = N === 1 ? [0] : (N === 2 ? [-9, 9] : [-15, 0, 15]);
       for (let i = 0; i < N; i++) {
         const x = offs[i];
@@ -353,7 +357,6 @@ export default function Racquet3D(props: {
       }
     }
 
-    // grip
     const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
     const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(21, 22, gripLen, 22, 1), gripMat);
     gripMesh.position.set(0, (gripTopC[1] + gripBotC[1]) / 2, zc);
@@ -364,6 +367,9 @@ export default function Racquet3D(props: {
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(15, 21, 28, 18, 1), frameMat);
     neck.position.set(0, gripTopC[1] + 10, zc);
     group.add(neck);
+
+    // initial texture bake
+    redraw();
 
     // ---- animate ----
     let raf = 0;
@@ -376,8 +382,9 @@ export default function Racquet3D(props: {
     const onCanvasDown = (e: PointerEvent) => { downXY = [e.clientX, e.clientY]; };
     const onCanvasUp = (e: PointerEvent) => {
       const dd = downXY; downXY = null;
-      if (!props.editHoles || !props.setDesign || !dd) return;
-      if (Math.hypot(e.clientX - dd[0], e.clientY - dd[1]) > 5) return; // was a rotate, not a click
+      const P = propsRef.current;
+      if (!P.editHoles || !P.setDesign || !dd) return;
+      if (Math.hypot(e.clientX - dd[0], e.clientY - dd[1]) > 5) return;
       const rect = renderer.domElement.getBoundingClientRect();
       const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
@@ -385,8 +392,8 @@ export default function Racquet3D(props: {
       if (!hits.length) return;
       const pt = hits[0].point;
       const hx = Math.round(pt.x), hy = Math.round(CY0 - c.cy - pt.y);
-      const baseHoles = props.holes || [];
-      props.setDesign!((d: any) => {
+      const baseHoles = P.holes || [];
+      P.setDesign!((d: any) => {
         const cur = (Array.isArray(d.holes) ? d.holes : baseHoles).slice();
         let idx = -1, best = 1e9;
         for (let i = 0; i < cur.length; i++) { const q = Math.hypot(cur[i].x - hx, cur[i].y - hy); if (q < best) { best = q; idx = i; } }
@@ -410,6 +417,7 @@ export default function Racquet3D(props: {
       camStateRef.current = { pos: camera.position.toArray(), tgt: controls.target.toArray() };
       renderer.domElement.removeEventListener("pointerdown", onCanvasDown);
       renderer.domElement.removeEventListener("pointerup", onCanvasUp);
+      redrawRef.current = null;
       controls.dispose();
       camRef.current = null; ctrlRef.current = null;
       scene.traverse((o: any) => {
@@ -419,7 +427,10 @@ export default function Racquet3D(props: {
       renderer.dispose();
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
-  }, [key]);
+  }, [geoKey]);
+
+  // Light: only re-bake the face texture when layers / face color / pattern change
+  useEffect(() => { if (redrawRef.current) redrawRef.current(); }, [texKey]);
 
   // Zoom bar -> dolly the camera without rebuilding (keeps current rotation)
   useEffect(() => {
