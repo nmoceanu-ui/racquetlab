@@ -3883,7 +3883,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
     let closedT="";
     if(throatType==="closed"){ const wy0=Math.max(aL[1],aR[1])+14; closedT='<path d="M'+(aL[0]+22)+' '+wy0+' L'+(CX-3)+' '+HT+' L'+(CX+3)+' '+HT+' L'+(aR[0]-22)+' '+wy0+' Z" fill="'+throatC+'"/>'; }
     return '<svg id="pdsvg" viewBox="0 0 680 720" width="100%" style="display:block;cursor:grab;touch-action:none;user-select:none">'
-      +'<defs><clipPath id="pd_fc"><path d="'+faceD+'"/></clipPath>'
+      +'<defs><clipPath id="pd_fc"><path d="'+faceD+'"/></clipPath><clipPath id="pd_rq"><path d="'+faceD+'"/><path d="M'+(CX-66)+' '+(cy+c.ry-30)+' L'+(CX+66)+' '+(cy+c.ry-30)+' L'+(CX+22)+' '+(HT-4)+' L'+(CX-22)+' '+(HT-4)+' Z"/></clipPath>'
       +'<linearGradient id="pd_frG" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="'+shade(frame,0.30)+'"/><stop offset="0.5" stop-color="'+frame+'"/><stop offset="1" stop-color="'+shade(frame,-0.35)+'"/></linearGradient>'
       +'<linearGradient id="pd_faG" x1="0.1" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="'+shade(face,0.16)+'"/><stop offset="0.45" stop-color="'+face+'"/><stop offset="1" stop-color="'+shade(face,-0.22)+'"/></linearGradient>'
       +'<linearGradient id="pd_pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+accent+'"/><stop offset="1" stop-color="'+face+'"/></linearGradient>'
@@ -3901,7 +3901,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
       +'<path d="'+faceD+'" fill="url(#pd_faG)"/><path d="'+faceD+'" fill="'+faceFillId+'" fill-opacity="'+(pattern==="gradient"?1:0.55)+'"/>'
       +overlay
       +'<path d="'+faceD+'" fill="url(#pd_sheen)"/><path d="'+faceD+'" fill="none" stroke="'+shade(face,-0.5)+'" stroke-width="2.5" opacity="0.5"/>'
-      +'<g clip-path="url(#pd_fc)">'+layerStr()+'</g>'
+      +'<g clip-path="url(#pd_rq)">'+layerStr()+'</g>'
       +'<g clip-path="url(#pd_fc)">'+holesTop(cy)+'</g>'
       +'</g></svg>';
   };
