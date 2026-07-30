@@ -20,11 +20,14 @@ export default function Racquet3D(props: {
   beamColors: string[];
   holes: Hole[];
   holeR: number;
+  editHoles?: boolean;
+  setDesign?: (u: any) => void;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
   const ctrlRef = useRef<any>(null);
   const baseDistRef = useRef<number>(1170);
+  const camStateRef = useRef<any>(null);
 
   // Rebuild the scene on design changes, but NOT on zoom (zoom is handled below
   // via a ref so dragging the zoom bar doesn't reset the rotation).
@@ -94,8 +97,12 @@ export default function Racquet3D(props: {
     controls.target.set(0, 0, 0);
     ctrlRef.current = controls;
 
-    // apply the current zoom immediately
-    {
+    // restore prior camera orientation across rebuilds; else apply the current zoom
+    if (camStateRef.current) {
+      camera.position.fromArray(camStateRef.current.pos);
+      controls.target.fromArray(camStateRef.current.tgt);
+      controls.update();
+    } else {
       const dir = camera.position.clone().sub(controls.target).normalize();
       const dist = Math.max(controls.minDistance, Math.min(controls.maxDistance, baseDistRef.current / (zoom || 1)));
       camera.position.copy(controls.target.clone().add(dir.multiplyScalar(dist)));
@@ -276,6 +283,11 @@ export default function Racquet3D(props: {
     foam.position.z = -Tfoam / 2;
     group.add(foam);
 
+    // invisible pick plane over the whole face (for click-to-edit holes)
+    const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    pickMesh.position.z = T / 2 + 0.5;
+    group.add(pickMesh);
+
     const ringGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: T + 8, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 2, steps: 1 });
     const ring = new THREE.Mesh(ringGeo, frameMat);
     ring.position.z = -(T + 8) / 2;
@@ -358,6 +370,34 @@ export default function Racquet3D(props: {
     const animate = () => { raf = requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); };
     animate();
 
+    // ---- click to add / remove holes directly in 3D ----
+    let downXY: number[] | null = null;
+    const raycaster = new THREE.Raycaster();
+    const onCanvasDown = (e: PointerEvent) => { downXY = [e.clientX, e.clientY]; };
+    const onCanvasUp = (e: PointerEvent) => {
+      const dd = downXY; downXY = null;
+      if (!props.editHoles || !props.setDesign || !dd) return;
+      if (Math.hypot(e.clientX - dd[0], e.clientY - dd[1]) > 5) return; // was a rotate, not a click
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObject(pickMesh);
+      if (!hits.length) return;
+      const pt = hits[0].point;
+      const hx = Math.round(pt.x), hy = Math.round(CY0 - c.cy - pt.y);
+      const baseHoles = props.holes || [];
+      props.setDesign!((d: any) => {
+        const cur = (Array.isArray(d.holes) ? d.holes : baseHoles).slice();
+        let idx = -1, best = 1e9;
+        for (let i = 0; i < cur.length; i++) { const q = Math.hypot(cur[i].x - hx, cur[i].y - hy); if (q < best) { best = q; idx = i; } }
+        const hr = (d.holeR != null ? d.holeR : 5.6);
+        if (idx >= 0 && best < hr + 6) cur.splice(idx, 1); else cur.push({ x: hx, y: hy });
+        return { ...d, holes: cur };
+      });
+    };
+    renderer.domElement.addEventListener("pointerdown", onCanvasDown);
+    renderer.domElement.addEventListener("pointerup", onCanvasUp);
+
     const onResize = () => {
       W = mount.clientWidth || W; H = mount.clientHeight || H;
       camera.aspect = W / H; camera.updateProjectionMatrix(); renderer.setSize(W, H);
@@ -367,6 +407,9 @@ export default function Racquet3D(props: {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      camStateRef.current = { pos: camera.position.toArray(), tgt: controls.target.toArray() };
+      renderer.domElement.removeEventListener("pointerdown", onCanvasDown);
+      renderer.domElement.removeEventListener("pointerup", onCanvasUp);
       controls.dispose();
       camRef.current = null; ctrlRef.current = null;
       scene.traverse((o: any) => {
