@@ -3889,7 +3889,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
       +'<linearGradient id="pd_pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+accent+'"/><stop offset="1" stop-color="'+face+'"/></linearGradient>'
       +'<pattern id="pd_stp" width="30" height="30" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="'+face+'"/><rect width="15" height="30" fill="'+accent+'"/></pattern>'
       +'<radialGradient id="pd_sheen" cx="0.34" cy="0.24" r="0.6"><stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.03"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
-      +'<filter id="pd_shf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter></defs>'
+      +'<filter id="pd_shf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>'+'<filter id="pd_wh"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0"/></filter><mask id="pd_thm" maskUnits="userSpaceOnUse" x="0" y="0" width="680" height="720"><rect width="680" height="720" fill="#000"/><path d="'+faceD+'" fill="#fff"/><g filter="url(#pd_wh)">'+armStr(aL,-1)+armStr(aR,1)+bridgeStr(aL,aR)+closedT+'</g></mask></defs>'
       +'<rect x="0" y="0" width="680" height="720" fill="'+BG+'"/>'
       +'<g transform="translate('+tx.toFixed(1)+' '+ty.toFixed(1)+') scale('+camS+')">'
      
@@ -3901,7 +3901,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
       +'<path d="'+faceD+'" fill="url(#pd_faG)"/><path d="'+faceD+'" fill="'+faceFillId+'" fill-opacity="'+(pattern==="gradient"?1:0.55)+'"/>'
       +overlay
       +'<path d="'+faceD+'" fill="url(#pd_sheen)"/><path d="'+faceD+'" fill="none" stroke="'+shade(face,-0.5)+'" stroke-width="2.5" opacity="0.5"/>'
-      +'<g clip-path="url(#pd_rq)">'+layerStr()+'</g>'
+      +'<g mask="url(#pd_thm)">'+layerStr()+'</g>'+'<g clip-path="url(#pd_rq)" opacity="0">'+layerStr()+'</g>'
       +'<g clip-path="url(#pd_fc)">'+holesTop(cy)+'</g>'
       +'</g></svg>';
   };
