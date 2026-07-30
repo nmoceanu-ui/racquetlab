@@ -14,13 +14,22 @@ export default function Racquet3D(props: {
   grip: string;
   accent: string;
   pattern: string;
+  finish: string;
+  zoom: number;
   layers: any[];
   beamColors: string[];
   holes: Hole[];
   holeR: number;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const key = JSON.stringify(props);
+  const camRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const ctrlRef = useRef<any>(null);
+  const baseDistRef = useRef<number>(1170);
+
+  // Rebuild the scene on design changes, but NOT on zoom (zoom is handled below
+  // via a ref so dragging the zoom bar doesn't reset the rotation).
+  const { zoom, ...rest } = props;
+  const key = JSON.stringify(rest);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -64,6 +73,8 @@ export default function Racquet3D(props: {
     let H = mount.clientHeight || 460;
     const camera = new THREE.PerspectiveCamera(35, W / H, 1, 8000);
     camera.position.set(300, 140, 1120);
+    camRef.current = camera;
+    baseDistRef.current = camera.position.length();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -77,17 +88,26 @@ export default function Racquet3D(props: {
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.enablePan = false;
-    controls.minDistance = 600;
-    controls.maxDistance = 2600;
+    controls.minDistance = 340;
+    controls.maxDistance = 2400;
     controls.rotateSpeed = 0.9;
     controls.target.set(0, 0, 0);
+    ctrlRef.current = controls;
+
+    // apply the current zoom immediately
+    {
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      const dist = Math.max(controls.minDistance, Math.min(controls.maxDistance, baseDistRef.current / (zoom || 1)));
+      camera.position.copy(controls.target.clone().add(dir.multiplyScalar(dist)));
+      controls.update();
+    }
 
     // ---- lights ----
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const l1 = new THREE.DirectionalLight(0xffffff, 0.9); l1.position.set(-0.4, 0.8, 1); scene.add(l1);
-    const l2 = new THREE.DirectionalLight(0xffffff, 0.42); l2.position.set(0.7, -0.3, 0.6); scene.add(l2);
-    const l3 = new THREE.DirectionalLight(0xffffff, 0.3); l3.position.set(0, 0.2, -1); scene.add(l3);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 0.28));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const l1 = new THREE.DirectionalLight(0xffffff, 0.95); l1.position.set(-0.4, 0.8, 1); scene.add(l1);
+    const l2 = new THREE.DirectionalLight(0xffffff, 0.45); l2.position.set(0.7, -0.3, 0.6); scene.add(l2);
+    const l3 = new THREE.DirectionalLight(0xffffff, 0.35); l3.position.set(0.2, 0.4, -1); scene.add(l3);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 0.3));
 
     const group = new THREE.Group();
     scene.add(group);
@@ -165,7 +185,6 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      // text layers
       (props.layers || []).forEach((it: any) => {
         if (it.type !== "text") return;
         ctx.save();
@@ -201,11 +220,22 @@ export default function Racquet3D(props: {
       img.src = it.href;
     });
 
-    // ---- materials ----
-    const faceMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.55, metalness: 0.08, side: THREE.DoubleSide });
+    // ---- materials (gloss vs matte) ----
+    const glossy = props.finish === "gloss";
+    const faceMat: THREE.Material = glossy
+      ? new THREE.MeshPhysicalMaterial({ map: texture, roughness: 0.16, metalness: 0.0, clearcoat: 1.0, clearcoatRoughness: 0.1, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ map: texture, roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide });
     const foamMat = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
-    const frameMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.38, metalness: 0.28, side: THREE.DoubleSide });
+    const frameMat: THREE.Material = glossy
+      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.14, metalness: 0.35, clearcoat: 1.0, clearcoatRoughness: 0.08, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.68, metalness: 0.15, side: THREE.DoubleSide });
     const gripMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(props.grip || "#e9e3d4"), roughness: 0.85, metalness: 0.02, side: THREE.DoubleSide });
+    const beamMat = (i: number): THREE.Material => {
+      const col = new THREE.Color((props.beamColors && props.beamColors[i]) || props.throatC || "#c0472a");
+      return glossy
+        ? new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.16, metalness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.1, side: THREE.DoubleSide })
+        : new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, metalness: 0.12, side: THREE.DoubleSide });
+    };
 
     // ---- depths ----
     const T = 30, tp = 6, Tfoam = 14;
@@ -229,27 +259,23 @@ export default function Racquet3D(props: {
       return p;
     });
 
-    // front plate (holed): caps = face texture, walls (incl. hole interiors) = foam
     const frontGeo = new THREE.ExtrudeGeometry(shapeOf(fpts, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
     setFaceUV(frontGeo);
     const frontPlate = new THREE.Mesh(frontGeo, [faceMat, foamMat]);
     frontPlate.position.z = T / 2 - tp;
     group.add(frontPlate);
 
-    // back plate (holed)
     const backGeo = new THREE.ExtrudeGeometry(shapeOf(fpts, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
     setFaceUV(backGeo);
     const backPlate = new THREE.Mesh(backGeo, [faceMat, foamMat]);
     backPlate.position.z = -T / 2;
     group.add(backPlate);
 
-    // foam core (solid) so holes reveal grey/black, not through to the far side
     const foamGeo = new THREE.ExtrudeGeometry(shapeOf(fpts), { depth: Tfoam, bevelEnabled: false, steps: 1 });
     const foam = new THREE.Mesh(foamGeo, foamMat);
     foam.position.z = -Tfoam / 2;
     group.add(foam);
 
-    // frame ring (bumper): frame color on every angle
     const ringGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: T + 8, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 2, steps: 1 });
     const ring = new THREE.Mesh(ringGeo, frameMat);
     ring.position.z = -(T + 8) / 2;
@@ -257,9 +283,9 @@ export default function Racquet3D(props: {
 
     // ---- throat + grip ----
     const zc = 0;
-    const beamDepth = T * 0.6;
-    const AL = S(head[30][0], head[30][1]);
-    const AR = S(head[18][0], head[18][1]);
+    const beamDepth = T * 0.62;
+    const AL = S(head[30][0], head[30][1]); // left junction (upper-left of throat)
+    const AR = S(head[18][0], head[18][1]); // right junction (upper-right)
     const gripTopL = S(CX - 24, 486);
     const gripTopR = S(CX + 24, 486);
     const gripTopC = S(CX, 486);
@@ -279,15 +305,16 @@ export default function Racquet3D(props: {
     strut(AL, gripTopL, 13, T * 0.7, frameMat);
     strut(AR, gripTopR, 13, T * 0.7, frameMat);
 
-    const bc = (i: number) => new THREE.MeshStandardMaterial({
-      color: new THREE.Color((props.beamColors && props.beamColors[i]) || props.throatC || "#c0472a"),
-      roughness: 0.4, metalness: 0.2, side: THREE.DoubleSide,
-    });
-
-    const topY = Math.min(AL[1], AR[1]) - 6;
-    const botY = gripTopC[1] + 8;
-    const spanTopL = AL[0] + 16, spanTopR = AR[0] - 16;
-    const spanBotL = gripTopL[0], spanBotR = gripTopR[0];
+    // throat opening vertical span (under the face, down to the grip)
+    const yT = -46;                    // just under the face
+    const yB = gripTopC[1] + 4;        // just above the grip
+    // x position of a side rail at a given height y (side: -1 left, +1 right)
+    const railX = (side: number, y: number): number => {
+      const A = side < 0 ? AL : AR;
+      const G = side < 0 ? gripTopL : gripTopR;
+      const t = (A[1] - y) / (A[1] - G[1]);
+      return A[0] + (G[0] - A[0]) * t;
+    };
     const N = Math.max(1, Math.min(3, props.beams || 2));
 
     if (props.throatType === "closed") {
@@ -296,22 +323,21 @@ export default function Racquet3D(props: {
       const g = new THREE.ExtrudeGeometry(sh, { depth: T * 0.62, bevelEnabled: false });
       const m = new THREE.Mesh(g, frameMat); m.position.z = -T * 0.31; group.add(m);
     } else if (props.throatType === "horizontal") {
+      // N stacked horizontal bars, each spanning frame-to-frame (like 1 beam + one under it)
       for (let i = 0; i < N; i++) {
-        const t = N === 1 ? 0.5 : i / (N - 1);
-        const y = topY + (botY - topY) * t;
-        const lx = spanTopL + (spanBotL - spanTopL) * t;
-        const rx = spanTopR + (spanBotR - spanTopR) * t;
-        strut([lx, y], [rx, y], 9, beamDepth, bc(i));
+        const frac = 0.32 + i * 0.26;              // top-to-bottom placement
+        const y = yT + (yB - yT) * frac;
+        strut([railX(-1, y) + 3, y], [railX(1, y) - 3, y], 9, beamDepth, beamMat(i));
       }
     } else if (props.throatType === "diagonal") {
-      strut([spanTopL, topY], [spanBotR, botY], 9, beamDepth, bc(0));
-      strut([spanTopR, topY], [spanBotL, botY], 9, beamDepth, bc(1));
+      strut([railX(-1, yT), yT], [railX(1, yB), yB], 9, beamDepth, beamMat(0));
+      strut([railX(1, yT), yT], [railX(-1, yB), yB], 9, beamDepth, beamMat(1));
     } else {
+      // vertical: N parallel struts straight up the middle of the throat, not touching
+      const offs = N === 1 ? [0] : (N === 2 ? [-9, 9] : [-15, 0, 15]);
       for (let i = 0; i < N; i++) {
-        const t = N === 1 ? 0.5 : i / (N - 1);
-        const xTop = spanTopL + (spanTopR - spanTopL) * t;
-        const xBot = spanBotL + (spanBotR - spanBotL) * t;
-        strut([xTop, topY], [xBot, botY], 9, beamDepth, bc(i));
+        const x = offs[i];
+        strut([x, yB], [x, yT], 8, beamDepth, beamMat(i));
       }
     }
 
@@ -342,6 +368,7 @@ export default function Racquet3D(props: {
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.dispose();
+      camRef.current = null; ctrlRef.current = null;
       scene.traverse((o: any) => {
         if (o.geometry) o.geometry.dispose();
         if (o.material) { const arr = Array.isArray(o.material) ? o.material : [o.material]; arr.forEach((m: any) => { if (m.map) m.map.dispose(); m.dispose(); }); }
@@ -350,6 +377,16 @@ export default function Racquet3D(props: {
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
     };
   }, [key]);
+
+  // Zoom bar -> dolly the camera without rebuilding (keeps current rotation)
+  useEffect(() => {
+    const cam = camRef.current, ctr = ctrlRef.current;
+    if (!cam || !ctr) return;
+    const dir = cam.position.clone().sub(ctr.target).normalize();
+    const dist = Math.max(ctr.minDistance, Math.min(ctr.maxDistance, baseDistRef.current / (zoom || 1)));
+    cam.position.copy(ctr.target.clone().add(dir.multiplyScalar(dist)));
+    ctr.update();
+  }, [zoom]);
 
   return <div ref={mountRef} style={{ width: "100%", height: "min(60vh, 540px)", minHeight: 360, touchAction: "none", cursor: "grab" }} />;
 }
