@@ -99,7 +99,7 @@ export default function Racquet3D(props: {
     camRef.current = camera;
     baseDistRef.current = camera.position.length();
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(W, H);
     (renderer as any).outputColorSpace = THREE.SRGBColorSpace;
@@ -323,8 +323,8 @@ export default function Racquet3D(props: {
 
     // lead-tape channel: a thin recolourable band running around the frame
     const leadMat: THREE.Material = glossy
-      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide })
-      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide });
+      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
+      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     leadMatRef.current = leadMat;
     // an optional image wrapped around the channel (patterned lead-tape look)
     const leadCanvas = document.createElement("canvas");
@@ -336,24 +336,8 @@ export default function Racquet3D(props: {
     (leadTexture as any).colorSpace = THREE.SRGBColorSpace;
     leadTexture.anisotropy = 4;
     leadTexRef.current = leadTexture;
-    // a band around the OUTER EDGE of the frame, centred in depth — runs down
-    // the middle of the profile, not on the face. Inner wall is buried 2px inside
-    // the ring so its faces are never coplanar with the ring (kills z-fighting).
-    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(-3, -3), [pathOf(genPts(2, 2))]), { depth: 14, bevelEnabled: false, steps: 1 });
-    // wrap UVs: u = arc-length fraction around the head (repeats), v = depth
-    {
-      const lpos = leadGeo.attributes.position as THREE.BufferAttribute;
-      const luv = leadGeo.attributes.uv as THREE.BufferAttribute;
-      const ccx = 0, ccy = CY0 - c.cy, REP = 10;
-      for (let i = 0; i < lpos.count; i++) {
-        const ang = Math.atan2(lpos.getY(i) - ccy, lpos.getX(i) - ccx);
-        luv.setXY(i, (ang / (2 * Math.PI) + 0.5) * REP, lpos.getZ(i) / 14);
-      }
-      luv.needsUpdate = true;
-    }
-    const leadBand = new THREE.Mesh(leadGeo, leadMat);
-    leadBand.position.z = -7;
-    group.add(leadBand);
+    // (the channel ribbon geometry is built in the throat section below, once the
+    // head/throat anchor points are known, so it can flow as one continuous piece)
 
     // bake the channel image (if any) onto its own texture; else leave colour only
     const redrawLead = () => {
@@ -403,22 +387,61 @@ export default function Racquet3D(props: {
     strut(AL, gripTopL, 13, T + 8, frameMat);
     strut(AR, gripTopR, 13, T + 8, frameMat);
 
-    // lead channel continues down the throat: a thin strip on the OUTER edge of
-    // each side rail, centred in depth (matches the head band look).
-    const leadStrut = (p1: number[], p2: number[]) => {
-      const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
-      const len = Math.hypot(dx, dy) || 1;
-      let nx = -dy / len, ny = dx / len; // perpendicular
-      const midx = (p1[0] + p2[0]) / 2, midy = (p1[1] + p2[1]) / 2;
-      if ((nx >= 0) !== (midx >= 0)) { nx = -nx; ny = -ny; } // point outward
-      const off = 6.5; // sit at the rail's outer face
-      const m = new THREE.Mesh(new THREE.BoxGeometry(len, 5, 14), leadMat);
-      m.position.set(midx + nx * off, midy + ny * off, zc);
-      m.rotation.z = Math.atan2(dy, dx);
-      group.add(m);
-    };
-    leadStrut(AL, gripTopL);
-    leadStrut(AR, gripTopR);
+    // ---- lead-tape channel: ONE continuous ribbon that runs up the left throat
+    // rail, around the head (over the top), and back down the right rail. It sits
+    // proud of the frame's outer edge, centred in depth (the "profile" middle), so
+    // it reads as a single unbroken groove that flows down the profile.
+    {
+      const headS: [number, number][] = head.map((p) => S(p[0], p[1]));
+      const path: [number, number][] = [];
+      path.push([gripTopL[0], gripTopL[1]]);
+      // head arc the LONG way (over the top): index 75 (lower-left) -> 0 (top) -> 45 (lower-right)
+      for (let k = 0; k <= 120; k++) {
+        const idx = (75 + k) % 120;
+        path.push(headS[idx]);
+        if (idx === 45) break;
+      }
+      path.push([gripTopR[0], gripTopR[1]]);
+
+      const C: [number, number] = [0, CY0 - c.cy];
+      const OUT = 4, IN = -2, ZT = 7, ZB = -7, REP = 6;
+      const NP = path.length;
+      const nrm: [number, number][] = [];
+      for (let i = 0; i < NP; i++) {
+        const a = path[Math.max(0, i - 1)], b = path[Math.min(NP - 1, i + 1)];
+        let tx = b[0] - a[0], ty = b[1] - a[1];
+        const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+        let nx = -ty, ny = tx; // outward-ish perpendicular
+        const P = path[i];
+        if (nx * (P[0] - C[0]) + ny * (P[1] - C[1]) < 0) { nx = -nx; ny = -ny; }
+        nrm.push([nx, ny]);
+      }
+      const cum: number[] = [0];
+      for (let i = 1; i < NP; i++) cum[i] = cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
+      const total = cum[NP - 1] || 1;
+      const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
+      const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
+      for (let i = 0; i < NP; i++) {
+        const P = path[i], n = nrm[i], u = (cum[i] / total) * REP;
+        vpush(P, n, OUT, ZT); uv.push(u, 1); // OT
+        vpush(P, n, OUT, ZB); uv.push(u, 0); // OB
+        vpush(P, n, IN, ZT);  uv.push(u, 1); // IT
+        vpush(P, n, IN, ZB);  uv.push(u, 0); // IB
+      }
+      const quad = (a: number, b: number, cc: number, d: number) => { idxs.push(a, b, cc, a, cc, d); };
+      for (let i = 0; i < NP - 1; i++) {
+        const s = i * 4, t = (i + 1) * 4;
+        quad(s + 0, s + 1, t + 1, t + 0); // outer face
+        quad(s + 2, s + 0, t + 0, t + 2); // top cap
+        quad(s + 1, s + 3, t + 3, t + 1); // bottom cap
+      }
+      const rib = new THREE.BufferGeometry();
+      rib.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+      rib.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+      rib.setIndex(idxs);
+      rib.computeVertexNormals();
+      group.add(new THREE.Mesh(rib, leadMat));
+    }
 
     const yT = -46;
     const yB = gripTopC[1] + 4;
