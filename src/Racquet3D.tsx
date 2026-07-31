@@ -94,7 +94,7 @@ export default function Racquet3D(props: {
     camRef.current = camera;
     baseDistRef.current = camera.position.length();
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(W, H);
     (renderer as any).outputColorSpace = THREE.SRGBColorSpace;
