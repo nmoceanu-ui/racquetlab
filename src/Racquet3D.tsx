@@ -24,6 +24,7 @@ export default function Racquet3D(props: {
   setDesign?: (u: any) => void;
   selId?: number | null;
   setSelId?: (id: number | null) => void;
+  leadChannel?: string;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -33,6 +34,7 @@ export default function Racquet3D(props: {
   const redrawRef = useRef<(() => void) | null>(null);
   const frameMatRef = useRef<any>(null);
   const gripMatRef = useRef<any>(null);
+  const leadMatRef = useRef<any>(null);
   const beamMatsRef = useRef<any[]>([]);
   const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
   const propsRef = useRef(props);
@@ -48,7 +50,7 @@ export default function Racquet3D(props: {
   // the image size/rotate/opacity/position perfectly smooth.
   const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent });
   // ...and just recolour materials in place (instant) when a colour swatch changes.
-  const colorKey = JSON.stringify({ frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors });
+  const colorKey = JSON.stringify({ frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors, leadChannel: props.leadChannel });
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -67,8 +69,8 @@ export default function Racquet3D(props: {
     const genPts = (dx: number, dy: number): [number, number][] => {
       const rx = c.rx - dx, ry = c.ry - dy;
       const out: [number, number][] = [];
-      for (let i = 0; i < 48; i++) {
-        const th = -Math.PI / 2 + (2 * Math.PI * i) / 48;
+      for (let i = 0; i < 120; i++) {
+        const th = -Math.PI / 2 + (2 * Math.PI * i) / 120;
         const ct = Math.cos(th), st = Math.sin(th);
         const ex = (ct < 0 ? -1 : 1) * Math.pow(Math.abs(ct), 2 / c.n);
         const ey = (st < 0 ? -1 : 1) * Math.pow(Math.abs(st), 2 / c.n);
@@ -311,16 +313,26 @@ export default function Racquet3D(props: {
     pickMesh.position.z = T / 2 + 0.5;
     group.add(pickMesh);
 
-    const ringGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: T + 8, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 2, steps: 1 });
+    const ringGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: T + 8, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
     const ring = new THREE.Mesh(ringGeo, frameMat);
     ring.position.z = -(T + 8) / 2;
     group.add(ring);
 
+    // lead-tape channel: a thin recolourable band running around the frame
+    const leadMat: THREE.Material = glossy
+      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide });
+    leadMatRef.current = leadMat;
+    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(5, 5), [pathOf(genPts(10, 10))]), { depth: 3, bevelEnabled: false, steps: 1 });
+    const leadBand = new THREE.Mesh(leadGeo, leadMat);
+    leadBand.position.z = T / 2 + 1.5;
+    group.add(leadBand);
+
     // ---- throat + grip ----
     const zc = 0;
     const beamDepth = T * 0.62;
-    const AL = S(head[30][0], head[30][1]);
-    const AR = S(head[18][0], head[18][1]);
+    const AL = S(head[75][0], head[75][1]);
+    const AR = S(head[45][0], head[45][1]);
     const gripTopL = S(CX - 24, 486);
     const gripTopR = S(CX + 24, 486);
     const gripTopC = S(CX, 486);
@@ -496,6 +508,7 @@ export default function Racquet3D(props: {
     const P = propsRef.current;
     if (frameMatRef.current) frameMatRef.current.color.set(P.frame || "#101015");
     if (gripMatRef.current) gripMatRef.current.color.set(P.grip || "#e9e3d4");
+    if (leadMatRef.current) leadMatRef.current.color.set(P.leadChannel || "#c9c9c9");
     (beamMatsRef.current || []).forEach((m: any, i: number) => { if (m && m.color) m.color.set((P.beamColors && P.beamColors[i]) || P.throatC || "#c0472a"); });
   }, [colorKey]);
 
