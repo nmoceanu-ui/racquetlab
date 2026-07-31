@@ -323,10 +323,15 @@ export default function Racquet3D(props: {
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide });
     leadMatRef.current = leadMat;
-    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(5, 5), [pathOf(genPts(10, 10))]), { depth: 3, bevelEnabled: false, steps: 1 });
+    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(2, 2), [pathOf(genPts(10, 10))]), { depth: 4, bevelEnabled: true, bevelThickness: 1, bevelSize: 1, bevelSegments: 2, steps: 1 });
     const leadBand = new THREE.Mesh(leadGeo, leadMat);
-    leadBand.position.z = T / 2 + 1.5;
+    leadBand.position.z = T / 2 + 3.5;
     group.add(leadBand);
+    // mirror band on the back so the channel wraps the whole frame
+    const leadBackGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(2, 2), [pathOf(genPts(10, 10))]), { depth: 4, bevelEnabled: false, steps: 1 });
+    const leadBack = new THREE.Mesh(leadBackGeo, leadMat);
+    leadBack.position.z = -T / 2 - 7.5;
+    group.add(leadBack);
 
     // ---- throat + grip ----
     const zc = 0;
