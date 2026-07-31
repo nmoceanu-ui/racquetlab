@@ -22,6 +22,8 @@ export default function Racquet3D(props: {
   holeR: number;
   editHoles?: boolean;
   setDesign?: (u: any) => void;
+  selId?: number | null;
+  setSelId?: (id: number | null) => void;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -29,20 +31,24 @@ export default function Racquet3D(props: {
   const baseDistRef = useRef<number>(1170);
   const camStateRef = useRef<any>(null);
   const redrawRef = useRef<(() => void) | null>(null);
+  const frameMatRef = useRef<any>(null);
+  const gripMatRef = useRef<any>(null);
+  const beamMatsRef = useRef<any[]>([]);
   const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
   const propsRef = useRef(props);
   propsRef.current = props;
 
   const { zoom } = props;
-  // Heavy rebuild only when geometry / materials change...
+  // Heavy rebuild only when geometry actually changes...
   const geoKey = JSON.stringify({
     shape: props.shape, throatType: props.throatType, beams: props.beams,
     holes: props.holes, holeR: props.holeR, finish: props.finish,
-    frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors,
   });
-  // ...but only re-bake the face texture (no rebuild) when these change — keeps
-  // dragging the image size/rotate/opacity perfectly smooth.
+  // ...re-bake the face texture (no rebuild) when these change — keeps dragging
+  // the image size/rotate/opacity/position perfectly smooth.
   const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent });
+  // ...and just recolour materials in place (instant) when a colour swatch changes.
+  const colorKey = JSON.stringify({ frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors });
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -99,9 +105,11 @@ export default function Racquet3D(props: {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.12;
-    controls.enablePan = false;
-    controls.minDistance = 340;
-    controls.maxDistance = 2400;
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.panSpeed = 0.9;
+    controls.minDistance = 240;
+    controls.maxDistance = 2600;
     controls.rotateSpeed = 0.85;
     controls.zoomSpeed = 0.9;
     controls.target.set(0, 0, 0);
@@ -247,11 +255,17 @@ export default function Racquet3D(props: {
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.14, metalness: 0.35, clearcoat: 1.0, clearcoatRoughness: 0.08, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.68, metalness: 0.15, side: THREE.DoubleSide });
     const gripMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(props.grip || "#e9e3d4"), roughness: 0.85, metalness: 0.02, side: THREE.DoubleSide });
+    frameMatRef.current = frameMat;
+    gripMatRef.current = gripMat;
+    const beamMats: any[] = [];
+    beamMatsRef.current = beamMats;
     const beamMat = (i: number): THREE.Material => {
       const col = new THREE.Color((props.beamColors && props.beamColors[i]) || props.throatC || "#c0472a");
-      return glossy
+      const m: any = glossy
         ? new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.16, metalness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.1, side: THREE.DoubleSide })
         : new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, metalness: 0.12, side: THREE.DoubleSide });
+      beamMats[i] = m;
+      return m;
     };
 
     // ---- depths ----
@@ -376,22 +390,65 @@ export default function Racquet3D(props: {
     const animate = () => { raf = requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); };
     animate();
 
-    // ---- click to add / remove holes directly in 3D ----
+    // ---- pointer interaction: grab a logo to move it on the face, or click to edit holes ----
     let downXY: number[] | null = null;
+    let dragLayer: any = null; // { id, ox, oy }
     const raycaster = new THREE.Raycaster();
-    const onCanvasDown = (e: PointerEvent) => { downXY = [e.clientX, e.clientY]; };
-    const onCanvasUp = (e: PointerEvent) => {
-      const dd = downXY; downXY = null;
-      const P = propsRef.current;
-      if (!P.editHoles || !P.setDesign || !dd) return;
-      if (Math.hypot(e.clientX - dd[0], e.clientY - dd[1]) > 5) return;
+    const facePoint = (e: PointerEvent): { px: number; py: number } | null => {
       const rect = renderer.domElement.getBoundingClientRect();
       const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObject(pickMesh);
-      if (!hits.length) return;
+      if (!hits.length) return null;
       const pt = hits[0].point;
-      const hx = Math.round(pt.x), hy = Math.round(CY0 - c.cy - pt.y);
+      return { px: pt.x + CX, py: CY0 - pt.y };
+    };
+    const layerAt = (px: number, py: number, layers: any[]): any => {
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const it = layers[i];
+        if (it.side === "profile") continue;
+        const rot = (-(it.rot || 0) * Math.PI) / 180;
+        const cos = Math.cos(rot), sin = Math.sin(rot);
+        const dx = px - it.x, dy = py - it.y;
+        const lx = dx * cos - dy * sin, ly = dx * sin + dy * cos;
+        let hw, hh;
+        if (it.type === "text") { hw = Math.max(20, (it.text || "").length * (it.size || 24) * 0.34); hh = (it.size || 24) * 0.8; }
+        else { hw = (it.baseW || 100) * (it.scale || 1) / 2; hh = (it.baseH || 100) * (it.scale || 1) / 2; }
+        if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) return it;
+      }
+      return null;
+    };
+    const onCanvasDown = (e: PointerEvent) => {
+      downXY = [e.clientX, e.clientY];
+      dragLayer = null;
+      const P = propsRef.current;
+      if (P.editHoles) return; // hole editing handled on pointerup
+      const fp = facePoint(e);
+      if (!fp) return;
+      const hit = layerAt(fp.px, fp.py, P.layers || []);
+      if (hit) {
+        dragLayer = { id: hit.id, ox: hit.x - fp.px, oy: hit.y - fp.py };
+        if (P.setSelId) P.setSelId(hit.id);
+        e.stopImmediatePropagation(); // don't let OrbitControls rotate while moving a logo
+        try { renderer.domElement.setPointerCapture(e.pointerId); } catch (er) { /* noop */ }
+      }
+    };
+    const onCanvasMove = (e: PointerEvent) => {
+      if (!dragLayer) return;
+      const fp = facePoint(e);
+      if (!fp) return;
+      const P = propsRef.current;
+      P.setDesign && P.setDesign((d: any) => ({ ...d, layers: (d.layers || []).map((l: any) => l.id === dragLayer.id ? { ...l, x: Math.round(fp.px + dragLayer.ox), y: Math.round(fp.py + dragLayer.oy) } : l) }));
+    };
+    const onCanvasUp = (e: PointerEvent) => {
+      const dd = downXY; downXY = null;
+      if (dragLayer) { dragLayer = null; try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (er) { /* noop */ } return; }
+      const P = propsRef.current;
+      if (!P.editHoles || !P.setDesign || !dd) return;
+      if (Math.hypot(e.clientX - dd[0], e.clientY - dd[1]) > 5) return;
+      const fp = facePoint(e);
+      if (!fp) return;
+      const hx = Math.round(fp.px - CX), hy = Math.round(fp.py - c.cy);
       const baseHoles = P.holes || [];
       P.setDesign!((d: any) => {
         const cur = (Array.isArray(d.holes) ? d.holes : baseHoles).slice();
@@ -402,7 +459,8 @@ export default function Racquet3D(props: {
         return { ...d, holes: cur };
       });
     };
-    renderer.domElement.addEventListener("pointerdown", onCanvasDown);
+    renderer.domElement.addEventListener("pointerdown", onCanvasDown, true);
+    renderer.domElement.addEventListener("pointermove", onCanvasMove);
     renderer.domElement.addEventListener("pointerup", onCanvasUp);
 
     const onResize = () => {
@@ -415,7 +473,8 @@ export default function Racquet3D(props: {
       cancelAnimationFrame(raf);
       ro.disconnect();
       camStateRef.current = { pos: camera.position.toArray(), tgt: controls.target.toArray() };
-      renderer.domElement.removeEventListener("pointerdown", onCanvasDown);
+      renderer.domElement.removeEventListener("pointerdown", onCanvasDown, true);
+      renderer.domElement.removeEventListener("pointermove", onCanvasMove);
       renderer.domElement.removeEventListener("pointerup", onCanvasUp);
       redrawRef.current = null;
       controls.dispose();
@@ -431,6 +490,14 @@ export default function Racquet3D(props: {
 
   // Light: only re-bake the face texture when layers / face color / pattern change
   useEffect(() => { if (redrawRef.current) redrawRef.current(); }, [texKey]);
+
+  // Instant: recolour materials in place (no rebuild) when a colour swatch changes
+  useEffect(() => {
+    const P = propsRef.current;
+    if (frameMatRef.current) frameMatRef.current.color.set(P.frame || "#101015");
+    if (gripMatRef.current) gripMatRef.current.color.set(P.grip || "#e9e3d4");
+    (beamMatsRef.current || []).forEach((m: any, i: number) => { if (m && m.color) m.color.set((P.beamColors && P.beamColors[i]) || P.throatC || "#c0472a"); });
+  }, [colorKey]);
 
   // Zoom bar -> dolly the camera without rebuilding (keeps current rotation)
   useEffect(() => {
