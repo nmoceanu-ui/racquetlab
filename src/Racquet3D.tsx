@@ -258,7 +258,9 @@ export default function Racquet3D(props: {
     const faceMat: THREE.Material = glossy
       ? new THREE.MeshPhysicalMaterial({ map: texture, roughness: 0.16, metalness: 0.0, clearcoat: 1.0, clearcoatRoughness: 0.1, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ map: texture, roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide });
-    const foamMat = new THREE.MeshStandardMaterial({ color: 0x2b2b30, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide });
+    // holes are see-through: the bore walls are fully transparent and there is no
+    // foam block behind the face, so you look straight through the perforations.
+    const foamMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
     const frameMat: THREE.Material = glossy
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.14, metalness: 0.35, clearcoat: 1.0, clearcoatRoughness: 0.08, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.68, metalness: 0.15, side: THREE.DoubleSide });
@@ -309,20 +311,31 @@ export default function Racquet3D(props: {
     backPlate.position.z = -T / 2;
     group.add(backPlate);
 
-    const foamGeo = new THREE.ExtrudeGeometry(shapeOf(fpts), { depth: Tfoam, bevelEnabled: false, steps: 1 });
-    const foam = new THREE.Mesh(foamGeo, foamMat);
-    foam.position.z = -Tfoam / 2;
-    group.add(foam);
+    // (no foam block — perforations are see-through)
 
     // invisible pick plane over the whole face (for click-to-edit holes)
     const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     pickMesh.position.z = T / 2 + 0.5;
     group.add(pickMesh);
 
-    const ringGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: T + 8, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
-    const ring = new THREE.Mesh(ringGeo, frameMat);
-    ring.position.z = -(T + 8) / 2;
-    group.add(ring);
+    // Frame ring with a REAL recessed lead channel down the profile: two beveled
+    // "shoulder" rings at full width (top and bottom of the edge), and a recessed
+    // floor across the middle depth band. The lead channel sits in that groove,
+    // slightly below the surrounding frame surface.
+    const FD = T + 8;             // full frame depth (38)
+    const GH = 7;                 // groove half-height (channel is 2*GH wide in z)
+    const GDEP = 7;               // how far the groove floor is set inside the outer edge
+    const shDepth = FD / 2 - GH;  // shoulder depth (12)
+    const addShoulder = (zpos: number) => {
+      const g = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: shDepth, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
+      const m = new THREE.Mesh(g, frameMat); m.position.z = zpos; group.add(m);
+    };
+    addShoulder(GH);        // top shoulder: z  7 .. 19
+    addShoulder(-FD / 2);   // bottom shoulder: z -19 .. -7
+    const floorGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(GDEP, GDEP), [pathOf(fpts)]), { depth: 2 * GH, bevelEnabled: false, steps: 1 });
+    const floorRing = new THREE.Mesh(floorGeo, frameMat);
+    floorRing.position.z = -GH;
+    group.add(floorRing);
 
     // lead-tape channel: a thin recolourable band running around the frame
     const leadMat: THREE.Material = glossy
@@ -425,7 +438,10 @@ export default function Racquet3D(props: {
       if (withThroat) path.push([gripTopR[0], gripTopR[1]]);
 
       const C: [number, number] = [0, CY0 - c.cy];
-      const OUT = 4, IN = -2, ZT = 7, ZB = -7, REP = 1;
+      // OUT/IN are negative so the channel surface sits INSIDE the frame's outer
+      // edge — recessed into the milled groove. (On the throat rails the large
+      // baseOff below lifts it back out so it stays visible on the box rails.)
+      const OUT = -4, IN = -7, ZT = 7, ZB = -7, REP = 1;
       const NP = path.length;
       const nrm: [number, number][] = [];
       for (let i = 0; i < NP; i++) {
@@ -443,7 +459,7 @@ export default function Racquet3D(props: {
       // head path points already sit on the frame's outer edge; the two grip ends
       // sit on the rail CENTRELINE, so push them out past the rail's outer face
       // (half-width ~6.5) — the ribbon then stays proud all the way down the throat.
-      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 8 : 0);
+      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 12 : 0);
       const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
       const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
       for (let i = 0; i < NP; i++) {
