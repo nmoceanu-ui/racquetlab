@@ -58,6 +58,8 @@ export default function Racquet3D(props: {
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    mount.style.position = "relative";
+    let captionEl: HTMLDivElement | null = null;
 
     // ---- constants that match the 2D designer ----
     const CX = 340, CY0 = 352;
@@ -328,10 +330,10 @@ export default function Racquet3D(props: {
     leadMatRef.current = leadMat;
     // an optional image wrapped around the channel (patterned lead-tape look)
     const leadCanvas = document.createElement("canvas");
-    leadCanvas.width = 512; leadCanvas.height = 128;
+    leadCanvas.width = 1600; leadCanvas.height = 96;
     const lctx = leadCanvas.getContext("2d") as CanvasRenderingContext2D;
     const leadTexture = new THREE.CanvasTexture(leadCanvas);
-    leadTexture.wrapS = THREE.RepeatWrapping;
+    leadTexture.wrapS = THREE.ClampToEdgeWrapping;
     leadTexture.wrapT = THREE.ClampToEdgeWrapping;
     (leadTexture as any).colorSpace = THREE.SRGBColorSpace;
     leadTexture.anisotropy = 4;
@@ -355,9 +357,16 @@ export default function Racquet3D(props: {
       }
       if (cached.loaded) {
         lctx.clearRect(0, 0, leadCanvas.width, leadCanvas.height);
-        const iw = cached.img.width, ih = cached.img.height, cw = leadCanvas.width, ch = leadCanvas.height;
-        const s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
-        try { lctx.drawImage(cached.img, (cw - dw) / 2, (ch - dh) / 2, dw, dh); } catch (e) { /* tainted */ }
+        const cw = leadCanvas.width, ch = leadCanvas.height;
+        // Lay the image ONCE, length-wise: rotate 90 degrees so the image's LONG
+        // axis runs along the channel path (canvas width) and its short axis maps
+        // across the channel (canvas height). The whole image is used (stretched
+        // to the channel's ratio) — no tiling, no side-by-side repeat.
+        lctx.save();
+        lctx.translate(cw / 2, ch / 2);
+        lctx.rotate(Math.PI / 2);
+        try { lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw); } catch (e) { /* tainted */ }
+        lctx.restore();
         leadTexture.needsUpdate = true;
         lm.map = leadTexture; lm.color.set("#ffffff"); lm.needsUpdate = true;
       }
@@ -404,7 +413,7 @@ export default function Racquet3D(props: {
       path.push([gripTopR[0], gripTopR[1]]);
 
       const C: [number, number] = [0, CY0 - c.cy];
-      const OUT = 4, IN = -2, ZT = 7, ZB = -7, REP = 6;
+      const OUT = 4, IN = -2, ZT = 7, ZB = -7, REP = 1;
       const NP = path.length;
       const nrm: [number, number][] = [];
       for (let i = 0; i < NP; i++) {
@@ -445,6 +454,18 @@ export default function Racquet3D(props: {
       rib.setIndex(idxs);
       rib.computeVertexNormals();
       group.add(new THREE.Mesh(rib, leadMat));
+
+      // Tell the user the target art size: the channel is `total` long and
+      // (ZT-ZB) wide in model units; scale to mm via the ~455mm racquet length.
+      const headTopY = Math.min.apply(null, head.map((p) => p[1]));
+      const mmScale = 455 / (664 - headTopY);
+      const lenMm = Math.round(total * mmScale);
+      const widMm = Math.round((ZT - ZB) * mmScale);
+      const ratio = Math.max(1, Math.round(total / (ZT - ZB)));
+      captionEl = document.createElement("div");
+      captionEl.style.cssText = "position:absolute;left:10px;bottom:8px;font:11px/1.35 Inter,system-ui,sans-serif;color:#6b6459;background:rgba(255,255,255,0.78);padding:4px 8px;border-radius:8px;pointer-events:none;max-width:78%;";
+      captionEl.textContent = "Lead-channel art: 1 long strip ≈ " + lenMm + " × " + widMm + " mm (~" + ratio + ":1). Applied once, length-wise.";
+      mount.appendChild(captionEl);
     }
 
     const yT = -46;
@@ -587,6 +608,7 @@ export default function Racquet3D(props: {
       renderer.domElement.removeEventListener("pointerup", onCanvasUp);
       redrawRef.current = null;
       redrawLeadRef.current = null;
+      if (captionEl && captionEl.parentNode) captionEl.parentNode.removeChild(captionEl);
       try { leadTexture.dispose(); } catch (e) { /* noop */ }
       controls.dispose();
       camRef.current = null; ctrlRef.current = null;
