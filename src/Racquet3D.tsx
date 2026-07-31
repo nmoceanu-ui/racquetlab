@@ -25,6 +25,7 @@ export default function Racquet3D(props: {
   selId?: number | null;
   setSelId?: (id: number | null) => void;
   leadChannel?: string;
+  leadImg?: string;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -35,6 +36,8 @@ export default function Racquet3D(props: {
   const frameMatRef = useRef<any>(null);
   const gripMatRef = useRef<any>(null);
   const leadMatRef = useRef<any>(null);
+  const leadTexRef = useRef<any>(null);
+  const redrawLeadRef = useRef<(() => void) | null>(null);
   const beamMatsRef = useRef<any[]>([]);
   const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
   const propsRef = useRef(props);
@@ -323,12 +326,59 @@ export default function Racquet3D(props: {
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide });
     leadMatRef.current = leadMat;
+    // an optional image wrapped around the channel (patterned lead-tape look)
+    const leadCanvas = document.createElement("canvas");
+    leadCanvas.width = 512; leadCanvas.height = 128;
+    const lctx = leadCanvas.getContext("2d") as CanvasRenderingContext2D;
+    const leadTexture = new THREE.CanvasTexture(leadCanvas);
+    leadTexture.wrapS = THREE.RepeatWrapping;
+    leadTexture.wrapT = THREE.ClampToEdgeWrapping;
+    (leadTexture as any).colorSpace = THREE.SRGBColorSpace;
+    leadTexture.anisotropy = 4;
+    leadTexRef.current = leadTexture;
     // a band around the OUTER EDGE of the frame, centred in depth — runs down
-    // the middle of the profile, not on the face
-    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(-3, -3), [pathOf(genPts(0, 0))]), { depth: 14, bevelEnabled: false, steps: 1 });
+    // the middle of the profile, not on the face. Inner wall is buried 2px inside
+    // the ring so its faces are never coplanar with the ring (kills z-fighting).
+    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(-3, -3), [pathOf(genPts(2, 2))]), { depth: 14, bevelEnabled: false, steps: 1 });
+    // wrap UVs: u = arc-length fraction around the head (repeats), v = depth
+    {
+      const lpos = leadGeo.attributes.position as THREE.BufferAttribute;
+      const luv = leadGeo.attributes.uv as THREE.BufferAttribute;
+      const ccx = 0, ccy = CY0 - c.cy, REP = 10;
+      for (let i = 0; i < lpos.count; i++) {
+        const ang = Math.atan2(lpos.getY(i) - ccy, lpos.getX(i) - ccx);
+        luv.setXY(i, (ang / (2 * Math.PI) + 0.5) * REP, lpos.getZ(i) / 14);
+      }
+      luv.needsUpdate = true;
+    }
     const leadBand = new THREE.Mesh(leadGeo, leadMat);
     leadBand.position.z = -7;
     group.add(leadBand);
+
+    // bake the channel image (if any) onto its own texture; else leave colour only
+    const redrawLead = () => {
+      const P = propsRef.current;
+      const lm = leadMatRef.current;
+      if (!lm) return;
+      if (!P.leadImg) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
+      let cached = imgCacheRef.current.get(P.leadImg);
+      if (!cached) {
+        const img = new Image(); img.crossOrigin = "anonymous";
+        cached = { img, loaded: false };
+        imgCacheRef.current.set(P.leadImg, cached);
+        img.onload = () => { cached!.loaded = true; redrawLeadRef.current && redrawLeadRef.current(); };
+        img.src = P.leadImg;
+      }
+      if (cached.loaded) {
+        lctx.clearRect(0, 0, leadCanvas.width, leadCanvas.height);
+        const iw = cached.img.width, ih = cached.img.height, cw = leadCanvas.width, ch = leadCanvas.height;
+        const s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
+        try { lctx.drawImage(cached.img, (cw - dw) / 2, (ch - dh) / 2, dw, dh); } catch (e) { /* tainted */ }
+        leadTexture.needsUpdate = true;
+        lm.map = leadTexture; lm.color.set("#ffffff"); lm.needsUpdate = true;
+      }
+    };
+    redrawLeadRef.current = redrawLead;
 
     // ---- throat + grip ----
     const zc = 0;
@@ -352,6 +402,23 @@ export default function Racquet3D(props: {
 
     strut(AL, gripTopL, 13, T + 8, frameMat);
     strut(AR, gripTopR, 13, T + 8, frameMat);
+
+    // lead channel continues down the throat: a thin strip on the OUTER edge of
+    // each side rail, centred in depth (matches the head band look).
+    const leadStrut = (p1: number[], p2: number[]) => {
+      const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+      const len = Math.hypot(dx, dy) || 1;
+      let nx = -dy / len, ny = dx / len; // perpendicular
+      const midx = (p1[0] + p2[0]) / 2, midy = (p1[1] + p2[1]) / 2;
+      if ((nx >= 0) !== (midx >= 0)) { nx = -nx; ny = -ny; } // point outward
+      const off = 6.5; // sit at the rail's outer face
+      const m = new THREE.Mesh(new THREE.BoxGeometry(len, 5, 14), leadMat);
+      m.position.set(midx + nx * off, midy + ny * off, zc);
+      m.rotation.z = Math.atan2(dy, dx);
+      group.add(m);
+    };
+    leadStrut(AL, gripTopL);
+    leadStrut(AR, gripTopR);
 
     const yT = -46;
     const yB = gripTopC[1] + 4;
@@ -398,6 +465,7 @@ export default function Racquet3D(props: {
 
     // initial texture bake
     redraw();
+    redrawLead();
 
     // ---- animate ----
     let raf = 0;
@@ -491,6 +559,8 @@ export default function Racquet3D(props: {
       renderer.domElement.removeEventListener("pointermove", onCanvasMove);
       renderer.domElement.removeEventListener("pointerup", onCanvasUp);
       redrawRef.current = null;
+      redrawLeadRef.current = null;
+      try { leadTexture.dispose(); } catch (e) { /* noop */ }
       controls.dispose();
       camRef.current = null; ctrlRef.current = null;
       scene.traverse((o: any) => {
@@ -510,9 +580,13 @@ export default function Racquet3D(props: {
     const P = propsRef.current;
     if (frameMatRef.current) frameMatRef.current.color.set(P.frame || "#101015");
     if (gripMatRef.current) gripMatRef.current.color.set(P.grip || "#e9e3d4");
-    if (leadMatRef.current) leadMatRef.current.color.set(P.leadChannel || "#c9c9c9");
+    // when a channel image is set, keep the material white so the image shows true
+    if (leadMatRef.current) leadMatRef.current.color.set(P.leadImg ? "#ffffff" : (P.leadChannel || "#c9c9c9"));
     (beamMatsRef.current || []).forEach((m: any, i: number) => { if (m && m.color) m.color.set((P.beamColors && P.beamColors[i]) || P.throatC || "#c0472a"); });
   }, [colorKey]);
+
+  // Channel image: (re)bake the wrapped texture in place when it changes
+  useEffect(() => { if (redrawLeadRef.current) redrawLeadRef.current(); }, [props.leadImg]);
 
   // Zoom bar -> dolly the camera without rebuilding (keeps current rotation)
   useEffect(() => {
