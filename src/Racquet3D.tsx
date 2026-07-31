@@ -67,7 +67,7 @@ export default function Racquet3D(props: {
     const CFG: any = {
       round:    { cy: 224, rx: 170, ry: 186, n: 2.5, nb: 0.05, nt: 0.05 },
       teardrop: { cy: 214, rx: 166, ry: 188, n: 2.2, nb: 0.30, nt: 0.04 },
-      diamond:  { cy: 216, rx: 170, ry: 190, n: 3.0, nb: 0.30, nt: -0.06 },
+      diamond:  { cy: 220, rx: 170, ry: 190, n: 3.0, nb: 0.42, nt: -0.06 },
     };
     const shape = CFG[props.shape] ? props.shape : "teardrop";
     const c = CFG[shape];
@@ -258,9 +258,10 @@ export default function Racquet3D(props: {
     const faceMat: THREE.Material = glossy
       ? new THREE.MeshPhysicalMaterial({ map: texture, roughness: 0.16, metalness: 0.0, clearcoat: 1.0, clearcoatRoughness: 0.1, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ map: texture, roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide });
-    // holes are see-through: the bore walls are fully transparent and there is no
-    // foam block behind the face, so you look straight through the perforations.
-    const foamMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    // holes reveal a deep, near-black inner cavity (the foam core), so a
+    // perforation always reads as a dark hole — face-on and at any angle —
+    // instead of a flat grey disc getting in the way.
+    const foamMat = new THREE.MeshStandardMaterial({ color: 0x0d0d11, roughness: 1.0, metalness: 0.0, side: THREE.DoubleSide });
     const frameMat: THREE.Material = glossy
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.14, metalness: 0.35, clearcoat: 1.0, clearcoatRoughness: 0.08, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.frame || "#101015"), roughness: 0.68, metalness: 0.15, side: THREE.DoubleSide });
@@ -311,7 +312,11 @@ export default function Racquet3D(props: {
     backPlate.position.z = -T / 2;
     group.add(backPlate);
 
-    // (no foam block — perforations are see-through)
+    // dark inner core sitting a little behind the face, so holes look deep
+    const foamGeo = new THREE.ExtrudeGeometry(shapeOf(fpts), { depth: Tfoam, bevelEnabled: false, steps: 1 });
+    const foam = new THREE.Mesh(foamGeo, foamMat);
+    foam.position.z = -Tfoam / 2 - 2;
+    group.add(foam);
 
     // invisible pick plane over the whole face (for click-to-edit holes)
     const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
@@ -535,9 +540,17 @@ export default function Racquet3D(props: {
     const butt = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 10, 22, 1), frameMat);
     butt.position.set(0, gripBotC[1] - 3, zc);
     group.add(butt);
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(15, 21, 28, 18, 1), frameMat);
-    neck.position.set(0, gripTopC[1] + 10, zc);
+    // a long, gradual taper that starts up inside the throat base and eases down
+    // to the grip radius, so the throat flows into the handle instead of looking
+    // like a separate box stuck on a cylinder.
+    const neckTopY = gripTopC[1] + 30, neckBotY = gripTopC[1] - 10;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(26, 21.5, neckTopY - neckBotY, 28, 1), frameMat);
+    neck.position.set(0, (neckTopY + neckBotY) / 2, zc);
     group.add(neck);
+    // a small collar fillet where the taper meets the grip, to hide the seam
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(22, 21.5, 10, 28, 1), frameMat);
+    collar.position.set(0, neckBotY + 2, zc);
+    group.add(collar);
 
     // initial texture bake
     redraw();
