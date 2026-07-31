@@ -358,15 +358,23 @@ export default function Racquet3D(props: {
       if (cached.loaded) {
         lctx.clearRect(0, 0, leadCanvas.width, leadCanvas.height);
         const cw = leadCanvas.width, ch = leadCanvas.height;
-        // Lay the image ONCE, length-wise: rotate 90 degrees so the image's LONG
-        // axis runs along the channel path (canvas width) and its short axis maps
-        // across the channel (canvas height). The whole image is used (stretched
-        // to the channel's ratio) — no tiling, no side-by-side repeat.
-        lctx.save();
-        lctx.translate(cw / 2, ch / 2);
-        lctx.rotate(Math.PI / 2);
-        try { lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw); } catch (e) { /* tainted */ }
-        lctx.restore();
+        // Lay the image ONCE, length-wise: its LONG axis runs along the channel
+        // path (canvas width), its short axis across the channel (canvas height).
+        // Auto-orient so a long strip works whether it's saved tall or wide.
+        // No tiling, no side-by-side repeat.
+        try {
+          if (cached.img.width >= cached.img.height) {
+            // already long-side horizontal: stretch straight onto the strip canvas
+            lctx.drawImage(cached.img, 0, 0, cw, ch);
+          } else {
+            // tall strip: rotate 90 degrees so its height runs along the length
+            lctx.save();
+            lctx.translate(cw / 2, ch / 2);
+            lctx.rotate(Math.PI / 2);
+            lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw);
+            lctx.restore();
+          }
+        } catch (e) { /* tainted */ }
         leadTexture.needsUpdate = true;
         lm.map = leadTexture; lm.color.set("#ffffff"); lm.needsUpdate = true;
       }
