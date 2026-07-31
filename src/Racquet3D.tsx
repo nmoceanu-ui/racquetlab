@@ -218,7 +218,7 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (P.layers || []).forEach((it: any) => {
+      (P.layers || []).filter((it: any) => (it.side || "face") !== "profile").forEach((it: any) => {
         if (it.type === "text") {
           ctx.save();
           ctx.translate(it.x, it.y);
