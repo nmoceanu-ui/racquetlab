@@ -419,14 +419,18 @@ export default function Racquet3D(props: {
       const cum: number[] = [0];
       for (let i = 1; i < NP; i++) cum[i] = cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
       const total = cum[NP - 1] || 1;
+      // head path points already sit on the frame's outer edge; the two grip ends
+      // sit on the rail CENTRELINE, so push them out past the rail's outer face
+      // (half-width ~6.5) — the ribbon then stays proud all the way down the throat.
+      const baseOff = path.map((_, i) => (i <= 1 || i >= NP - 2) ? 8 : 0);
       const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
       const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
       for (let i = 0; i < NP; i++) {
-        const P = path[i], n = nrm[i], u = (cum[i] / total) * REP;
-        vpush(P, n, OUT, ZT); uv.push(u, 1); // OT
-        vpush(P, n, OUT, ZB); uv.push(u, 0); // OB
-        vpush(P, n, IN, ZT);  uv.push(u, 1); // IT
-        vpush(P, n, IN, ZB);  uv.push(u, 0); // IB
+        const P = path[i], n = nrm[i], u = (cum[i] / total) * REP, bo = baseOff[i];
+        vpush(P, n, bo + OUT, ZT); uv.push(u, 1); // OT
+        vpush(P, n, bo + OUT, ZB); uv.push(u, 0); // OB
+        vpush(P, n, bo + IN, ZT);  uv.push(u, 1); // IT
+        vpush(P, n, bo + IN, ZB);  uv.push(u, 0); // IB
       }
       const quad = (a: number, b: number, cc: number, d: number) => { idxs.push(a, b, cc, a, cc, d); };
       for (let i = 0; i < NP - 1; i++) {
