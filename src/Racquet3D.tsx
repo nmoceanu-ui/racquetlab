@@ -323,19 +323,16 @@ export default function Racquet3D(props: {
       ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide })
       : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide });
     leadMatRef.current = leadMat;
-    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(2, 2), [pathOf(genPts(10, 10))]), { depth: 4, bevelEnabled: true, bevelThickness: 1, bevelSize: 1, bevelSegments: 2, steps: 1 });
+    // a band around the OUTER EDGE of the frame, centred in depth — runs down
+    // the middle of the profile, not on the face
+    const leadGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(-3, -3), [pathOf(genPts(0, 0))]), { depth: 14, bevelEnabled: false, steps: 1 });
     const leadBand = new THREE.Mesh(leadGeo, leadMat);
-    leadBand.position.z = T / 2 + 3.5;
+    leadBand.position.z = -7;
     group.add(leadBand);
-    // mirror band on the back so the channel wraps the whole frame
-    const leadBackGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(2, 2), [pathOf(genPts(10, 10))]), { depth: 4, bevelEnabled: false, steps: 1 });
-    const leadBack = new THREE.Mesh(leadBackGeo, leadMat);
-    leadBack.position.z = -T / 2 - 7.5;
-    group.add(leadBack);
 
     // ---- throat + grip ----
     const zc = 0;
-    const beamDepth = T * 0.62;
+    const beamDepth = T + 8;
     const AL = S(head[75][0], head[75][1]);
     const AR = S(head[45][0], head[45][1]);
     const gripTopL = S(CX - 24, 486);
@@ -353,8 +350,8 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    strut(AL, gripTopL, 13, T * 0.7, frameMat);
-    strut(AR, gripTopR, 13, T * 0.7, frameMat);
+    strut(AL, gripTopL, 13, T + 8, frameMat);
+    strut(AR, gripTopR, 13, T + 8, frameMat);
 
     const yT = -46;
     const yB = gripTopC[1] + 4;
@@ -369,8 +366,8 @@ export default function Racquet3D(props: {
     if (props.throatType === "closed") {
       const sh = new THREE.Shape();
       sh.moveTo(AL[0], AL[1]); sh.lineTo(AR[0], AR[1]); sh.lineTo(gripTopR[0], gripTopR[1]); sh.lineTo(gripTopL[0], gripTopL[1]); sh.closePath();
-      const g = new THREE.ExtrudeGeometry(sh, { depth: T * 0.62, bevelEnabled: false });
-      const m = new THREE.Mesh(g, frameMat); m.position.z = -T * 0.31; group.add(m);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: T + 8, bevelEnabled: false });
+      const m = new THREE.Mesh(g, frameMat); m.position.z = -(T + 8) / 2; group.add(m);
     } else if (props.throatType === "horizontal") {
       for (let i = 0; i < N; i++) {
         const frac = 0.32 + i * 0.26;
