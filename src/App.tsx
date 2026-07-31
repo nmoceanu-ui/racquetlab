@@ -3914,7 +3914,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
   const sel:any = selId!=null ? layers.find((l:any)=>l.id===selId) : null;
   const upd = (patch:any) => setLayers((ls:any[])=>ls.map((l:any)=>l.id===selId?{...l,...patch}:l));
   const del = () => { setLayers((ls:any[])=>ls.filter((l:any)=>l.id!==selId)); setSelId(null); };
-  const download = () => { const svgEl:any=wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return; const s=new XMLSerializer().serializeToString(svgEl); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=1020; cv.height=1080; const ctx:any=cv.getContext("2d"); ctx.fillStyle=BG; ctx.fillRect(0,0,1020,1080); ctx.drawImage(img,0,0,1020,1080); URL.revokeObjectURL(url); try{ const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=cv.toDataURL("image/png"); a.click(); }catch(_e){} }; img.src=url; };
+  const download = () => { const _cv3d:any=wrapRef.current && wrapRef.current.querySelector("canvas"); if(view==="3d" && _cv3d){ try{ const a=document.createElement("a"); a.download="racquet.png"; a.href=_cv3d.toDataURL("image/png"); a.click(); }catch(_e){} return; } const svgEl:any=wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return; const s=new XMLSerializer().serializeToString(svgEl); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=1020; cv.height=1080; const ctx:any=cv.getContext("2d"); ctx.fillStyle=BG; ctx.fillRect(0,0,1020,1080); ctx.drawImage(img,0,0,1020,1080); URL.revokeObjectURL(url); try{ const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=cv.toDataURL("image/png"); a.click(); }catch(_e){} }; img.src=url; };
   const lbl:any={fontSize:12,color:"#7A7268",fontFamily:"Inter, sans-serif",display:"flex",flexDirection:"column",gap:4};
   const fld:any={width:"100%",marginTop:2,padding:"7px 8px",borderRadius:8,border:"1px solid rgba(0,0,0,0.1)",background:"#DDD7C8",color:"#18181B",fontFamily:"Inter, sans-serif",fontSize:13};
   const col:any={width:"100%",height:32,padding:2,border:"1px solid rgba(0,0,0,0.1)",borderRadius:6,background:"#DDD7C8"};
@@ -8845,7 +8845,7 @@ export default function App() {
         </div>
 
         {/* Info strip */}
-        <div style={{ background:"#EDEADE", padding:"10px 14px", borderTop:"1px solid #D8D4C8" }}>
+        <div style={{ display: diagramMode==="design"?"none":"block", background:"#EDEADE", padding:"10px 14px", borderTop:"1px solid #D8D4C8" }}>
           {diagramMode !== "profile" && (
             <p style={{ fontSize:12, color:"#5A574C", lineHeight:1.5, margin:0, fontFamily:"Inter, sans-serif" }}>
               <strong style={{color:"#26241E"}}>Sweet spot:</strong> {sweetSpotPosLabel(shapeId, balanceCm)} ·{" "}
@@ -8861,7 +8861,7 @@ export default function App() {
       </div>
 
       {/* Quick score strip */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, margin:"16px", }}>
+      <div style={{ display: diagramMode==="design"?"none":"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, margin:"16px", }}>
         {[["Power",scores.power],["Control",scores.control],["Comfort",scores.comfort],["Spin",scores.spin]].map(([label,val]) => (
           <div key={label as string} style={{ background:"rgba(0,0,0,0.035)", border:"1px solid rgba(0,0,0,0.05)", borderRadius:8, padding:"10px 8px", textAlign:"center" }}>
             <div style={{ fontSize:18, fontFamily:"'Barlow Condensed', sans-serif", fontWeight:800, color:LIME }}>{(val as number).toFixed(1)}</div>
