@@ -26,6 +26,7 @@ export default function Racquet3D(props: {
   setSelId?: (id: number | null) => void;
   leadChannel?: string;
   leadImg?: string;
+  leadThroat?: boolean;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -47,7 +48,7 @@ export default function Racquet3D(props: {
   // Heavy rebuild only when geometry actually changes...
   const geoKey = JSON.stringify({
     shape: props.shape, throatType: props.throatType, beams: props.beams,
-    holes: props.holes, holeR: props.holeR, finish: props.finish,
+    holes: props.holes, holeR: props.holeR, finish: props.finish, leadThroat: props.leadThroat,
   });
   // ...re-bake the face texture (no rebuild) when these change — keeps dragging
   // the image size/rotate/opacity/position perfectly smooth.
@@ -409,16 +410,19 @@ export default function Racquet3D(props: {
     // proud of the frame's outer edge, centred in depth (the "profile" middle), so
     // it reads as a single unbroken groove that flows down the profile.
     {
+      // by default the channel wraps only the head; the throat rails are optional
+      // (lead tape goes inside the frame at the throat, and a strip there looks busy)
+      const withThroat = !!props.leadThroat;
       const headS: [number, number][] = head.map((p) => S(p[0], p[1]));
       const path: [number, number][] = [];
-      path.push([gripTopL[0], gripTopL[1]]);
+      if (withThroat) path.push([gripTopL[0], gripTopL[1]]);
       // head arc the LONG way (over the top): index 75 (lower-left) -> 0 (top) -> 45 (lower-right)
       for (let k = 0; k <= 120; k++) {
         const idx = (75 + k) % 120;
         path.push(headS[idx]);
         if (idx === 45) break;
       }
-      path.push([gripTopR[0], gripTopR[1]]);
+      if (withThroat) path.push([gripTopR[0], gripTopR[1]]);
 
       const C: [number, number] = [0, CY0 - c.cy];
       const OUT = 4, IN = -2, ZT = 7, ZB = -7, REP = 1;
@@ -439,7 +443,7 @@ export default function Racquet3D(props: {
       // head path points already sit on the frame's outer edge; the two grip ends
       // sit on the rail CENTRELINE, so push them out past the rail's outer face
       // (half-width ~6.5) — the ribbon then stays proud all the way down the throat.
-      const baseOff = path.map((_, i) => (i <= 1 || i >= NP - 2) ? 8 : 0);
+      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 8 : 0);
       const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
       const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
       for (let i = 0; i < NP; i++) {
