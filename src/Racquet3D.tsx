@@ -39,6 +39,8 @@ export default function Racquet3D(props: {
   const leadMatRef = useRef<any>(null);
   const leadTexRef = useRef<any>(null);
   const redrawLeadRef = useRef<(() => void) | null>(null);
+  const edgeTexRef = useRef<any>(null);
+  const redrawEdgeRef = useRef<(() => void) | null>(null);
   const beamMatsRef = useRef<any[]>([]);
   const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
   const propsRef = useRef(props);
@@ -501,6 +503,92 @@ export default function Racquet3D(props: {
       mount.appendChild(captionEl);
     }
 
+    // ---- EDGE ART (Stage 2): bake the profile-tagged "edge" layers onto a
+    // texture and wrap it around the head's outer edge, so art placed in the
+    // Profile view shows on the actual 3D frame edge. Profile-strip coords map:
+    // y(48..512) -> around the head (arc length), x(322..358) -> depth (z).
+    {
+      const EW = 1856, EH = 144; // matches the 464x36 profile strip aspect (x4)
+      const edgeCanvas = document.createElement("canvas");
+      edgeCanvas.width = EW; edgeCanvas.height = EH;
+      const ectx = edgeCanvas.getContext("2d") as CanvasRenderingContext2D;
+      const edgeTexture = new THREE.CanvasTexture(edgeCanvas);
+      edgeTexture.flipY = false;
+      edgeTexture.wrapS = THREE.ClampToEdgeWrapping;
+      edgeTexture.wrapT = THREE.ClampToEdgeWrapping;
+      (edgeTexture as any).colorSpace = THREE.SRGBColorSpace;
+      edgeTexture.anisotropy = 4;
+      edgeTexRef.current = edgeTexture;
+      const edgeMat: any = new THREE.MeshStandardMaterial({ map: edgeTexture, transparent: true, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+
+      const redrawEdge = () => {
+        const P = propsRef.current;
+        ectx.clearRect(0, 0, EW, EH);
+        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
+          const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
+          ectx.save();
+          ectx.translate(u * EW, v * EH);
+          ectx.rotate(((it.rot || 0) * Math.PI) / 180);
+          if (it.type === "text") {
+            ectx.font = Math.max(8, (it.size || 24) * 4) + "px " + (it.font || "sans-serif");
+            ectx.fillStyle = it.color || "#ffffff";
+            ectx.textAlign = "center"; ectx.textBaseline = "middle";
+            ectx.fillText(it.text || "", 0, 0);
+          } else if (it.href) {
+            let cached = imgCacheRef.current.get(it.href);
+            if (!cached) {
+              const img = new Image(); img.crossOrigin = "anonymous";
+              cached = { img, loaded: false };
+              imgCacheRef.current.set(it.href, cached);
+              img.onload = () => { cached!.loaded = true; redrawEdgeRef.current && redrawEdgeRef.current(); };
+              img.src = it.href;
+            }
+            if (cached.loaded) {
+              const dw = (it.baseW || 100) * (it.scale || 1) * 4, dh = (it.baseH || 100) * (it.scale || 1) * 4;
+              ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
+              try { ectx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
+            }
+          }
+          ectx.restore();
+        });
+        edgeTexture.needsUpdate = true;
+      };
+      redrawEdgeRef.current = redrawEdge;
+      redrawEdge();
+
+      const eHeadS: [number, number][] = head.map((p) => S(p[0], p[1]));
+      const epath: [number, number][] = [];
+      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; epath.push(eHeadS[idx]); if (idx === 45) break; }
+      const eC: [number, number] = [0, CY0 - c.cy];
+      const eN = epath.length;
+      const enrm: [number, number][] = [];
+      for (let i = 0; i < eN; i++) {
+        const a = epath[Math.max(0, i - 1)], b = epath[Math.min(eN - 1, i + 1)];
+        let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+        let nx = -ty, ny = tx; const Pp = epath[i];
+        if (nx * (Pp[0] - eC[0]) + ny * (Pp[1] - eC[1]) < 0) { nx = -nx; ny = -ny; }
+        enrm.push([nx, ny]);
+      }
+      const ecum: number[] = [0];
+      for (let i = 1; i < eN; i++) ecum[i] = ecum[i - 1] + Math.hypot(epath[i][0] - epath[i - 1][0], epath[i][1] - epath[i - 1][1]);
+      const etot = ecum[eN - 1] || 1;
+      const EOUT = 1, EZT = 18, EZB = -18;
+      const evTop = (EZT + 19) / 38, evBot = (EZB + 19) / 38;
+      const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
+      for (let i = 0; i < eN; i++) {
+        const Pp = epath[i], n = enrm[i], u = ecum[i] / etot;
+        epos.push(Pp[0] + n[0] * EOUT, Pp[1] + n[1] * EOUT, EZT); euv.push(u, evTop);
+        epos.push(Pp[0] + n[0] * EOUT, Pp[1] + n[1] * EOUT, EZB); euv.push(u, evBot);
+      }
+      for (let i = 0; i < eN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
+      const eg = new THREE.BufferGeometry();
+      eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
+      eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
+      eg.setIndex(eidx);
+      eg.computeVertexNormals();
+      group.add(new THREE.Mesh(eg, edgeMat));
+    }
+
     const yT = -46;
     const yB = gripTopC[1] + 4;
     const railX = (side: number, y: number): number => {
@@ -649,6 +737,7 @@ export default function Racquet3D(props: {
       renderer.domElement.removeEventListener("pointerup", onCanvasUp);
       redrawRef.current = null;
       redrawLeadRef.current = null;
+      redrawEdgeRef.current = null;
       if (captionEl && captionEl.parentNode) captionEl.parentNode.removeChild(captionEl);
       try { leadTexture.dispose(); } catch (e) { /* noop */ }
       controls.dispose();
@@ -663,7 +752,7 @@ export default function Racquet3D(props: {
   }, [geoKey]);
 
   // Light: only re-bake the face texture when layers / face color / pattern change
-  useEffect(() => { if (redrawRef.current) redrawRef.current(); }, [texKey]);
+  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); }, [texKey]);
 
   // Instant: recolour materials in place (no rebuild) when a colour swatch changes
   useEffect(() => {
