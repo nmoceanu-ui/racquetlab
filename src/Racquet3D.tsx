@@ -752,25 +752,6 @@ export default function Racquet3D(props: {
       pickTargets.push(throatMesh); // let the throat panel be grabbed for dragging in 3D
     }
 
-    // Solid "heart" yoke that fills the base of the throat so the angled rails and the
-    // round grip meet seamlessly — no open crooks between them. Same frame material,
-    // so it merges invisibly with the rails; the beams and grip sit in front of it.
-    {
-      const topY = gripTopC[1] + 16, botY = gripTopC[1] - 22;
-      const topX = 30, botX = 21, midY = (gripTopC[1] + 16 + (gripTopC[1] - 22)) / 2;
-      const sh = new THREE.Shape();
-      sh.moveTo(-topX, topY);
-      sh.lineTo(topX, topY);
-      sh.quadraticCurveTo(topX + 4, midY, botX, botY);    // right outer edge — gentle flare into the grip
-      sh.lineTo(-botX, botY);
-      sh.quadraticCurveTo(-topX - 4, midY, -topX, topY);  // left outer edge
-      sh.closePath();
-      const g = new THREE.ExtrudeGeometry(sh, { depth: T + 8, bevelEnabled: false });
-      const m = new THREE.Mesh(g, frameMat);
-      m.position.z = -(T + 8) / 2 - 1;                     // just behind the rails/beams so they stay in front
-      group.add(m);
-    }
-
     const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
     const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(21, 22, gripLen, 22, 1), gripMat);
     gripMesh.position.set(0, (gripTopC[1] + gripBotC[1]) / 2, zc);
@@ -778,17 +759,12 @@ export default function Racquet3D(props: {
     const butt = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 10, 22, 1), frameMat);
     butt.position.set(0, gripBotC[1] - 3, zc);
     group.add(butt);
-    // a long, gradual taper that starts up inside the throat base and eases down
-    // to the grip radius, so the throat flows into the handle instead of looking
-    // like a separate box stuck on a cylinder.
-    const neckTopY = gripTopC[1] + 30, neckBotY = gripTopC[1] - 10;
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(26, 21.5, neckTopY - neckBotY, 28, 1), frameMat);
+    // a short, clean flare from the grip up to the rails at the throat base, so the
+    // throat narrows straight into the handle like the 2D model — no collar puck.
+    const neckTopY = gripTopC[1] + 8, neckBotY = gripTopC[1] - 16;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(24.5, 21.5, neckTopY - neckBotY, 28, 1), frameMat);
     neck.position.set(0, (neckTopY + neckBotY) / 2, zc);
     group.add(neck);
-    // a small collar fillet where the taper meets the grip, to hide the seam
-    const collar = new THREE.Mesh(new THREE.CylinderGeometry(22, 21.5, 10, 28, 1), frameMat);
-    collar.position.set(0, neckBotY + 2, zc);
-    group.add(collar);
 
     // initial texture bake
     redraw();
