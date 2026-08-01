@@ -223,7 +223,7 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (P.layers || []).filter((it: any) => (it.side || "face") === "face").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
+      (P.layers || []).filter((it: any) => (it.side || "face") === "face").forEach((it: any) => {
         if (it.type === "text") {
           ctx.save();
           ctx.translate(it.x, it.y);
@@ -379,7 +379,7 @@ export default function Racquet3D(props: {
       if (!lm) return;
       // ONLY "Lead strip"-placed layers live on the channel — no legacy image and no
       // edge/face/throat bleed. Images first so text always sits on top.
-      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0));
+      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead");
       if (leadLayers.length === 0) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
       const cw = leadCanvas.width, ch = leadCanvas.height;
       lctx.clearRect(0, 0, cw, ch);
@@ -601,7 +601,7 @@ export default function Racquet3D(props: {
         // Edge art = only the layers placed with the "Edge" target (side "profile").
         // The lead strip is a SEPARATE surface (baked in redrawLead), so edge art no
         // longer bleeds onto the lead channel.
-        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
+        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
           ectx.translate(u * EW, v * EH);
@@ -713,7 +713,7 @@ export default function Racquet3D(props: {
       const redrawThroat = () => {
         const P = propsRef.current;
         tctx.clearRect(0, 0, TCW, TCH);
-        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
+        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").forEach((it: any) => {
           // v = position ALONG the rail (from the layer's y); centred across the wrap.
           const v = Math.max(0.04, Math.min(0.96, ((it.y - PYMIN) / spanY)));
           const cx = TCW / 2, cy = v * TCH;
