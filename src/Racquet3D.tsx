@@ -377,38 +377,61 @@ export default function Racquet3D(props: {
       const P = propsRef.current;
       const lm = leadMatRef.current;
       if (!lm) return;
-      if (!P.leadImg) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
-      let cached = imgCacheRef.current.get(P.leadImg);
-      if (!cached) {
-        const img = new Image(); img.crossOrigin = "anonymous";
-        cached = { img, loaded: false };
-        imgCacheRef.current.set(P.leadImg, cached);
-        img.onload = () => { cached!.loaded = true; redrawLeadRef.current && redrawLeadRef.current(); };
-        img.src = P.leadImg;
+      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead");
+      // nothing on the strip -> plain recolourable band
+      if (!P.leadImg && leadLayers.length === 0) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
+      const cw = leadCanvas.width, ch = leadCanvas.height;
+      lctx.clearRect(0, 0, cw, ch);
+      // optional legacy full-strip image (from older saved builds) as a base
+      if (P.leadImg) {
+        let cached = imgCacheRef.current.get(P.leadImg);
+        if (!cached) {
+          const img = new Image(); img.crossOrigin = "anonymous";
+          cached = { img, loaded: false };
+          imgCacheRef.current.set(P.leadImg, cached);
+          img.onload = () => { cached!.loaded = true; redrawLeadRef.current && redrawLeadRef.current(); };
+          img.src = P.leadImg;
+        }
+        if (cached.loaded) {
+          try {
+            if (cached.img.width >= cached.img.height) lctx.drawImage(cached.img, 0, 0, cw, ch);
+            else { lctx.save(); lctx.translate(cw / 2, ch / 2); lctx.rotate(Math.PI / 2); lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw); lctx.restore(); }
+          } catch (e) { /* tainted */ }
+        }
       }
-      if (cached.loaded) {
-        lctx.clearRect(0, 0, leadCanvas.width, leadCanvas.height);
-        const cw = leadCanvas.width, ch = leadCanvas.height;
-        // Lay the image ONCE, length-wise: its LONG axis runs along the channel
-        // path (canvas width), its short axis across the channel (canvas height).
-        // Auto-orient so a long strip works whether it's saved tall or wide.
-        // No tiling, no side-by-side repeat.
-        try {
-          if (cached.img.width >= cached.img.height) {
-            // already long-side horizontal: stretch straight onto the strip canvas
-            lctx.drawImage(cached.img, 0, 0, cw, ch);
-          } else {
-            // tall strip: rotate 90 degrees so its height runs along the length
-            lctx.save();
-            lctx.translate(cw / 2, ch / 2);
-            lctx.rotate(Math.PI / 2);
-            lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw);
-            lctx.restore();
+      // "Lead strip"-placed layers: each runs ALONG the channel (u = length from the
+      // layer's y), centred across the strip. Size/rotate/opacity come from the layer.
+      leadLayers.forEach((it: any) => {
+        const u = Math.max(0.03, Math.min(0.97, (((it.y != null ? it.y : 150) - 48) / 464)));
+        lctx.save();
+        lctx.translate(u * cw, ch / 2);
+        lctx.rotate(((it.rot || 0) * Math.PI) / 180);
+        lctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+        lctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
+        if (it.type === "text") {
+          lctx.font = Math.max(8, (it.size || 24) * 2.4) + "px " + (it.font || "sans-serif");
+          lctx.fillStyle = it.color || "#ffffff";
+          lctx.textAlign = "center"; lctx.textBaseline = "middle";
+          lctx.fillText(it.text || "", 0, 0);
+        } else if (it.href) {
+          let cached = imgCacheRef.current.get(it.href);
+          if (!cached) {
+            const img = new Image(); img.crossOrigin = "anonymous";
+            cached = { img, loaded: false };
+            imgCacheRef.current.set(it.href, cached);
+            img.onload = () => { cached!.loaded = true; redrawLeadRef.current && redrawLeadRef.current(); };
+            img.src = it.href;
           }
-        } catch (e) { /* tainted */ }
-        leadTexture.needsUpdate = true;
-        lm.map = leadTexture; lm.color.set("#ffffff"); lm.needsUpdate = true;
-      }
+          if (cached.loaded) {
+            const dw = (it.baseW || 100) * (it.scale || 1) * 1.4, dh = (it.baseH || 100) * (it.scale || 1) * 1.4;
+            lctx.globalAlpha = it.opacity != null ? it.opacity : 1;
+            try { lctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
+          }
+        }
+        lctx.restore();
+      });
+      leadTexture.needsUpdate = true;
+      lm.map = leadTexture; lm.color.set("#ffffff"); lm.needsUpdate = true;
     };
     redrawLeadRef.current = redrawLead;
 
@@ -507,7 +530,9 @@ export default function Racquet3D(props: {
       // head path points already sit on the frame's outer edge; the two grip ends
       // sit on the rail CENTRELINE, so push them out past the rail's outer face
       // (half-width ~6.5) — the ribbon then stays proud all the way down the throat.
-      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 12 : 0);
+      // keep the throat-rail section of the channel flush with the rail's outer
+      // face (rail half-width ~6.5) so it sits IN the rail instead of sticking out.
+      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 7 : 0);
       const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
       const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
       for (let i = 0; i < NP; i++) {
@@ -589,19 +614,9 @@ export default function Racquet3D(props: {
       const redrawEdge = () => {
         const P = propsRef.current;
         ectx.clearRect(0, 0, EW, EH);
-        // side-frame band image: fill the ENTIRE edge band (stretched to fit), so it
-        // reads the same as the Profile view's side band. Edge layers draw on top.
-        if (P.sideImg) {
-          let sc = imgCacheRef.current.get(P.sideImg);
-          if (!sc) {
-            const img = new Image(); img.crossOrigin = "anonymous";
-            sc = { img, loaded: false };
-            imgCacheRef.current.set(P.sideImg, sc);
-            img.onload = () => { sc!.loaded = true; redrawEdgeRef.current && redrawEdgeRef.current(); };
-            img.src = P.sideImg;
-          }
-          if (sc.loaded) { try { ectx.drawImage(sc.img, 0, 0, EW, EH); } catch (e) { /* tainted */ } }
-        }
+        // Edge art = only the layers placed with the "Edge" target (side "profile").
+        // The lead strip is a SEPARATE surface (baked in redrawLead), so edge art no
+        // longer bleeds onto the lead channel.
         (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
@@ -897,7 +912,7 @@ export default function Racquet3D(props: {
   }, [geoKey]);
 
   // Light: only re-bake the face texture when layers / face color / pattern change
-  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); if (redrawThroatRef.current) redrawThroatRef.current(); }, [texKey]);
+  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); if (redrawThroatRef.current) redrawThroatRef.current(); if (redrawLeadRef.current) redrawLeadRef.current(); }, [texKey]);
 
   // Instant: recolour materials in place (no rebuild) when a colour swatch changes
   useEffect(() => {
