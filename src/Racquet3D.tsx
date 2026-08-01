@@ -752,6 +752,25 @@ export default function Racquet3D(props: {
       pickTargets.push(throatMesh); // let the throat panel be grabbed for dragging in 3D
     }
 
+    // Solid "heart" yoke that fills the base of the throat so the angled rails and the
+    // round grip meet seamlessly — no open crooks between them. Same frame material,
+    // so it merges invisibly with the rails; the beams and grip sit in front of it.
+    {
+      const topY = gripTopC[1] + 16, botY = gripTopC[1] - 22;
+      const topX = 30, botX = 21, midY = (gripTopC[1] + 16 + (gripTopC[1] - 22)) / 2;
+      const sh = new THREE.Shape();
+      sh.moveTo(-topX, topY);
+      sh.lineTo(topX, topY);
+      sh.quadraticCurveTo(topX + 4, midY, botX, botY);    // right outer edge — gentle flare into the grip
+      sh.lineTo(-botX, botY);
+      sh.quadraticCurveTo(-topX - 4, midY, -topX, topY);  // left outer edge
+      sh.closePath();
+      const g = new THREE.ExtrudeGeometry(sh, { depth: T + 8, bevelEnabled: false });
+      const m = new THREE.Mesh(g, frameMat);
+      m.position.z = -(T + 8) / 2 - 1;                     // just behind the rails/beams so they stay in front
+      group.add(m);
+    }
+
     const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
     const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(21, 22, gripLen, 22, 1), gripMat);
     gripMesh.position.set(0, (gripTopC[1] + gripBotC[1]) / 2, zc);
