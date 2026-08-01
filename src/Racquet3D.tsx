@@ -431,98 +431,38 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    // A rounded-profile cross-section (half-width w, half-depth h, corner radius r)
-    // used to sweep the throat rails so their edges are soft, not hard rectangles.
-    const roundRectRing = (w: number, h: number, r: number, seg = 3): [number, number][] => {
-      r = Math.min(r, w * 0.95, h * 0.95);
-      const pts: [number, number][] = [];
-      const arcs = [
-        { cx: w - r, cy: h - r, a0: 0, a1: Math.PI / 2 },
-        { cx: -(w - r), cy: h - r, a0: Math.PI / 2, a1: Math.PI },
-        { cx: -(w - r), cy: -(h - r), a0: Math.PI, a1: 1.5 * Math.PI },
-        { cx: w - r, cy: -(h - r), a0: 1.5 * Math.PI, a1: 2 * Math.PI },
-      ];
-      for (const arc of arcs) {
-        for (let j = 0; j <= seg; j++) {
-          const a = arc.a0 + (arc.a1 - arc.a0) * (j / seg);
-          pts.push([arc.cx + r * Math.cos(a), arc.cy + r * Math.sin(a)]);
-        }
-      }
-      return pts;
+    // A straight throat rail (same rectangle as the original box strut) but with the
+    // very bottom OUTER corner rounded off, where the rail meets the grip. It's a flat
+    // 2D silhouette extruded through the frame depth, so the sides stay straight/sharp
+    // exactly as before — only that one outside corner is filleted.
+    const roundedRail = (A: number[], G: number[], width: number, depth: number, r: number, outerSign: number, mat: THREE.Material) => {
+      const w = width / 2;
+      const dx = G[0] - A[0], dy = G[1] - A[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;       // axis A(top) -> G(bottom)
+      let nx = -uy, ny = ux;                     // in-plane normal
+      if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; } // make it point OUTWARD
+      const rr = Math.min(r, w * 0.95, len * 0.4);
+      const topOut: [number, number] = [A[0] + nx * w, A[1] + ny * w];
+      const topIn: [number, number] = [A[0] - nx * w, A[1] - ny * w];
+      const botIn: [number, number] = [G[0] - nx * w, G[1] - ny * w];
+      const botOut: [number, number] = [G[0] + nx * w, G[1] + ny * w];
+      const sh = new THREE.Shape();
+      sh.moveTo(topOut[0], topOut[1]);
+      sh.lineTo(topIn[0], topIn[1]);
+      sh.lineTo(botIn[0], botIn[1]);
+      sh.lineTo(botOut[0] - nx * rr, botOut[1] - ny * rr);                                   // stop short of the corner
+      sh.quadraticCurveTo(botOut[0], botOut[1], botOut[0] - ux * rr, botOut[1] - uy * rr);   // round only this corner
+      sh.lineTo(topOut[0], topOut[1]);
+      sh.closePath();
+      const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.z = -depth / 2;
+      group.add(m);
     };
 
-    // Sweep a rounded cross-section along a cubic Bezier (P0..P3). The rail flows
-    // as one smooth piece from the hoop into the grip — following the throat line —
-    // and thins gently through the middle for an aero, non-blocky look.
-    const sweptRail = (
-      P0: number[], P1: number[], P2: number[], P3: number[],
-      width: number, depth: number, r: number, mat: THREE.Material, STEPS = 28,
-    ) => {
-      const w0 = width / 2, h = depth / 2;
-      const ring = roundRectRing(w0, h, r, 3);
-      const M = ring.length;
-      const bez = (t: number): [number, number] => {
-        const mt = 1 - t;
-        return [
-          mt * mt * mt * P0[0] + 3 * mt * mt * t * P1[0] + 3 * mt * t * t * P2[0] + t * t * t * P3[0],
-          mt * mt * mt * P0[1] + 3 * mt * mt * t * P1[1] + 3 * mt * t * t * P2[1] + t * t * t * P3[1],
-        ];
-      };
-      const pos: number[] = [];
-      const idx: number[] = [];
-      for (let i = 0; i <= STEPS; i++) {
-        const t = i / STEPS;
-        const c0 = bez(Math.max(0, t - 0.001)), c1 = bez(Math.min(1, t + 0.001));
-        let tx = c1[0] - c0[0], ty = c1[1] - c0[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
-        const nx = -ty, ny = tx;                    // in-plane normal (XY); depth runs along z
-        const ctr = bez(t);
-        const wf = 1 - 0.22 * Math.sin(Math.PI * t); // thin the middle slightly
-        for (let m = 0; m < M; m++) {
-          const la = ring[m][0] * wf, lb = ring[m][1];
-          pos.push(ctr[0] + la * nx, ctr[1] + la * ny, lb);
-        }
-      }
-      for (let i = 0; i < STEPS; i++) {
-        for (let m = 0; m < M; m++) {
-          const a = i * M + m, b = i * M + ((m + 1) % M), cc = (i + 1) * M + m, d = (i + 1) * M + ((m + 1) % M);
-          idx.push(a, b, d, a, d, cc);
-        }
-      }
-      // end caps (triangle fans) so the rail reads solid where it tucks in
-      const capStart = pos.length / 3;
-      const s0 = bez(0); pos.push(s0[0], s0[1], 0);
-      for (let m = 0; m < M; m++) idx.push(capStart, m, (m + 1) % M);
-      const capEnd = pos.length / 3;
-      const e0 = bez(1); pos.push(e0[0], e0[1], 0);
-      const base = STEPS * M;
-      for (let m = 0; m < M; m++) idx.push(capEnd, base + ((m + 1) % M), base + m);
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-      geo.setIndex(idx);
-      geo.computeVertexNormals();
-      group.add(new THREE.Mesh(geo, mat));
-    };
-
-    // control points: leave the hoop bowing gently OUTWARD, arrive at the grip
-    // near-vertical, so the rail curves into the throat instead of cutting straight.
-    {
-      const dyL = gripTopL[1] - AL[1];
-      sweptRail(
-        AL,
-        [AL[0] - 10, AL[1] + dyL * 0.33],
-        [gripTopL[0] - 6, AL[1] + dyL * 0.72],
-        gripTopL,
-        13, T + 8, 4, frameMat,
-      );
-      const dyR = gripTopR[1] - AR[1];
-      sweptRail(
-        AR,
-        [AR[0] + 10, AR[1] + dyR * 0.33],
-        [gripTopR[0] + 6, AR[1] + dyR * 0.72],
-        gripTopR,
-        13, T + 8, 4, frameMat,
-      );
-    }
+    roundedRail(AL, gripTopL, 13, T + 8, 5, -1, frameMat);
+    roundedRail(AR, gripTopR, 13, T + 8, 5, 1, frameMat);
 
     // ---- lead-tape channel: ONE continuous ribbon that runs up the left throat
     // rail, around the head (over the top), and back down the right rail. It sits
