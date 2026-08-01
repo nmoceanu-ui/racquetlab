@@ -227,6 +227,8 @@ export default function Racquet3D(props: {
           ctx.save();
           ctx.translate(it.x, it.y);
           ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          ctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+          ctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           ctx.font = (it.size || 24) + "px " + (it.font || "sans-serif");
           ctx.fillStyle = it.color || "#ffffff";
           ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
@@ -247,6 +249,8 @@ export default function Racquet3D(props: {
           ctx.save();
           ctx.translate(it.x, it.y);
           ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          ctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+          ctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           ctx.scale(it.scale || 1, it.scale || 1);
           ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
           try { ctx.drawImage(cached.img, -it.baseW / 2, -it.baseH / 2, it.baseW, it.baseH); } catch (e) { /* tainted */ }
@@ -650,6 +654,8 @@ export default function Racquet3D(props: {
           // the profile strip's LONG axis (y) runs around the edge, its SHORT axis
           // (x) is the depth — the opposite of the edge canvas axes, so rotate 90.
           ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
+          ectx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+          ectx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           if (it.type === "text") {
             ectx.font = Math.max(8, (it.size || 24) * PPU) + "px " + (it.font || "sans-serif");
             ectx.fillStyle = it.color || "#ffffff";
@@ -762,6 +768,8 @@ export default function Racquet3D(props: {
           tctx.save();
           tctx.translate(cx, cy);
           tctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          tctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+          tctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           if (it.type === "text") {
             tctx.font = Math.max(8, (it.size || 24) * TPP) + "px " + (it.font || "sans-serif");
             tctx.fillStyle = it.color || "#ffffff";
