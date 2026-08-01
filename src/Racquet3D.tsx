@@ -41,6 +41,8 @@ export default function Racquet3D(props: {
   const redrawLeadRef = useRef<(() => void) | null>(null);
   const edgeTexRef = useRef<any>(null);
   const redrawEdgeRef = useRef<(() => void) | null>(null);
+  const throatTexRef = useRef<any>(null);
+  const redrawThroatRef = useRef<(() => void) | null>(null);
   const beamMatsRef = useRef<any[]>([]);
   const imgCacheRef = useRef<Map<string, { img: HTMLImageElement; loaded: boolean }>>(new Map());
   const propsRef = useRef(props);
@@ -220,7 +222,7 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (P.layers || []).filter((it: any) => (it.side || "face") !== "profile").forEach((it: any) => {
+      (P.layers || []).filter((it: any) => (it.side || "face") === "face").forEach((it: any) => {
         if (it.type === "text") {
           ctx.save();
           ctx.translate(it.x, it.y);
@@ -721,6 +723,81 @@ export default function Racquet3D(props: {
       }
     }
 
+    // ---- THROAT ART: bake throat-tagged layers onto a flat panel that spans the
+    // throat trapezoid on the front face. The canvas is transparent except where the
+    // user actually placed art, so open (beam) throats stay open — the panel only
+    // becomes visible where a logo or text sits, matching the 2D face view.
+    {
+      const pAL: [number, number] = [head[75][0], head[75][1]];
+      const pAR: [number, number] = [head[45][0], head[45][1]];
+      const pGL: [number, number] = [CX - 24, 486];
+      const pGR: [number, number] = [CX + 24, 486];
+      const PXMIN = Math.min(pAL[0], pAR[0], pGL[0], pGR[0]);
+      const PXMAX = Math.max(pAL[0], pAR[0], pGL[0], pGR[0]);
+      const PYMIN = Math.min(pAL[1], pAR[1], pGL[1], pGR[1]);
+      const PYMAX = Math.max(pAL[1], pAR[1], pGL[1], pGR[1]);
+      const spanX = Math.max(1, PXMAX - PXMIN), spanY = Math.max(1, PYMAX - PYMIN);
+      const TPP = 4; // canvas px per model unit (uniform in both axes -> no distortion)
+      const TCW = Math.max(64, Math.round(spanX * TPP));
+      const TCH = Math.max(64, Math.round(spanY * TPP));
+      const throatCanvas = document.createElement("canvas");
+      throatCanvas.width = TCW; throatCanvas.height = TCH;
+      const tctx = throatCanvas.getContext("2d") as CanvasRenderingContext2D;
+      const throatTexture = new THREE.CanvasTexture(throatCanvas);
+      throatTexture.flipY = false;
+      throatTexture.wrapS = THREE.ClampToEdgeWrapping;
+      throatTexture.wrapT = THREE.ClampToEdgeWrapping;
+      (throatTexture as any).colorSpace = THREE.SRGBColorSpace;
+      throatTexture.anisotropy = 4;
+      throatTexRef.current = throatTexture;
+      const throatMat: any = new THREE.MeshStandardMaterial({ map: throatTexture, transparent: true, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      const redrawThroat = () => {
+        const P = propsRef.current;
+        tctx.clearRect(0, 0, TCW, TCH);
+        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").forEach((it: any) => {
+          const cx = ((it.x - PXMIN) / spanX) * TCW, cy = ((it.y - PYMIN) / spanY) * TCH;
+          tctx.save();
+          tctx.translate(cx, cy);
+          tctx.rotate(((it.rot || 0) * Math.PI) / 180);
+          if (it.type === "text") {
+            tctx.font = Math.max(8, (it.size || 24) * TPP) + "px " + (it.font || "sans-serif");
+            tctx.fillStyle = it.color || "#ffffff";
+            tctx.textAlign = "center"; tctx.textBaseline = "middle";
+            tctx.fillText(it.text || "", 0, 0);
+          } else if (it.href) {
+            let cached = imgCacheRef.current.get(it.href);
+            if (!cached) {
+              const img = new Image(); img.crossOrigin = "anonymous";
+              cached = { img, loaded: false };
+              imgCacheRef.current.set(it.href, cached);
+              img.onload = () => { cached!.loaded = true; redrawThroatRef.current && redrawThroatRef.current(); };
+              img.src = it.href;
+            }
+            if (cached.loaded) {
+              const dw = (it.baseW || 100) * (it.scale || 1) * TPP, dh = (it.baseH || 100) * (it.scale || 1) * TPP;
+              tctx.globalAlpha = it.opacity != null ? it.opacity : 1;
+              try { tctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
+            }
+          }
+          tctx.restore();
+        });
+        throatTexture.needsUpdate = true;
+      };
+      redrawThroatRef.current = redrawThroat;
+      redrawThroat();
+      const zFront = (T + 8) / 2 + 0.5;
+      const uv = (p: [number, number]): [number, number] => [(p[0] - PXMIN) / spanX, (p[1] - PYMIN) / spanY];
+      const uA = uv(pAL), uB = uv(pAR), uC = uv(pGR), uD = uv(pGL);
+      const tpos = [AL[0], AL[1], zFront, AR[0], AR[1], zFront, gripTopR[0], gripTopR[1], zFront, gripTopL[0], gripTopL[1], zFront];
+      const tuv = [uA[0], uA[1], uB[0], uB[1], uC[0], uC[1], uD[0], uD[1]];
+      const tg = new THREE.BufferGeometry();
+      tg.setAttribute("position", new THREE.Float32BufferAttribute(tpos, 3));
+      tg.setAttribute("uv", new THREE.Float32BufferAttribute(tuv, 2));
+      tg.setIndex([0, 1, 2, 0, 2, 3]);
+      tg.computeVertexNormals();
+      group.add(new THREE.Mesh(tg, throatMat));
+    }
+
     const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
     const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(21, 22, gripLen, 22, 1), gripMat);
     gripMesh.position.set(0, (gripTopC[1] + gripBotC[1]) / 2, zc);
@@ -838,6 +915,7 @@ export default function Racquet3D(props: {
       redrawRef.current = null;
       redrawLeadRef.current = null;
       redrawEdgeRef.current = null;
+      redrawThroatRef.current = null;
       if (captionEl && captionEl.parentNode) captionEl.parentNode.removeChild(captionEl);
       try { leadTexture.dispose(); } catch (e) { /* noop */ }
       controls.dispose();
@@ -852,7 +930,7 @@ export default function Racquet3D(props: {
   }, [geoKey]);
 
   // Light: only re-bake the face texture when layers / face color / pattern change
-  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); }, [texKey]);
+  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); if (redrawThroatRef.current) redrawThroatRef.current(); }, [texKey]);
 
   // Instant: recolour materials in place (no rebuild) when a colour swatch changes
   useEffect(() => {
