@@ -508,7 +508,31 @@ export default function Racquet3D(props: {
     // Profile view shows on the actual 3D frame edge. Profile-strip coords map:
     // y(48..512) -> around the head (arc length), x(322..358) -> depth (z).
     {
-      const EW = 1856, EH = 144; // matches the 464x36 profile strip aspect (x4)
+      // path around the head first, so we can size the texture to the edge's TRUE
+      // proportions (length : depth). Matching that aspect means the wrap never
+      // stretches the art — the user's Size slider zooms it, keeping its shape.
+      const eHeadS: [number, number][] = head.map((p) => S(p[0], p[1]));
+      const epath: [number, number][] = [];
+      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; epath.push(eHeadS[idx]); if (idx === 45) break; }
+      const eC: [number, number] = [0, CY0 - c.cy];
+      const eN = epath.length;
+      const enrm: [number, number][] = [];
+      for (let i = 0; i < eN; i++) {
+        const a = epath[Math.max(0, i - 1)], b = epath[Math.min(eN - 1, i + 1)];
+        let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+        let nx = -ty, ny = tx; const Pp = epath[i];
+        if (nx * (Pp[0] - eC[0]) + ny * (Pp[1] - eC[1]) < 0) { nx = -nx; ny = -ny; }
+        enrm.push([nx, ny]);
+      }
+      const ecum: number[] = [0];
+      for (let i = 1; i < eN; i++) ecum[i] = ecum[i - 1] + Math.hypot(epath[i][0] - epath[i - 1][0], epath[i][1] - epath[i - 1][1]);
+      const etot = ecum[eN - 1] || 1;
+      const EOUT = 1, EZT = 18, EZB = -18;
+      const EDEPTH = EZT - EZB;             // 36 units of edge depth
+      const PPU = 4;                         // texture pixels per model unit (UNIFORM in both axes)
+      const EH = Math.round(EDEPTH * PPU);   // 144
+      const EW = Math.max(512, Math.round(etot * PPU)); // matches physical aspect -> no stretch
+
       const edgeCanvas = document.createElement("canvas");
       edgeCanvas.width = EW; edgeCanvas.height = EH;
       const ectx = edgeCanvas.getContext("2d") as CanvasRenderingContext2D;
@@ -532,7 +556,7 @@ export default function Racquet3D(props: {
           // (x) is the depth — the opposite of the edge canvas axes, so rotate 90.
           ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
           if (it.type === "text") {
-            ectx.font = Math.max(8, (it.size || 24) * 4) + "px " + (it.font || "sans-serif");
+            ectx.font = Math.max(8, (it.size || 24) * PPU) + "px " + (it.font || "sans-serif");
             ectx.fillStyle = it.color || "#ffffff";
             ectx.textAlign = "center"; ectx.textBaseline = "middle";
             ectx.fillText(it.text || "", 0, 0);
@@ -546,7 +570,8 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * 4, dh = (it.baseH || 100) * (it.scale || 1) * 4;
+              // keep the image's TRUE aspect (baseW:baseH); Size slider (scale) zooms it
+              const dw = (it.baseW || 100) * (it.scale || 1) * PPU, dh = (it.baseH || 100) * (it.scale || 1) * PPU;
               ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
               try { ectx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
@@ -558,23 +583,6 @@ export default function Racquet3D(props: {
       redrawEdgeRef.current = redrawEdge;
       redrawEdge();
 
-      const eHeadS: [number, number][] = head.map((p) => S(p[0], p[1]));
-      const epath: [number, number][] = [];
-      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; epath.push(eHeadS[idx]); if (idx === 45) break; }
-      const eC: [number, number] = [0, CY0 - c.cy];
-      const eN = epath.length;
-      const enrm: [number, number][] = [];
-      for (let i = 0; i < eN; i++) {
-        const a = epath[Math.max(0, i - 1)], b = epath[Math.min(eN - 1, i + 1)];
-        let tx = b[0] - a[0], ty = b[1] - a[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
-        let nx = -ty, ny = tx; const Pp = epath[i];
-        if (nx * (Pp[0] - eC[0]) + ny * (Pp[1] - eC[1]) < 0) { nx = -nx; ny = -ny; }
-        enrm.push([nx, ny]);
-      }
-      const ecum: number[] = [0];
-      for (let i = 1; i < eN; i++) ecum[i] = ecum[i - 1] + Math.hypot(epath[i][0] - epath[i - 1][0], epath[i][1] - epath[i - 1][1]);
-      const etot = ecum[eN - 1] || 1;
-      const EOUT = 1, EZT = 18, EZB = -18;
       const evTop = (EZT + 19) / 38, evBot = (EZB + 19) / 38;
       const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
       for (let i = 0; i < eN; i++) {
