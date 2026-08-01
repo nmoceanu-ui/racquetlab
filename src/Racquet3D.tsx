@@ -223,7 +223,7 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (P.layers || []).filter((it: any) => (it.side || "face") === "face").forEach((it: any) => {
+      (P.layers || []).filter((it: any) => (it.side || "face") === "face").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
         if (it.type === "text") {
           ctx.save();
           ctx.translate(it.x, it.y);
@@ -377,28 +377,12 @@ export default function Racquet3D(props: {
       const P = propsRef.current;
       const lm = leadMatRef.current;
       if (!lm) return;
-      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead");
-      // nothing on the strip -> plain recolourable band
-      if (!P.leadImg && leadLayers.length === 0) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
+      // ONLY "Lead strip"-placed layers live on the channel — no legacy image and no
+      // edge/face/throat bleed. Images first so text always sits on top.
+      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0));
+      if (leadLayers.length === 0) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
       const cw = leadCanvas.width, ch = leadCanvas.height;
       lctx.clearRect(0, 0, cw, ch);
-      // optional legacy full-strip image (from older saved builds) as a base
-      if (P.leadImg) {
-        let cached = imgCacheRef.current.get(P.leadImg);
-        if (!cached) {
-          const img = new Image(); img.crossOrigin = "anonymous";
-          cached = { img, loaded: false };
-          imgCacheRef.current.set(P.leadImg, cached);
-          img.onload = () => { cached!.loaded = true; redrawLeadRef.current && redrawLeadRef.current(); };
-          img.src = P.leadImg;
-        }
-        if (cached.loaded) {
-          try {
-            if (cached.img.width >= cached.img.height) lctx.drawImage(cached.img, 0, 0, cw, ch);
-            else { lctx.save(); lctx.translate(cw / 2, ch / 2); lctx.rotate(Math.PI / 2); lctx.drawImage(cached.img, -ch / 2, -cw / 2, ch, cw); lctx.restore(); }
-          } catch (e) { /* tainted */ }
-        }
-      }
       // "Lead strip"-placed layers: each runs ALONG the channel (u = length from the
       // layer's y), centred across the strip. Size/rotate/opacity come from the layer.
       leadLayers.forEach((it: any) => {
@@ -530,9 +514,9 @@ export default function Racquet3D(props: {
       // head path points already sit on the frame's outer edge; the two grip ends
       // sit on the rail CENTRELINE, so push them out past the rail's outer face
       // (half-width ~6.5) — the ribbon then stays proud all the way down the throat.
-      // keep the throat-rail section of the channel flush with the rail's outer
-      // face (rail half-width ~6.5) so it sits IN the rail instead of sticking out.
-      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 7 : 0);
+      // sit the throat-rail section of the channel right on the rail's outer face
+      // (rail half-width ~6.5): visible on top of the rail, but not past its silhouette.
+      const baseOff = path.map((_, i) => (withThroat && (i <= 1 || i >= NP - 2)) ? 10 : 0);
       const pos: number[] = [], uv: number[] = [], idxs: number[] = [];
       const vpush = (P: [number, number], n: [number, number], off: number, z: number) => { pos.push(P[0] + n[0] * off, P[1] + n[1] * off, z); };
       for (let i = 0; i < NP; i++) {
@@ -617,7 +601,7 @@ export default function Racquet3D(props: {
         // Edge art = only the layers placed with the "Edge" target (side "profile").
         // The lead strip is a SEPARATE surface (baked in redrawLead), so edge art no
         // longer bleeds onto the lead channel.
-        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
+        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
           ectx.translate(u * EW, v * EH);
@@ -729,7 +713,7 @@ export default function Racquet3D(props: {
       const redrawThroat = () => {
         const P = propsRef.current;
         tctx.clearRect(0, 0, TCW, TCH);
-        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").forEach((it: any) => {
+        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").slice().sort((a: any, b: any) => (a.type === "text" ? 1 : 0) - (b.type === "text" ? 1 : 0)).forEach((it: any) => {
           // v = position ALONG the rail (from the layer's y); centred across the wrap.
           const v = Math.max(0.04, Math.min(0.96, ((it.y - PYMIN) / spanY)));
           const cx = TCW / 2, cy = v * TCH;
@@ -753,7 +737,7 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * 1.1, dh = (it.baseH || 100) * (it.scale || 1) * 1.1;
+              const dw = (it.baseW || 100) * (it.scale || 1) * 0.8, dh = (it.baseH || 100) * (it.scale || 1) * 0.8;
               tctx.globalAlpha = it.opacity != null ? it.opacity : 1;
               try { tctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
@@ -771,12 +755,16 @@ export default function Racquet3D(props: {
       const Zt = (T + 8) / 2;   // rail depth half (~19)
       const rw = 6.5;           // rail half-width (rail is 13 wide)
       const OUTP = 1.2;         // sit a hair proud of the rail's outer face
-      // cross-section across the wrap: [in-plane offset, z]; u runs front(0) -> back(1)
+      // cross-section across the wrap: [in-plane offset, z]; u runs front(0) -> back(1).
+      // Corners sit AT the rail's outer edge (rw) and its FULL depth (+/-Zt) so the strip
+      // truly wraps front face -> outer face -> back face and never bleeds sideways past
+      // the rail silhouette.
+      const _po = OUTP; // (kept for reference)
       const cs: [number, number][] = [
-        [rw * 0.35, Zt],          // front face, just inside the outer corner
-        [rw + OUTP, Zt * 0.55],   // front-outer corner
-        [rw + OUTP, -Zt * 0.55],  // back-outer corner
-        [rw * 0.35, -Zt],         // back face, just inside the outer corner
+        [rw * 0.3, Zt],       // front face, near the outer corner
+        [rw + 0.1, Zt],       // front-outer corner (right at the rail edge)
+        [rw + 0.1, -Zt],      // back-outer corner
+        [rw * 0.3, -Zt],      // back face, near the outer corner
       ];
       const CSN = cs.length;
       const buildRailWrap = (A: number[], G: number[], outerSign: number) => {
@@ -793,7 +781,9 @@ export default function Racquet3D(props: {
           for (let k = 0; k < CSN; k++) {
             const o = cs[k][0], z = cs[k][1];
             tpos.push(bx + nx * o, by + ny * o, z);
-            tuv.push(k / (CSN - 1), t);
+            // flip the wrap U on the right rail so its art reads the same way as the
+            // left rail (not mirror-reversed) when the frame is turned around.
+            tuv.push(outerSign > 0 ? 1 - k / (CSN - 1) : k / (CSN - 1), t);
           }
         }
         for (let s = 0; s < NS; s++) {
