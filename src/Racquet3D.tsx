@@ -720,7 +720,7 @@ export default function Racquet3D(props: {
       const PYMIN = Math.min(pAL[1], pAR[1], pGL[1], pGR[1]);
       const PYMAX = Math.max(pAL[1], pAR[1], pGL[1], pGR[1]);
       const spanY = Math.max(1, PYMAX - PYMIN);
-      const TCW = 128, TCH = 512; // across the wrap (x) by along-the-rail length (y)
+      const TCW = 384, TCH = 1536; // across the wrap (x) by rail length (y) — 3x res for crisp art
       const throatCanvas = document.createElement("canvas");
       throatCanvas.width = TCW; throatCanvas.height = TCH;
       const tctx = throatCanvas.getContext("2d") as CanvasRenderingContext2D;
@@ -729,7 +729,7 @@ export default function Racquet3D(props: {
       throatTexture.wrapS = THREE.ClampToEdgeWrapping;
       throatTexture.wrapT = THREE.ClampToEdgeWrapping;
       (throatTexture as any).colorSpace = THREE.SRGBColorSpace;
-      throatTexture.anisotropy = 4;
+      throatTexture.anisotropy = 8;
       throatTexRef.current = throatTexture;
       const throatMat: any = new THREE.MeshStandardMaterial({ map: throatTexture, transparent: true, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
       const redrawThroat = () => {
@@ -748,7 +748,7 @@ export default function Racquet3D(props: {
             // the wrap's outer faces are seen from OUTSIDE, so the baked text lands
             // mirror-reversed on them — flip it L-R here so it reads normally.
             tctx.scale(-1, 1);
-            tctx.font = Math.max(8, (it.size || 24) * 2.2) + "px " + (it.font || "sans-serif");
+            tctx.font = Math.max(8, (it.size || 24) * 6.6) + "px " + (it.font || "sans-serif");
             tctx.fillStyle = it.color || "#ffffff";
             tctx.textAlign = "center"; tctx.textBaseline = "middle";
             tctx.fillText(it.text || "", 0, 0);
@@ -762,7 +762,7 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * 2.2, dh = (it.baseH || 100) * (it.scale || 1) * 2.2;
+              const dw = (it.baseW || 100) * (it.scale || 1) * 6.6, dh = (it.baseH || 100) * (it.scale || 1) * 6.6;
               tctx.globalAlpha = it.opacity != null ? it.opacity : 1;
               try { tctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
@@ -786,10 +786,10 @@ export default function Racquet3D(props: {
       // the rail silhouette.
       const _po = OUTP; // (kept for reference)
       const cs: [number, number][] = [
-        [-rw + 0.6, Zt],      // front face, near the INNER edge (wrap the inner half too)
-        [rw + 0.1, Zt],       // front-outer corner (right at the rail edge)
-        [rw + 0.1, -Zt],      // back-outer corner
-        [-rw + 0.6, -Zt],     // back face, near the INNER edge
+        [-rw + 0.6, Zt + 0.5],       // front face, near inner edge — a hair PROUD of the face
+        [rw + 0.3, Zt + 0.5],        // front-outer corner, proud (kills z-fighting speckle)
+        [rw + 0.3, -(Zt + 0.5)],     // back-outer corner
+        [-rw + 0.6, -(Zt + 0.5)],    // back face, near inner edge
       ];
       const CSN = cs.length;
       const buildRailWrap = (A: number[], G: number[], outerSign: number) => {
