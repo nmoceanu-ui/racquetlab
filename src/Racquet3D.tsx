@@ -442,7 +442,7 @@ export default function Racquet3D(props: {
       const ux = dx / len, uy = dy / len;       // axis A(top) -> G(bottom)
       let nx = -uy, ny = ux;                     // in-plane normal
       if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; } // make it point OUTWARD
-      const rr = Math.min(r, w * 0.95, len * 0.4);
+      const rr = Math.min(r, width * 0.92, len * 0.45);
       const topOut: [number, number] = [A[0] + nx * w, A[1] + ny * w];
       const topIn: [number, number] = [A[0] - nx * w, A[1] - ny * w];
       const botIn: [number, number] = [G[0] - nx * w, G[1] - ny * w];
@@ -461,8 +461,8 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    roundedRail(AL, gripTopL, 13, T + 8, 5, -1, frameMat);
-    roundedRail(AR, gripTopR, 13, T + 8, 5, 1, frameMat);
+    roundedRail(AL, gripTopL, 13, T + 8, 11, -1, frameMat);
+    roundedRail(AR, gripTopR, 13, T + 8, 11, 1, frameMat);
 
     // ---- lead-tape channel: ONE continuous ribbon that runs up the left throat
     // rail, around the head (over the top), and back down the right rail. It sits
