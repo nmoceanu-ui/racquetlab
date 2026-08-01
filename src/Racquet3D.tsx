@@ -745,6 +745,9 @@ export default function Racquet3D(props: {
           tctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
           tctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           if (it.type === "text") {
+            // the wrap's outer faces are seen from OUTSIDE, so the baked text lands
+            // mirror-reversed on them — flip it L-R here so it reads normally.
+            tctx.scale(-1, 1);
             tctx.font = Math.max(8, (it.size || 24) * 2.2) + "px " + (it.font || "sans-serif");
             tctx.fillStyle = it.color || "#ffffff";
             tctx.textAlign = "center"; tctx.textBaseline = "middle";
