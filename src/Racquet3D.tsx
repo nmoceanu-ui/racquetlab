@@ -27,6 +27,7 @@ export default function Racquet3D(props: {
   leadChannel?: string;
   leadImg?: string;
   leadThroat?: boolean;
+  sideImg?: string;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const camRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -56,7 +57,7 @@ export default function Racquet3D(props: {
   });
   // ...re-bake the face texture (no rebuild) when these change — keeps dragging
   // the image size/rotate/opacity/position perfectly smooth.
-  const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent });
+  const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent, sideImg: props.sideImg });
   // ...and just recolour materials in place (instant) when a colour swatch changes.
   const colorKey = JSON.stringify({ frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors, leadChannel: props.leadChannel });
 
@@ -588,6 +589,19 @@ export default function Racquet3D(props: {
       const redrawEdge = () => {
         const P = propsRef.current;
         ectx.clearRect(0, 0, EW, EH);
+        // side-frame band image: fill the ENTIRE edge band (stretched to fit), so it
+        // reads the same as the Profile view's side band. Edge layers draw on top.
+        if (P.sideImg) {
+          let sc = imgCacheRef.current.get(P.sideImg);
+          if (!sc) {
+            const img = new Image(); img.crossOrigin = "anonymous";
+            sc = { img, loaded: false };
+            imgCacheRef.current.set(P.sideImg, sc);
+            img.onload = () => { sc!.loaded = true; redrawEdgeRef.current && redrawEdgeRef.current(); };
+            img.src = P.sideImg;
+          }
+          if (sc.loaded) { try { ectx.drawImage(sc.img, 0, 0, EW, EH); } catch (e) { /* tainted */ } }
+        }
         (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
