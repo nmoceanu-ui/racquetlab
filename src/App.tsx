@@ -3949,7 +3949,7 @@ function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design
       )}
       {sel && sel.type==="image" && (
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={320} value={Math.round(sel.scale*100)} onChange={e=>upd({scale:(+e.target.value)/100})} style={{ flex:1 }} /></div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={900} value={Math.round(sel.scale*100)} onChange={e=>upd({scale:(+e.target.value)/100})} style={{ flex:1 }} /></div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Rotate</span><input type="range" min={-180} max={180} value={sel.rot} onChange={e=>upd({rot:+e.target.value})} style={{ flex:1 }} /></div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Opacity</span><input type="range" min={10} max={100} value={Math.round(sel.opacity*100)} onChange={e=>upd({opacity:(+e.target.value)/100})} style={{ flex:1 }} /></div>
         </div>
