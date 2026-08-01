@@ -755,17 +755,18 @@ export default function Racquet3D(props: {
     // start the grip a touch higher and gently flare its top out to meet the rails, so
     // the throat eases smoothly into the handle with no hard step or black stem — like 2D.
     const gripTopY = gripTopC[1] + 8;
-    const gripLen = Math.max(20, gripTopY - gripBotC[1]);
-    const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(24, 22, gripLen, 48, 1), gripMat);
-    gripMesh.position.set(0, (gripTopY + gripBotC[1]) / 2, zc);
+    const bandBotY = gripTopC[1] - 8;   // the black band is the top slice of the grip
+    // lower (grey) part of the grip
+    const gripLen = Math.max(20, bandBotY - gripBotC[1]);
+    const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(23.8, 22, gripLen, 48, 1), gripMat);
+    gripMesh.position.set(0, (bandBotY + gripBotC[1]) / 2, zc);
     group.add(gripMesh);
     const butt = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 10, 22, 1), frameMat);
     butt.position.set(0, gripBotC[1] - 3, zc);
     group.add(butt);
-    // a short black band right on top of the grip — same diameter as the grip — where
-    // the two rails converge and meet, like the 2D model.
-    const bandBotY = gripTopC[1] - 8;
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(24, 23.5, gripTopY - bandBotY, 48, 1), frameMat);
+    // the black band = the top slice of the grip (same diameter, stacked on the grey
+    // part so no z-fight), where the two rails converge and meet, like the 2D model.
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(24, 23.8, gripTopY - bandBotY, 48, 1), frameMat);
     band.position.set(0, (gripTopY + bandBotY) / 2, zc);
     group.add(band);
 
