@@ -326,6 +326,9 @@ export default function Racquet3D(props: {
     const pickMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapeOf(fpts)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     pickMesh.position.z = T / 2 + 0.5;
     group.add(pickMesh);
+    // raycast targets for dragging layers: the face plane, plus the throat panel
+    // (added later) so throat art can be grabbed and moved directly in 3D too.
+    const pickTargets: any[] = [pickMesh];
 
     // Frame ring with a REAL recessed lead channel down the profile: two beveled
     // "shoulder" rings at full width (top and bottom of the edge), and a recessed
@@ -795,7 +798,9 @@ export default function Racquet3D(props: {
       tg.setAttribute("uv", new THREE.Float32BufferAttribute(tuv, 2));
       tg.setIndex([0, 1, 2, 0, 2, 3]);
       tg.computeVertexNormals();
-      group.add(new THREE.Mesh(tg, throatMat));
+      const throatMesh = new THREE.Mesh(tg, throatMat);
+      group.add(throatMesh);
+      pickTargets.push(throatMesh); // let the throat panel be grabbed for dragging in 3D
     }
 
     const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
@@ -834,7 +839,7 @@ export default function Racquet3D(props: {
       const rect = renderer.domElement.getBoundingClientRect();
       const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const hits = raycaster.intersectObject(pickMesh);
+      const hits = raycaster.intersectObjects(pickTargets);
       if (!hits.length) return null;
       const pt = hits[0].point;
       return { px: pt.x + CX, py: CY0 - pt.y };
