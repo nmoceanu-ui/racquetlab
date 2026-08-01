@@ -752,19 +752,16 @@ export default function Racquet3D(props: {
       pickTargets.push(throatMesh); // let the throat panel be grabbed for dragging in 3D
     }
 
-    const gripLen = Math.max(20, gripTopC[1] - gripBotC[1]);
-    const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(21, 22, gripLen, 22, 1), gripMat);
-    gripMesh.position.set(0, (gripTopC[1] + gripBotC[1]) / 2, zc);
+    // start the grip a touch higher and gently flare its top out to meet the rails, so
+    // the throat eases smoothly into the handle with no hard step or black stem — like 2D.
+    const gripTopY = gripTopC[1] + 8;
+    const gripLen = Math.max(20, gripTopY - gripBotC[1]);
+    const gripMesh = new THREE.Mesh(new THREE.CylinderGeometry(24, 22, gripLen, 48, 1), gripMat);
+    gripMesh.position.set(0, (gripTopY + gripBotC[1]) / 2, zc);
     group.add(gripMesh);
     const butt = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 10, 22, 1), frameMat);
     butt.position.set(0, gripBotC[1] - 3, zc);
     group.add(butt);
-    // a short, clean flare from the grip up to the rails at the throat base, so the
-    // throat narrows straight into the handle like the 2D model — no collar puck.
-    const neckTopY = gripTopC[1] + 8, neckBotY = gripTopC[1] - 16;
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(24.5, 21.5, neckTopY - neckBotY, 28, 1), frameMat);
-    neck.position.set(0, (neckTopY + neckBotY) / 2, zc);
-    group.add(neck);
 
     // initial texture bake
     redraw();
