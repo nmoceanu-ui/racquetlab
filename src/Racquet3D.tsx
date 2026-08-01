@@ -539,24 +539,27 @@ export default function Racquet3D(props: {
       rib.setIndex(idxs);
       rib.computeVertexNormals();
       group.add(new THREE.Mesh(rib, leadMat));
-      // The head has a milled groove that recesses the ribbon; the box throat rails
-      // do NOT, so the ribbon there ends up buried inside the solid rail. When the
-      // channel runs onto the throat, lay a visible lead strip on the FRONT face of
-      // each rail so it clearly reads on top of the rail.
+      // The head has a milled groove that recesses the ribbon; the box throat rails do
+      // NOT, so the ribbon there gets buried. When the channel runs onto the throat,
+      // lay a lead strip down the MIDDLE of each rail's OUTER SIDE EDGE (the profile
+      // face), centred in depth and running the rail length — like lead tape on the
+      // frame's edge, visible when the racquet is turned side-on.
       if (withThroat) {
-        const frontZ = (T + 8) / 2 + 1;
-        const railFrontStrip = (A: number[], G: number[]) => {
+        const o = 6.6;   // just proud of the rail's outer face (rail half-width 6.5)
+        const zh = 5;    // half-height in depth -> a ~10-unit strip down the edge middle
+        const railEdgeStrip = (A: number[], G: number[], outerSign: number) => {
           const dx = G[0] - A[0], dy = G[1] - A[1]; const len = Math.hypot(dx, dy) || 1;
-          const nx = -dy / len, ny = dx / len; const w = 2.6;
-          const p = [A[0] + nx * w, A[1] + ny * w, frontZ, A[0] - nx * w, A[1] - ny * w, frontZ, G[0] - nx * w, G[1] - ny * w, frontZ, G[0] + nx * w, G[1] + ny * w, frontZ];
+          let nx = -dy / len, ny = dx / len;
+          if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; } // point OUTWARD
+          const p = [A[0] + nx * o, A[1] + ny * o, zh, A[0] + nx * o, A[1] + ny * o, -zh, G[0] + nx * o, G[1] + ny * o, -zh, G[0] + nx * o, G[1] + ny * o, zh];
           const g = new THREE.BufferGeometry();
           g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
-          g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+          g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 1, 1], 2));
           g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals();
           group.add(new THREE.Mesh(g, leadMat));
         };
-        railFrontStrip(AL, gripTopL);
-        railFrontStrip(AR, gripTopR);
+        railEdgeStrip(AL, gripTopL, -1);
+        railEdgeStrip(AR, gripTopR, 1);
       }
 
       // Tell the user the target art size: the channel is `total` long and
