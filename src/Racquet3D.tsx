@@ -762,6 +762,12 @@ export default function Racquet3D(props: {
     const butt = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 10, 22, 1), frameMat);
     butt.position.set(0, gripBotC[1] - 3, zc);
     group.add(butt);
+    // a short black band right on top of the grip — same diameter as the grip — where
+    // the two rails converge and meet, like the 2D model.
+    const bandBotY = gripTopC[1] - 8;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(24, 23.5, gripTopY - bandBotY, 48, 1), frameMat);
+    band.position.set(0, (gripTopY + bandBotY) / 2, zc);
+    group.add(band);
 
     // initial texture bake
     redraw();
