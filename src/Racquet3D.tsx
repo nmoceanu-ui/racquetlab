@@ -539,6 +539,25 @@ export default function Racquet3D(props: {
       rib.setIndex(idxs);
       rib.computeVertexNormals();
       group.add(new THREE.Mesh(rib, leadMat));
+      // The head has a milled groove that recesses the ribbon; the box throat rails
+      // do NOT, so the ribbon there ends up buried inside the solid rail. When the
+      // channel runs onto the throat, lay a visible lead strip on the FRONT face of
+      // each rail so it clearly reads on top of the rail.
+      if (withThroat) {
+        const frontZ = (T + 8) / 2 + 1;
+        const railFrontStrip = (A: number[], G: number[]) => {
+          const dx = G[0] - A[0], dy = G[1] - A[1]; const len = Math.hypot(dx, dy) || 1;
+          const nx = -dy / len, ny = dx / len; const w = 2.6;
+          const p = [A[0] + nx * w, A[1] + ny * w, frontZ, A[0] - nx * w, A[1] - ny * w, frontZ, G[0] - nx * w, G[1] - ny * w, frontZ, G[0] + nx * w, G[1] + ny * w, frontZ];
+          const g = new THREE.BufferGeometry();
+          g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
+          g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+          g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals();
+          group.add(new THREE.Mesh(g, leadMat));
+        };
+        railFrontStrip(AL, gripTopL);
+        railFrontStrip(AR, gripTopR);
+      }
 
       // Tell the user the target art size: the channel is `total` long and
       // (ZT-ZB) wide in model units; scale to mm via the ~455mm racquet length.
