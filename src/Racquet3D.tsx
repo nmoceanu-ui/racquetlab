@@ -762,7 +762,7 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * 0.8, dh = (it.baseH || 100) * (it.scale || 1) * 0.8;
+              const dw = (it.baseW || 100) * (it.scale || 1) * 2.2, dh = (it.baseH || 100) * (it.scale || 1) * 2.2;
               tctx.globalAlpha = it.opacity != null ? it.opacity : 1;
               try { tctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
@@ -786,10 +786,10 @@ export default function Racquet3D(props: {
       // the rail silhouette.
       const _po = OUTP; // (kept for reference)
       const cs: [number, number][] = [
-        [rw * 0.3, Zt],       // front face, near the outer corner
+        [-rw + 0.6, Zt],      // front face, near the INNER edge (wrap the inner half too)
         [rw + 0.1, Zt],       // front-outer corner (right at the rail edge)
         [rw + 0.1, -Zt],      // back-outer corner
-        [rw * 0.3, -Zt],      // back face, near the outer corner
+        [-rw + 0.6, -Zt],     // back face, near the INNER edge
       ];
       const CSN = cs.length;
       const buildRailWrap = (A: number[], G: number[], outerSign: number) => {
