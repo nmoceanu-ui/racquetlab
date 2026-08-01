@@ -528,7 +528,9 @@ export default function Racquet3D(props: {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
           ectx.translate(u * EW, v * EH);
-          ectx.rotate(((it.rot || 0) * Math.PI) / 180);
+          // the profile strip's LONG axis (y) runs around the edge, its SHORT axis
+          // (x) is the depth — the opposite of the edge canvas axes, so rotate 90.
+          ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
           if (it.type === "text") {
             ectx.font = Math.max(8, (it.size || 24) * 4) + "px " + (it.font || "sans-serif");
             ectx.fillStyle = it.color || "#ffffff";
