@@ -442,7 +442,8 @@ export default function Racquet3D(props: {
       const ux = dx / len, uy = dy / len;       // axis A(top) -> G(bottom)
       let nx = -uy, ny = ux;                     // in-plane normal
       if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; } // make it point OUTWARD
-      const rr = Math.min(r, width * 0.92, len * 0.45);
+      const rb = Math.min(r, width * 0.96, len * 0.45); // along the bottom edge (capped by the rail width)
+      const ru = Math.min(r, len * 0.5);                 // up the outer edge (free to run taller for a bigger fillet)
       const topOut: [number, number] = [A[0] + nx * w, A[1] + ny * w];
       const topIn: [number, number] = [A[0] - nx * w, A[1] - ny * w];
       const botIn: [number, number] = [G[0] - nx * w, G[1] - ny * w];
@@ -451,8 +452,8 @@ export default function Racquet3D(props: {
       sh.moveTo(topOut[0], topOut[1]);
       sh.lineTo(topIn[0], topIn[1]);
       sh.lineTo(botIn[0], botIn[1]);
-      sh.lineTo(botOut[0] - nx * rr, botOut[1] - ny * rr);                                   // stop short of the corner
-      sh.quadraticCurveTo(botOut[0], botOut[1], botOut[0] - ux * rr, botOut[1] - uy * rr);   // round only this corner
+      sh.lineTo(botOut[0] - nx * rb, botOut[1] - ny * rb);                                   // stop short of the corner
+      sh.quadraticCurveTo(botOut[0], botOut[1], botOut[0] - ux * ru, botOut[1] - uy * ru);   // round only this corner
       sh.lineTo(topOut[0], topOut[1]);
       sh.closePath();
       const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false });
@@ -461,8 +462,8 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    roundedRail(AL, gripTopL, 13, T + 8, 11, -1, frameMat);
-    roundedRail(AR, gripTopR, 13, T + 8, 11, 1, frameMat);
+    roundedRail(AL, gripTopL, 13, T + 8, 17, -1, frameMat);
+    roundedRail(AR, gripTopR, 13, T + 8, 17, 1, frameMat);
 
     // ---- lead-tape channel: ONE continuous ribbon that runs up the left throat
     // rail, around the head (over the top), and back down the right rail. It sits
