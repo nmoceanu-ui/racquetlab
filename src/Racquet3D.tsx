@@ -711,14 +711,10 @@ export default function Racquet3D(props: {
       const pAR: [number, number] = [head[45][0], head[45][1]];
       const pGL: [number, number] = [CX - 24, 486];
       const pGR: [number, number] = [CX + 24, 486];
-      const PXMIN = Math.min(pAL[0], pAR[0], pGL[0], pGR[0]);
-      const PXMAX = Math.max(pAL[0], pAR[0], pGL[0], pGR[0]);
       const PYMIN = Math.min(pAL[1], pAR[1], pGL[1], pGR[1]);
       const PYMAX = Math.max(pAL[1], pAR[1], pGL[1], pGR[1]);
-      const spanX = Math.max(1, PXMAX - PXMIN), spanY = Math.max(1, PYMAX - PYMIN);
-      const TPP = 4; // canvas px per model unit (uniform in both axes -> no distortion)
-      const TCW = Math.max(64, Math.round(spanX * TPP));
-      const TCH = Math.max(64, Math.round(spanY * TPP));
+      const spanY = Math.max(1, PYMAX - PYMIN);
+      const TCW = 128, TCH = 512; // across the wrap (x) by along-the-rail length (y)
       const throatCanvas = document.createElement("canvas");
       throatCanvas.width = TCW; throatCanvas.height = TCH;
       const tctx = throatCanvas.getContext("2d") as CanvasRenderingContext2D;
@@ -734,14 +730,16 @@ export default function Racquet3D(props: {
         const P = propsRef.current;
         tctx.clearRect(0, 0, TCW, TCH);
         (P.layers || []).filter((l: any) => (l.side || "face") === "throat").forEach((it: any) => {
-          const cx = ((it.x - PXMIN) / spanX) * TCW, cy = ((it.y - PYMIN) / spanY) * TCH;
+          // v = position ALONG the rail (from the layer's y); centred across the wrap.
+          const v = Math.max(0.04, Math.min(0.96, ((it.y - PYMIN) / spanY)));
+          const cx = TCW / 2, cy = v * TCH;
           tctx.save();
           tctx.translate(cx, cy);
           tctx.rotate(((it.rot || 0) * Math.PI) / 180);
           tctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
           tctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           if (it.type === "text") {
-            tctx.font = Math.max(8, (it.size || 24) * TPP) + "px " + (it.font || "sans-serif");
+            tctx.font = Math.max(8, (it.size || 24) * 2.2) + "px " + (it.font || "sans-serif");
             tctx.fillStyle = it.color || "#ffffff";
             tctx.textAlign = "center"; tctx.textBaseline = "middle";
             tctx.fillText(it.text || "", 0, 0);
@@ -755,7 +753,7 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * TPP, dh = (it.baseH || 100) * (it.scale || 1) * TPP;
+              const dw = (it.baseW || 100) * (it.scale || 1) * 1.1, dh = (it.baseH || 100) * (it.scale || 1) * 1.1;
               tctx.globalAlpha = it.opacity != null ? it.opacity : 1;
               try { tctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
@@ -766,19 +764,55 @@ export default function Racquet3D(props: {
       };
       redrawThroatRef.current = redrawThroat;
       redrawThroat();
-      const zFront = (T + 8) / 2 + 0.5;
-      const uv = (p: [number, number]): [number, number] => [(p[0] - PXMIN) / spanX, (p[1] - PYMIN) / spanY];
-      const uA = uv(pAL), uB = uv(pAR), uC = uv(pGR), uD = uv(pGL);
-      const tpos = [AL[0], AL[1], zFront, AR[0], AR[1], zFront, gripTopR[0], gripTopR[1], zFront, gripTopL[0], gripTopL[1], zFront];
-      const tuv = [uA[0], uA[1], uB[0], uB[1], uC[0], uC[1], uD[0], uD[1]];
-      const tg = new THREE.BufferGeometry();
-      tg.setAttribute("position", new THREE.Float32BufferAttribute(tpos, 3));
-      tg.setAttribute("uv", new THREE.Float32BufferAttribute(tuv, 2));
-      tg.setIndex([0, 1, 2, 0, 2, 3]);
-      tg.computeVertexNormals();
-      const throatMesh = new THREE.Mesh(tg, throatMat);
-      group.add(throatMesh);
-      pickTargets.push(throatMesh); // let the throat panel be grabbed for dragging in 3D
+      // Build a ribbon that hugs ONE rail's outer edge, wrapping front -> outer -> back
+      // across the rail's depth, and running its full length. Both rails share the same
+      // throat texture, so a logo/text appears mirrored on each rail's edge and stays
+      // visible from any rotation instead of floating in the open throat.
+      const Zt = (T + 8) / 2;   // rail depth half (~19)
+      const rw = 6.5;           // rail half-width (rail is 13 wide)
+      const OUTP = 1.2;         // sit a hair proud of the rail's outer face
+      // cross-section across the wrap: [in-plane offset, z]; u runs front(0) -> back(1)
+      const cs: [number, number][] = [
+        [rw * 0.35, Zt],          // front face, just inside the outer corner
+        [rw + OUTP, Zt * 0.55],   // front-outer corner
+        [rw + OUTP, -Zt * 0.55],  // back-outer corner
+        [rw * 0.35, -Zt],         // back face, just inside the outer corner
+      ];
+      const CSN = cs.length;
+      const buildRailWrap = (A: number[], G: number[], outerSign: number) => {
+        const dx = G[0] - A[0], dy = G[1] - A[1];
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len, uy = dy / len;   // along the rail (A -> G)
+        let nx = -uy, ny = ux;                 // in-plane normal
+        if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; }
+        const NS = 44;
+        const tpos: number[] = [], tuv: number[] = [], tidx: number[] = [];
+        for (let s = 0; s <= NS; s++) {
+          const t = s / NS;
+          const bx = A[0] + (G[0] - A[0]) * t, by = A[1] + (G[1] - A[1]) * t;
+          for (let k = 0; k < CSN; k++) {
+            const o = cs[k][0], z = cs[k][1];
+            tpos.push(bx + nx * o, by + ny * o, z);
+            tuv.push(k / (CSN - 1), t);
+          }
+        }
+        for (let s = 0; s < NS; s++) {
+          for (let k = 0; k < CSN - 1; k++) {
+            const a = s * CSN + k, b = s * CSN + k + 1, cc = (s + 1) * CSN + k + 1, d = (s + 1) * CSN + k;
+            tidx.push(a, b, cc, a, cc, d);
+          }
+        }
+        const tg = new THREE.BufferGeometry();
+        tg.setAttribute("position", new THREE.Float32BufferAttribute(tpos, 3));
+        tg.setAttribute("uv", new THREE.Float32BufferAttribute(tuv, 2));
+        tg.setIndex(tidx);
+        tg.computeVertexNormals();
+        const m = new THREE.Mesh(tg, throatMat);
+        group.add(m);
+        pickTargets.push(m); // selectable/draggable in 3D
+      };
+      buildRailWrap(AL, gripTopL, -1);
+      buildRailWrap(AR, gripTopR, 1);
     }
 
     // start the grip a touch higher and gently flare its top out to meet the rails, so
