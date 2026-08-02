@@ -546,7 +546,7 @@ export default function Racquet3D(props: {
       rib.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
       rib.setIndex(idxs);
       rib.computeVertexNormals();
-      group.add(new THREE.Mesh(rib, leadMat));
+      void rib; // lead strip removed — frame art wraps the whole profile instead
       // The head has a milled groove that recesses the ribbon; the box throat rails do
       // NOT, so the ribbon there gets buried. When the channel runs onto the throat,
       // lay a lead strip down the MIDDLE of each rail's OUTER SIDE EDGE (the profile
@@ -566,8 +566,7 @@ export default function Racquet3D(props: {
           g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals();
           group.add(new THREE.Mesh(g, leadMat));
         };
-        railEdgeStrip(AL, gripTopL, -1);
-        railEdgeStrip(AR, gripTopR, 1);
+        void railEdgeStrip; // lead strip removed
       }
 
       // Tell the user the target art size: the channel is `total` long and
@@ -580,7 +579,7 @@ export default function Racquet3D(props: {
       captionEl = document.createElement("div");
       captionEl.style.cssText = "position:absolute;left:10px;bottom:8px;font:11px/1.35 Inter,system-ui,sans-serif;color:#6b6459;background:rgba(255,255,255,0.78);padding:4px 8px;border-radius:8px;pointer-events:none;max-width:78%;";
       captionEl.textContent = "Lead-channel art: 1 long strip ≈ " + lenMm + " × " + widMm + " mm (~" + ratio + ":1). Applied once, length-wise.";
-      mount.appendChild(captionEl);
+      captionEl = null; // lead strip removed — no caption
     }
 
     // ---- FRAME ART: bake the "Frame"-tagged (side "profile") layers onto a texture
@@ -628,17 +627,19 @@ export default function Racquet3D(props: {
         const P = propsRef.current;
         ectx.clearRect(0, 0, EW, EH);
         (P.layers || []).filter((l: any) => l && (l.side || "face") === "profile").forEach((it: any) => {
-          const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
-          ectx.save();
-          ectx.translate(u * EW, v * EH);
-          ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
-          ectx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
-          ectx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
+          const u = (it.y - 48) / 464;
           if (it.type === "text") {
+            const v = (it.x - 322) / 36;
+            ectx.save();
+            ectx.translate(u * EW, v * EH);
+            ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
+            ectx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+            ectx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
             ectx.font = Math.max(8, (it.size || 24) * PPU) + "px " + (it.font || "sans-serif");
             ectx.fillStyle = it.color || "#ffffff";
             ectx.textAlign = "center"; ectx.textBaseline = "middle";
             ectx.fillText(it.text || "", 0, 0);
+            ectx.restore();
           } else if (it.href) {
             let cached = imgCacheRef.current.get(it.href);
             if (!cached) {
@@ -649,12 +650,17 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              const dw = (it.baseW || 100) * (it.scale || 1) * PPU, dh = (it.baseH || 100) * (it.scale || 1) * PPU;
+              // Frame images WRAP the whole cross-section: fill the full canvas height
+              // (front face -> outer rim/profile -> back face). Size sets how far it
+              // wraps around the perimeter; Move Y sets where around the frame it sits.
+              const dw = (it.baseW || 100) * (it.scale || 1) * PPU;
+              const cxp = u * EW;
+              ectx.save();
               ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
-              try { ectx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
+              try { ectx.drawImage(cached.img, cxp - dw / 2, 0, dw, EH); } catch (e) { /* tainted */ }
+              ectx.restore();
             }
           }
-          ectx.restore();
         });
         edgeTexture.needsUpdate = true;
       };
