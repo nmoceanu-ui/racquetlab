@@ -668,20 +668,35 @@ export default function Racquet3D(props: {
       redrawEdgeRef.current = redrawEdge;
       redrawEdge();
 
-      const evTop = (EZT + 19) / 38, evBot = (EZB + 19) / 38;
-      const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
-      for (let i = 0; i < eN; i++) {
-        const Pp = epath[i], n = enrm[i], u = ecum[i] / etot;
-        epos.push(Pp[0] + n[0] * EOUT, Pp[1] + n[1] * EOUT, EZT); euv.push(u, evTop);
-        epos.push(Pp[0] + n[0] * EOUT, Pp[1] + n[1] * EOUT, EZB); euv.push(u, evBot);
-      }
-      for (let i = 0; i < eN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
-      const eg = new THREE.BufferGeometry();
-      eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
-      eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
-      eg.setIndex(eidx);
-      eg.computeVertexNormals();
-      group.add(new THREE.Mesh(eg, edgeMat));
+      // Edge art lands on the FLAT BLACK FRAME RING seen face-on (the "frame around
+      // the face"), NOT the side profile. It's the annulus between the inner face
+      // edge (fpts) and the outer frame edge (head), laid on the FRONT face. u runs
+      // around the frame; v runs radially (0 = inner face edge, 1 = outer frame edge).
+      // The grey lead strip lives on the side profile and is left completely untouched.
+      // (void the side-band-only locals so an unused-var check can't trip the build.)
+      void enrm; void EOUT; void EZT; void EZB;
+      const ringZf = T / 2 + 7;     // front ring, just proud of the frame face
+      const ringZb = -(T / 2 + 7);  // mirrored ring on the back face
+      const buildFrameRing = (ringZ: number, front: boolean) => {
+        const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
+        for (let i = 0; i < eN; i++) {
+          const idx = (75 + i) % 120;
+          const outer = epath[i];
+          const inner = S(fpts[idx][0], fpts[idx][1]);
+          const u = ecum[i] / etot;
+          epos.push(inner[0], inner[1], ringZ); euv.push(front ? u : 1 - u, 0);
+          epos.push(outer[0], outer[1], ringZ); euv.push(front ? u : 1 - u, 1);
+        }
+        for (let i = 0; i < eN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
+        const eg = new THREE.BufferGeometry();
+        eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
+        eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
+        eg.setIndex(eidx);
+        eg.computeVertexNormals();
+        group.add(new THREE.Mesh(eg, edgeMat));
+      };
+      buildFrameRing(ringZf, true);
+      buildFrameRing(ringZb, false);
     }
 
     const yT = -46;
