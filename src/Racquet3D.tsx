@@ -661,25 +661,39 @@ export default function Racquet3D(props: {
       redrawEdgeRef.current = redrawEdge;
       redrawEdge();
 
-      const ringZf = T / 2 + 8;
-      const ringZb = -(T / 2 + 8);
-      const buildFrameRing = (ringZ: number, front: boolean) => {
+      // Wrap the WHOLE frame cross-section: front face -> outer rim (the PROFILE /
+      // side edge) -> back face, around the entire perimeter (head + throat rails).
+      // So frame art covers the faces AND the profile side of the racquet — the whole
+      // external frame. v runs across the section: 0 = front inner, 0.5 = outer rim,
+      // 1 = back inner. A normal-sized image fills v and skins the whole section.
+      const Zf = T / 2 + 8;   // proud of the frame front/back
+      const cs: [number, number][] = [ [0, Zf], [1, Zf], [1, 0], [1, -Zf], [0, -Zf] ]; // [radial 0..1, z]
+      const CSN = cs.length;
+      {
         const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
         for (let i = 0; i < fN; i++) {
-          const u = ecum[i] / etot, uu = front ? u : 1 - u;
-          epos.push(fpath[i].in[0], fpath[i].in[1], ringZ); euv.push(uu, 0);
-          epos.push(fpath[i].out[0], fpath[i].out[1], ringZ); euv.push(uu, 1);
+          const P = fpath[i];
+          const dx = P.out[0] - P.in[0], dy = P.out[1] - P.in[1];
+          const u = ecum[i] / etot;
+          for (let k = 0; k < CSN; k++) {
+            const r = cs[k][0], z = cs[k][1];
+            epos.push(P.in[0] + dx * r, P.in[1] + dy * r, z);
+            euv.push(u, k / (CSN - 1));
+          }
         }
-        for (let i = 0; i < fN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
+        for (let i = 0; i < fN - 1; i++) {
+          for (let k = 0; k < CSN - 1; k++) {
+            const a = i * CSN + k, b = i * CSN + k + 1, c = (i + 1) * CSN + k + 1, d = (i + 1) * CSN + k;
+            eidx.push(a, b, c, a, c, d);
+          }
+        }
         const eg = new THREE.BufferGeometry();
         eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
         eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
         eg.setIndex(eidx);
         eg.computeVertexNormals();
         group.add(new THREE.Mesh(eg, edgeMat));
-      };
-      buildFrameRing(ringZf, true);
-      buildFrameRing(ringZb, false);
+      }
     }
 
     const yT = -46;
