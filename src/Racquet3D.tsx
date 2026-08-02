@@ -56,8 +56,16 @@ export default function Racquet3D(props: {
     holes: props.holes, holeR: props.holeR, finish: props.finish, leadThroat: props.leadThroat,
   });
   // ...re-bake the face texture (no rebuild) when these change — keeps dragging
-  // the image size/rotate/opacity/position perfectly smooth.
-  const texKey = JSON.stringify({ layers: props.layers, face: props.face, pattern: props.pattern, accent: props.accent, sideImg: props.sideImg });
+  // the image size/rotate/opacity/position perfectly smooth. IMPORTANT: never
+  // JSON.stringify the whole layers array — image hrefs are giant base64 data
+  // URLs, and serializing them on every render/slider-tick is what made the
+  // transitions stutter. Build a CHEAP signature from only the fields that affect
+  // the bake, fingerprinting hrefs by length + a few chars instead of the payload.
+  const hrefSig = (s: string): string => (s ? s.length + "~" + s.slice(0, 24) + "~" + s.slice(-12) : "0");
+  const layerSig = (l: any): string => (l
+    ? [l.id, l.type, l.side, l.x, l.y, l.size, l.scale, l.rot, l.sx, l.sy, l.skx, l.sky, l.opacity, l.color, l.font, l.text, l.baseW, l.baseH, hrefSig(l.href)].join(",")
+    : "_");
+  const texKey = (props.layers || []).map(layerSig).join("|") + "||" + (props.face || "") + "|" + (props.pattern || "") + "|" + (props.accent || "") + "|" + hrefSig(props.sideImg || "");
   // ...and just recolour materials in place (instant) when a colour swatch changes.
   const colorKey = JSON.stringify({ frame: props.frame, throatC: props.throatC, grip: props.grip, beamColors: props.beamColors, leadChannel: props.leadChannel });
 
@@ -857,6 +865,41 @@ export default function Racquet3D(props: {
     const animate = () => { raf = requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); };
     animate();
 
+    // ---- capture API: current-view PNG + a full set of preset angles ----
+    // Exposed on window so the Paint Shop toolbar buttons can trigger a download
+    // without threading a ref through props. preserveDrawingBuffer is on, so
+    // toDataURL after a manual render returns the actual pixels.
+    const renderOnce = () => renderer.render(scene, camera);
+    const capturePNG = (): string => { renderOnce(); return renderer.domElement.toDataURL("image/png"); };
+    const captureAngles = (): { name: string; url: string }[] => {
+      const savedPos = camera.position.toArray();
+      const savedTgt = controls.target.toArray();
+      const base = baseDistRef.current || 1170;
+      const shots: { name: string; dir: [number, number, number]; tgt: [number, number, number]; dist: number }[] = [
+        { name: "face",       dir: [0, 0.06, 1],     tgt: [0, 0, 0],     dist: base },
+        { name: "back",       dir: [0, 0.06, -1],    tgt: [0, 0, 0],     dist: base },
+        { name: "edge-left",  dir: [-1, 0.05, 0.14], tgt: [0, 0, 0],     dist: base },
+        { name: "edge-right", dir: [1, 0.05, 0.14],  tgt: [0, 0, 0],     dist: base },
+        { name: "throat",     dir: [0, -0.28, 0.95], tgt: [0, -40, 0],   dist: base * 0.6 },
+      ];
+      const out: { name: string; url: string }[] = [];
+      shots.forEach((s) => {
+        const t = new THREE.Vector3(s.tgt[0], s.tgt[1], s.tgt[2]);
+        const d = new THREE.Vector3(s.dir[0], s.dir[1], s.dir[2]).normalize();
+        camera.position.copy(t.clone().add(d.multiplyScalar(s.dist)));
+        camera.lookAt(t);
+        camera.updateProjectionMatrix();
+        renderOnce();
+        out.push({ name: s.name, url: renderer.domElement.toDataURL("image/png") });
+      });
+      camera.position.fromArray(savedPos);
+      controls.target.fromArray(savedTgt);
+      controls.update();
+      renderOnce();
+      return out;
+    };
+    (window as any).__pala3D = { capturePNG, captureAngles };
+
     // ---- pointer interaction: grab a logo to move it on the face, or click to edit holes ----
     let downXY: number[] | null = null;
     let dragLayer: any = null; // { id, ox, oy }
@@ -947,6 +990,7 @@ export default function Racquet3D(props: {
       redrawLeadRef.current = null;
       redrawEdgeRef.current = null;
       redrawThroatRef.current = null;
+      try { if ((window as any).__pala3D) delete (window as any).__pala3D; } catch (e) { /* noop */ }
       if (captionEl && captionEl.parentNode) captionEl.parentNode.removeChild(captionEl);
       try { leadTexture.dispose(); } catch (e) { /* noop */ }
       controls.dispose();
@@ -960,8 +1004,19 @@ export default function Racquet3D(props: {
     };
   }, [geoKey]);
 
-  // Light: only re-bake the face texture when layers / face color / pattern change
-  useEffect(() => { if (redrawRef.current) redrawRef.current(); if (redrawEdgeRef.current) redrawEdgeRef.current(); if (redrawThroatRef.current) redrawThroatRef.current(); if (redrawLeadRef.current) redrawLeadRef.current(); }, [texKey]);
+  // Light: only re-bake the textures when layers / face color / pattern change.
+  // Coalesce onto a single animation frame so a fast slider drag (many rapid
+  // changes) collapses into ONE bake per frame instead of one per event — this
+  // is what makes size/rotate/opacity feel seamless instead of glitchy.
+  useEffect(() => {
+    const h = requestAnimationFrame(() => {
+      if (redrawRef.current) redrawRef.current();
+      if (redrawEdgeRef.current) redrawEdgeRef.current();
+      if (redrawThroatRef.current) redrawThroatRef.current();
+      if (redrawLeadRef.current) redrawLeadRef.current();
+    });
+    return () => cancelAnimationFrame(h);
+  }, [texKey]);
 
   // Instant: recolour materials in place (no rebuild) when a colour swatch changes
   useEffect(() => {
