@@ -168,7 +168,7 @@ export default function Racquet3D(props: {
     const sminX = Math.min(...sxs), smaxX = Math.max(...sxs);
     const sminY = Math.min(...sys), smaxY = Math.max(...sys);
     const sW = smaxX - sminX, sH = smaxY - sminY;
-    const RES = 3;
+    const RES = 5;
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(4, Math.round(sW * RES));
     canvas.height = Math.max(4, Math.round(sH * RES));
@@ -176,7 +176,7 @@ export default function Racquet3D(props: {
     const texture = new THREE.CanvasTexture(canvas);
     texture.flipY = false;
     (texture as any).colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 4;
+    texture.anisotropy = 8;
 
     const darken = (hex: string, amt: number): string => {
       const h = (hex || "#242430").replace("#", "");
@@ -223,7 +223,7 @@ export default function Racquet3D(props: {
           ctx.closePath(); ctx.fill();
         }
       }
-      (P.layers || []).filter((it: any) => (it.side || "face") === "face").forEach((it: any) => {
+      (P.layers || []).filter((it: any) => it && (it.side || "face") === "face").forEach((it: any) => {
         if (it.type === "text") {
           ctx.save();
           ctx.translate(it.x, it.y);
@@ -361,13 +361,13 @@ export default function Racquet3D(props: {
     leadMatRef.current = leadMat;
     // an optional image wrapped around the channel (patterned lead-tape look)
     const leadCanvas = document.createElement("canvas");
-    leadCanvas.width = 1600; leadCanvas.height = 96;
+    leadCanvas.width = 2400; leadCanvas.height = 144;
     const lctx = leadCanvas.getContext("2d") as CanvasRenderingContext2D;
     const leadTexture = new THREE.CanvasTexture(leadCanvas);
     leadTexture.wrapS = THREE.ClampToEdgeWrapping;
     leadTexture.wrapT = THREE.ClampToEdgeWrapping;
     (leadTexture as any).colorSpace = THREE.SRGBColorSpace;
-    leadTexture.anisotropy = 4;
+    leadTexture.anisotropy = 8;
     leadTexRef.current = leadTexture;
     // (the channel ribbon geometry is built in the throat section below, once the
     // head/throat anchor points are known, so it can flow as one continuous piece)
@@ -379,7 +379,7 @@ export default function Racquet3D(props: {
       if (!lm) return;
       // ONLY "Lead strip"-placed layers live on the channel — no legacy image and no
       // edge/face/throat bleed. Images first so text always sits on top.
-      const leadLayers = (P.layers || []).filter((l: any) => (l.side || "") === "lead");
+      const leadLayers = (P.layers || []).filter((l: any) => l && (l.side || "") === "lead");
       if (leadLayers.length === 0) { lm.map = null; lm.color.set(P.leadChannel || "#c9c9c9"); lm.needsUpdate = true; return; }
       const cw = leadCanvas.width, ch = leadCanvas.height;
       lctx.clearRect(0, 0, cw, ch);
@@ -393,7 +393,7 @@ export default function Racquet3D(props: {
         lctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
         lctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
         if (it.type === "text") {
-          lctx.font = Math.max(8, (it.size || 24) * 2.4) + "px " + (it.font || "sans-serif");
+          lctx.font = Math.max(8, (it.size || 24) * 3.6) + "px " + (it.font || "sans-serif");
           lctx.fillStyle = it.color || "#ffffff";
           lctx.textAlign = "center"; lctx.textBaseline = "middle";
           lctx.fillText(it.text || "", 0, 0);
@@ -407,7 +407,7 @@ export default function Racquet3D(props: {
             img.src = it.href;
           }
           if (cached.loaded) {
-            const dw = (it.baseW || 100) * (it.scale || 1) * 1.4, dh = (it.baseH || 100) * (it.scale || 1) * 1.4;
+            const dw = (it.baseW || 100) * (it.scale || 1) * 2.1, dh = (it.baseH || 100) * (it.scale || 1) * 2.1;
             lctx.globalAlpha = it.opacity != null ? it.opacity : 1;
             try { lctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
           }
@@ -601,7 +601,7 @@ export default function Racquet3D(props: {
       const etot = ecum[eN - 1] || 1;
       const EOUT = 1, EZT = 18, EZB = -18;
       const EDEPTH = EZT - EZB;             // 36 units of edge depth
-      const PPU = 4;                         // texture pixels per model unit (UNIFORM in both axes)
+      const PPU = 5;                         // texture pixels per model unit (UNIFORM in both axes)
       const EH = Math.round(EDEPTH * PPU);   // 144
       const EW = Math.max(512, Math.round(etot * PPU)); // matches physical aspect -> no stretch
 
@@ -613,7 +613,7 @@ export default function Racquet3D(props: {
       edgeTexture.wrapS = THREE.ClampToEdgeWrapping;
       edgeTexture.wrapT = THREE.ClampToEdgeWrapping;
       (edgeTexture as any).colorSpace = THREE.SRGBColorSpace;
-      edgeTexture.anisotropy = 4;
+      edgeTexture.anisotropy = 8;
       edgeTexRef.current = edgeTexture;
       const edgeMat: any = new THREE.MeshStandardMaterial({ map: edgeTexture, transparent: true, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
 
@@ -623,7 +623,7 @@ export default function Racquet3D(props: {
         // Edge art = only the layers placed with the "Edge" target (side "profile").
         // The lead strip is a SEPARATE surface (baked in redrawLead), so edge art no
         // longer bleeds onto the lead channel.
-        (P.layers || []).filter((l: any) => (l.side || "face") === "profile").forEach((it: any) => {
+        (P.layers || []).filter((l: any) => l && (l.side || "face") === "profile").forEach((it: any) => {
           const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
           ectx.translate(u * EW, v * EH);
@@ -735,7 +735,7 @@ export default function Racquet3D(props: {
       const redrawThroat = () => {
         const P = propsRef.current;
         tctx.clearRect(0, 0, TCW, TCH);
-        (P.layers || []).filter((l: any) => (l.side || "face") === "throat").forEach((it: any) => {
+        (P.layers || []).filter((l: any) => l && (l.side || "face") === "throat").forEach((it: any) => {
           // v = position ALONG the rail (from the layer's y); centred across the wrap.
           const v = Math.max(0.04, Math.min(0.96, ((it.y - PYMIN) / spanY)));
           const cx = TCW / 2, cy = v * TCH;
