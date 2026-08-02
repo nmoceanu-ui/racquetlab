@@ -588,13 +588,25 @@ export default function Racquet3D(props: {
     // frame; v runs radially (0 = inner face edge, 1 = outer frame edge). The grey lead
     // strip lives on the side profile and is untouched.
     {
-      const eHeadS: [number, number][] = head.map((p) => S(p[0], p[1]));
-      const epath: [number, number][] = [];
-      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; epath.push(eHeadS[idx]); if (idx === 45) break; }
-      const eN = epath.length;
+      // full outer-frame path: up the LEFT rail, around the HEAD (over the top),
+      // down the RIGHT rail — each entry has an inner + outer edge (S-space), so the
+      // frame art wraps the WHOLE frame including the throat rails.
+      const railHalf = 6.5;
+      const fpath: { in: [number, number]; out: [number, number] }[] = [];
+      const pushRail = (A: number[], B: number[], outX: number) => {
+        let dx = B[0] - A[0], dy = B[1] - A[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+        let nx = -dy, ny = dx;
+        if (Math.sign(nx) !== Math.sign(outX)) { nx = -nx; ny = -ny; }
+        const NS = 10;
+        for (let s = 0; s <= NS; s++) { const t = s / NS, cx = A[0] + (B[0] - A[0]) * t, cy = A[1] + (B[1] - A[1]) * t; fpath.push({ in: [cx - nx * railHalf, cy - ny * railHalf], out: [cx + nx * railHalf, cy + ny * railHalf] }); }
+      };
+      pushRail(gripTopL, AL, -1);
+      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; fpath.push({ in: S(fpts[idx][0], fpts[idx][1]), out: S(head[idx][0], head[idx][1]) }); if (idx === 45) break; }
+      pushRail(AR, gripTopR, 1);
+      const fN = fpath.length;
       const ecum: number[] = [0];
-      for (let i = 1; i < eN; i++) ecum[i] = ecum[i - 1] + Math.hypot(epath[i][0] - epath[i - 1][0], epath[i][1] - epath[i - 1][1]);
-      const etot = ecum[eN - 1] || 1;
+      for (let i = 1; i < fN; i++) ecum[i] = ecum[i - 1] + Math.hypot(fpath[i].out[0] - fpath[i - 1].out[0], fpath[i].out[1] - fpath[i - 1].out[1]);
+      const etot = ecum[fN - 1] || 1;
       const EDEPTH = 36;
       const PPU = 5;
       const EH = Math.round(EDEPTH * PPU);
@@ -649,19 +661,16 @@ export default function Racquet3D(props: {
       redrawEdgeRef.current = redrawEdge;
       redrawEdge();
 
-      const ringZf = T / 2 + 7;
-      const ringZb = -(T / 2 + 7);
+      const ringZf = T / 2 + 8;
+      const ringZb = -(T / 2 + 8);
       const buildFrameRing = (ringZ: number, front: boolean) => {
         const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
-        for (let i = 0; i < eN; i++) {
-          const idx = (75 + i) % 120;
-          const outer = epath[i];
-          const inner = S(fpts[idx][0], fpts[idx][1]);
-          const u = ecum[i] / etot;
-          epos.push(inner[0], inner[1], ringZ); euv.push(front ? u : 1 - u, 0);
-          epos.push(outer[0], outer[1], ringZ); euv.push(front ? u : 1 - u, 1);
+        for (let i = 0; i < fN; i++) {
+          const u = ecum[i] / etot, uu = front ? u : 1 - u;
+          epos.push(fpath[i].in[0], fpath[i].in[1], ringZ); euv.push(uu, 0);
+          epos.push(fpath[i].out[0], fpath[i].out[1], ringZ); euv.push(uu, 1);
         }
-        for (let i = 0; i < eN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
+        for (let i = 0; i < fN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
         const eg = new THREE.BufferGeometry();
         eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
         eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
