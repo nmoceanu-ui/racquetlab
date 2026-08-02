@@ -343,24 +343,14 @@ export default function Racquet3D(props: {
     // (added later) so throat art can be grabbed and moved directly in 3D too.
     const pickTargets: any[] = [pickMesh];
 
-    // Frame ring with a REAL recessed lead channel down the profile: two beveled
-    // "shoulder" rings at full width (top and bottom of the edge), and a recessed
-    // floor across the middle depth band. The lead channel sits in that groove,
-    // slightly below the surrounding frame surface.
+    // Solid frame ring — ONE full-depth band around the head with lightly beveled
+    // front/back edges. No recessed lead groove: the whole profile is a single clean
+    // frame edge, matching the throat rails (which are already solid).
     const FD = T + 8;             // full frame depth (38)
-    const GH = 7;                 // groove half-height (channel is 2*GH wide in z)
-    const GDEP = 7;               // how far the groove floor is set inside the outer edge
-    const shDepth = FD / 2 - GH;  // shoulder depth (12)
-    const addShoulder = (zpos: number) => {
-      const g = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: shDepth, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
-      const m = new THREE.Mesh(g, frameMat); m.position.z = zpos; group.add(m);
-    };
-    addShoulder(GH);        // top shoulder: z  7 .. 19
-    addShoulder(-FD / 2);   // bottom shoulder: z -19 .. -7
-    const floorGeo = new THREE.ExtrudeGeometry(shapeOf(genPts(GDEP, GDEP), [pathOf(fpts)]), { depth: 2 * GH, bevelEnabled: false, steps: 1 });
-    const floorRing = new THREE.Mesh(floorGeo, frameMat);
-    floorRing.position.z = -GH;
-    group.add(floorRing);
+    const frameRingGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: FD, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
+    const frameRing = new THREE.Mesh(frameRingGeo, frameMat);
+    frameRing.position.z = -FD / 2;
+    group.add(frameRing);
 
     // lead-tape channel: a thin recolourable band running around the frame
     const leadMat: THREE.Material = glossy
