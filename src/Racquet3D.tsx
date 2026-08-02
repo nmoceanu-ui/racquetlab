@@ -583,38 +583,25 @@ export default function Racquet3D(props: {
       mount.appendChild(captionEl);
     }
 
-    // ---- FRAME ART: an image/text placed on "Frame" is PLANAR-projected (exactly
-    // like the face) across the whole OUTER FRAME — the head ring AND both throat
-    // rails, front and back — so it skins the frame the same way the frame COLOUR
-    // fills the whole outline. The grey lead strip lives on the side profile and is
-    // left completely untouched.
+    // ---- FRAME ART: bake the "Frame"-tagged (side "profile") layers onto a texture
+    // and wrap it around the head's flat frame ring (front + back). u runs around the
+    // frame; v runs radially (0 = inner face edge, 1 = outer frame edge). The grey lead
+    // strip lives on the side profile and is untouched.
     {
-      const railHalf = 6.5;
-      // Build the frame's flat front-face outline as inner/outer edge pairs, running
-      // up the LEFT rail, around the HEAD (over the top), and down the RIGHT rail.
-      const skin: { in: [number, number]; out: [number, number] }[] = [];
-      const pushRail = (A: number[], B: number[], outX: number) => {
-        let dx = B[0] - A[0], dy = B[1] - A[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
-        let nx = -dy, ny = dx;
-        if (Math.sign(nx) !== Math.sign(outX)) { nx = -nx; ny = -ny; } // point OUTWARD
-        const NS = 12;
-        for (let s = 0; s <= NS; s++) {
-          const t = s / NS, cx = A[0] + (B[0] - A[0]) * t, cy = A[1] + (B[1] - A[1]) * t;
-          skin.push({ in: [cx - nx * railHalf, cy - ny * railHalf], out: [cx + nx * railHalf, cy + ny * railHalf] });
-        }
-      };
-      pushRail(gripTopL, AL, -1);                          // left rail: grip -> head
-      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; skin.push({ in: S(fpts[idx][0], fpts[idx][1]), out: S(head[idx][0], head[idx][1]) }); if (idx === 45) break; } // head
-      pushRail(AR, gripTopR, 1);                           // right rail: head -> grip
+      const eHeadS: [number, number][] = head.map((p) => S(p[0], p[1]));
+      const epath: [number, number][] = [];
+      for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; epath.push(eHeadS[idx]); if (idx === 45) break; }
+      const eN = epath.length;
+      const ecum: number[] = [0];
+      for (let i = 1; i < eN; i++) ecum[i] = ecum[i - 1] + Math.hypot(epath[i][0] - epath[i - 1][0], epath[i][1] - epath[i - 1][1]);
+      const etot = ecum[eN - 1] || 1;
+      const EDEPTH = 36;
+      const PPU = 5;
+      const EH = Math.round(EDEPTH * PPU);
+      const EW = Math.max(512, Math.round(etot * PPU));
 
-      // world (px,py) bounding box for planar projection (same coord space as the face)
-      const wpt = (p: [number, number]): [number, number] => [p[0] + CX, CY0 - p[1]];
-      let fMinX = 1e9, fMaxX = -1e9, fMinY = 1e9, fMaxY = -1e9;
-      skin.forEach((q) => { const arr: [number, number][] = [q.in, q.out]; arr.forEach((p) => { const w = wpt(p); if (w[0] < fMinX) fMinX = w[0]; if (w[0] > fMaxX) fMaxX = w[0]; if (w[1] < fMinY) fMinY = w[1]; if (w[1] > fMaxY) fMaxY = w[1]; }); });
-      const fW = Math.max(1, fMaxX - fMinX), fH = Math.max(1, fMaxY - fMinY);
-      const FRES = 5;
       const edgeCanvas = document.createElement("canvas");
-      edgeCanvas.width = Math.max(4, Math.round(fW * FRES)); edgeCanvas.height = Math.max(4, Math.round(fH * FRES));
+      edgeCanvas.width = EW; edgeCanvas.height = EH;
       const ectx = edgeCanvas.getContext("2d") as CanvasRenderingContext2D;
       const edgeTexture = new THREE.CanvasTexture(edgeCanvas);
       edgeTexture.flipY = false;
@@ -627,20 +614,16 @@ export default function Racquet3D(props: {
 
       const redrawEdge = () => {
         const P = propsRef.current;
-        ectx.setTransform(1, 0, 0, 1, 0, 0);
-        ectx.clearRect(0, 0, edgeCanvas.width, edgeCanvas.height);
-        // planar: world (px,py) -> canvas px, so frame art shares the face's coordinate
-        // system and Move X / Move Y behave exactly like they do on the face.
-        ectx.setTransform(FRES, 0, 0, FRES, -fMinX * FRES, -fMinY * FRES);
+        ectx.clearRect(0, 0, EW, EH);
         (P.layers || []).filter((l: any) => l && (l.side || "face") === "profile").forEach((it: any) => {
+          const u = (it.y - 48) / 464, v = (it.x - 322) / 36;
           ectx.save();
-          ectx.translate(it.x, it.y);
-          ectx.rotate(((it.rot || 0) * Math.PI) / 180);
+          ectx.translate(u * EW, v * EH);
+          ectx.rotate(Math.PI / 2 + ((it.rot || 0) * Math.PI) / 180);
           ectx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
           ectx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
           if (it.type === "text") {
-            ectx.scale(it.scale || 1, it.scale || 1);
-            ectx.font = (it.size || 24) + "px " + (it.font || "sans-serif");
+            ectx.font = Math.max(8, (it.size || 24) * PPU) + "px " + (it.font || "sans-serif");
             ectx.fillStyle = it.color || "#ffffff";
             ectx.textAlign = "center"; ectx.textBaseline = "middle";
             ectx.fillText(it.text || "", 0, 0);
@@ -654,10 +637,9 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              ectx.scale(it.scale || 1, it.scale || 1);
+              const dw = (it.baseW || 100) * (it.scale || 1) * PPU, dh = (it.baseH || 100) * (it.scale || 1) * PPU;
               ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
-              const bw = it.baseW || 100, bh = it.baseH || 100;
-              try { ectx.drawImage(cached.img, -bw / 2, -bh / 2, bw, bh); } catch (e) { /* tainted */ }
+              try { ectx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
             }
           }
           ectx.restore();
@@ -667,15 +649,19 @@ export default function Racquet3D(props: {
       redrawEdgeRef.current = redrawEdge;
       redrawEdge();
 
-      const M = skin.length;
-      const buildSkin = (z: number) => {
+      const ringZf = T / 2 + 7;
+      const ringZb = -(T / 2 + 7);
+      const buildFrameRing = (ringZ: number, front: boolean) => {
         const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
-        for (let i = 0; i < M; i++) {
-          const wi = wpt(skin[i].in), wo = wpt(skin[i].out);
-          epos.push(skin[i].in[0], skin[i].in[1], z); euv.push((wi[0] - fMinX) / fW, (wi[1] - fMinY) / fH);
-          epos.push(skin[i].out[0], skin[i].out[1], z); euv.push((wo[0] - fMinX) / fW, (wo[1] - fMinY) / fH);
+        for (let i = 0; i < eN; i++) {
+          const idx = (75 + i) % 120;
+          const outer = epath[i];
+          const inner = S(fpts[idx][0], fpts[idx][1]);
+          const u = ecum[i] / etot;
+          epos.push(inner[0], inner[1], ringZ); euv.push(front ? u : 1 - u, 0);
+          epos.push(outer[0], outer[1], ringZ); euv.push(front ? u : 1 - u, 1);
         }
-        for (let i = 0; i < M - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
+        for (let i = 0; i < eN - 1; i++) { const s = i * 2, t = (i + 1) * 2; eidx.push(s, s + 1, t + 1, s, t + 1, t); }
         const eg = new THREE.BufferGeometry();
         eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
         eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
@@ -683,8 +669,8 @@ export default function Racquet3D(props: {
         eg.computeVertexNormals();
         group.add(new THREE.Mesh(eg, edgeMat));
       };
-      buildSkin(T / 2 + 7);       // front frame face
-      buildSkin(-(T / 2 + 7));    // back frame face
+      buildFrameRing(ringZf, true);
+      buildFrameRing(ringZb, false);
     }
 
     const yT = -46;
