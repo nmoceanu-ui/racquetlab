@@ -663,7 +663,10 @@ export default function Racquet3D(props: {
       // external frame. v runs across the section: 0 = front inner, 0.5 = outer rim,
       // 1 = back inner. A normal-sized image fills v and skins the whole section.
       const Zf = T / 2 + 8;   // proud of the frame front/back
-      const cs: [number, number][] = [ [0, Zf], [1, Zf], [1, 0], [1, -Zf], [0, -Zf] ]; // [radial 0..1, z]
+      // cross-section [radial r (0=inner face edge, 1=outer edge), z]. The rim points
+      // bulge OUTWARD past r=1 so the art sits PROUD of the frame's beveled outer edge
+      // (otherwise the solid frame occludes it and the art only shows on the faces).
+      const cs: [number, number][] = [ [0, Zf], [1, Zf], [1.2, Zf * 0.5], [1.3, 0], [1.2, -Zf * 0.5], [1, -Zf], [0, -Zf] ];
       const CSN = cs.length;
       {
         const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
