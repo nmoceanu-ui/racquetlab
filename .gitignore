@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Local backups / scratch
+*.bak
+*.orig
+App.*.tsx
+!src/App.tsx
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*

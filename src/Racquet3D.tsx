@@ -54,6 +54,8 @@ export default function Racquet3D(props: {
   const geoKey = JSON.stringify({
     shape: props.shape, throatType: props.throatType, beams: props.beams,
     holes: props.holes, holeR: props.holeR, finish: props.finish, leadThroat: props.leadThroat,
+    uniformHead: (props as any).uniformHead, edgeProfile: (props as any).edgeProfile,
+    leadStrip: (props as any).leadStrip, bodyProfile: (props as any).bodyProfile,
   });
   // ...re-bake the face texture (no rebuild) when these change — keeps dragging
   // the image size/rotate/opacity/position perfectly smooth. IMPORTANT: never
@@ -81,6 +83,10 @@ export default function Racquet3D(props: {
       round:    { cy: 224, rx: 170, ry: 186, n: 2.5, nb: 0.05, nt: 0.05 },
       teardrop: { cy: 214, rx: 166, ry: 188, n: 2.2, nb: 0.30, nt: 0.04 },
       diamond:  { cy: 220, rx: 170, ry: 190, n: 3.0, nb: 0.42, nt: -0.06 },
+      // Angular variants: higher superellipse exponent (straighter sides + defined
+      // corners); rx/ry shrunk so the face surface area matches the rounded version.
+      "round-angular":    { cy: 224, rx: 170, ry: 186, n: 4, nb: 0.05, nt: 0.05, chamfer: 1.44 },
+      "diamond-angular":  { cy: 220, rx: 170, ry: 190, n: 4, nb: 0.32, nt: 0.15, chamfer: 1.52, chamferTop: 1.66, chamferBot: 1.54 },
     };
     const shape = CFG[props.shape] ? props.shape : "teardrop";
     const c = CFG[shape];
@@ -91,8 +97,21 @@ export default function Racquet3D(props: {
       for (let i = 0; i < 120; i++) {
         const th = -Math.PI / 2 + (2 * Math.PI * i) / 120;
         const ct = Math.cos(th), st = Math.sin(th);
-        const ex = (ct < 0 ? -1 : 1) * Math.pow(Math.abs(ct), 2 / c.n);
-        const ey = (st < 0 ? -1 : 1) * Math.pow(Math.abs(st), 2 / c.n);
+        let ex: number, ey: number;
+        if (c.chamfer || c.chamferTop) {
+          // Straight-sided outline with flat CUT corners (octagon = rectangle ∩ diamond).
+          // Top and bottom corners can chamfer by different amounts: a bigger top k = a
+          // smaller cut = the upper shoulders sit HIGHER toward the tip (SIUX-style).
+          const ac = Math.abs(ct), asn = Math.abs(st);
+          const kk = st < 0 ? (c.chamferTop || c.chamfer) : (c.chamferBot || c.chamfer);
+          const rRect = 1 / Math.max(ac, asn, 1e-6);          // straight top/side/bottom edges
+          const rDiam = kk / ((ac + asn) || 1e-6);            // diagonal chamfer at the corners
+          const rr = Math.min(rRect, rDiam);
+          ex = ct * rr; ey = st * rr;
+        } else {
+          ex = (ct < 0 ? -1 : 1) * Math.pow(Math.abs(ct), 2 / c.n);
+          ey = (st < 0 ? -1 : 1) * Math.pow(Math.abs(st), 2 / c.n);
+        }
         let f = 1;
         if (st > 0) f = 1 - c.nb * st; else f = 1 - c.nt * (-st);
         out.push([CX + rx * f * ex, c.cy + ry * ey]);
@@ -172,7 +191,27 @@ export default function Racquet3D(props: {
     };
 
     // ---- face texture (base + pattern + layers) baked to a canvas ----
-    const sxs = fpts.map((p) => p[0]); const sys = fpts.map((p) => p[1]);
+    // Uniform-head style: the whole head is ONE face unit (no separate frame ring);
+    // the face color/image fills the entire head and wraps the rounded edge.
+    const uni = !!(props as any).uniformHead;
+    // Edge profile of the frame rim: "rounded" (curved, Viper-style), "standard"
+    // (slightly rounded, default), or "sharp" (flat vertical wall, angular diamond).
+    // Only the RIM cross-section changes — the face silhouette/area is untouched.
+    const ep: string = (props as any).edgeProfile || "standard";
+    // Body profile: "curved" domes the whole face so the cross-section tapers/curves
+    // like the Babolat Air Viper (vs "standard" flat face).
+    const curved = ((props as any).bodyProfile || "standard") === "curved";
+    // Curved body also rounds the rim into a bullnose so the whole perimeter (incl. the
+    // tip and tail) reads as one smooth round, not a sharp lens edge.
+    const epE = curved ? "rounded" : ep;
+    // Lead channel: when on, a real groove is milled into the frame's swept cross-section
+    // (a notch between two lips) and the lead strip nests inside it — genuinely recessed.
+    const leadOn = !!(props as any).leadStrip;
+    const rBulge = uni ? (curved ? 1.27 : 1.08) : (curved ? 1.42 : 1.30); // frame mid-depth radius
+    const rFloor = Math.max(1.03, rBulge - 0.24);                          // groove floor (recessed)
+    const Zg = 6;                                                          // groove half-height (z)
+    const foutline: [number, number][] = uni ? head : fpts;
+    const sxs = foutline.map((p) => p[0]); const sys = foutline.map((p) => p[1]);
     const sminX = Math.min(...sxs), smaxX = Math.max(...sxs);
     const sminY = Math.min(...sys), smaxY = Math.max(...sys);
     const sW = smaxX - sminX, sH = smaxY - sminY;
@@ -255,15 +294,30 @@ export default function Racquet3D(props: {
           img.src = it.href;
         }
         if (cached.loaded) {
-          ctx.save();
-          ctx.translate(it.x, it.y);
-          ctx.rotate(((it.rot || 0) * Math.PI) / 180);
-          ctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
-          ctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
-          ctx.scale(it.scale || 1, it.scale || 1);
-          ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
-          try { ctx.drawImage(cached.img, -it.baseW / 2, -it.baseH / 2, it.baseW, it.baseH); } catch (e) { /* tainted */ }
-          ctx.restore();
+          if (uni) {
+            // Uniform head: the face image is the whole skin. Cover the entire head
+            // (aspect preserved) so it fills the face and wraps the 38mm edge — no
+            // base-colour border. Size zooms in; Move X/Y pans within the fill.
+            const iw = cached.img.width || 1, ih = cached.img.height || 1;
+            const sc = Math.max(sW / iw, sH / ih) * Math.max(1, it.scale || 1);
+            const dw = iw * sc, dh = ih * sc;
+            const ox = sminX + sW / 2 - dw / 2 + ((it.x != null ? it.x : CX) - CX);
+            const oy = sminY + sH / 2 - dh / 2 + ((it.y != null ? it.y : c.cy) - c.cy);
+            ctx.save();
+            ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
+            try { ctx.drawImage(cached.img, ox, oy, dw, dh); } catch (e) { /* tainted */ }
+            ctx.restore();
+          } else {
+            ctx.save();
+            ctx.translate(it.x, it.y);
+            ctx.rotate(((it.rot || 0) * Math.PI) / 180);
+            ctx.transform(1, Math.tan(((it.sky || 0) * Math.PI) / 180), Math.tan(((it.skx || 0) * Math.PI) / 180), 1, 0, 0);
+            ctx.scale(it.sx == null ? 1 : it.sx, it.sy == null ? 1 : it.sy);
+            ctx.scale(it.scale || 1, it.scale || 1);
+            ctx.globalAlpha = it.opacity != null ? it.opacity : 1;
+            try { ctx.drawImage(cached.img, -it.baseW / 2, -it.baseH / 2, it.baseW, it.baseH); } catch (e) { /* tainted */ }
+            ctx.restore();
+          }
         }
       });
       texture.needsUpdate = true;
@@ -310,6 +364,19 @@ export default function Racquet3D(props: {
       uv.needsUpdate = true;
     };
 
+    // Curved body: dome a plate outward (convex) so the whole cross-section tapers/curves
+    // like the Air Viper. Displacement is 0 at the rim (so it still meets the edge) and
+    // peaks at the centre.
+    const domePlate = (geo: THREE.ExtrudeGeometry, amt: number) => {
+      const pos = geo.attributes.position as THREE.BufferAttribute;
+      const cxL = 0, cyL = CY0 - c.cy;   // S(CX, c.cy)
+      let maxR = 1;
+      for (let i = 0; i < pos.count; i++) { const dxx = pos.getX(i) - cxL, dyy = pos.getY(i) - cyL; maxR = Math.max(maxR, Math.hypot(dxx, dyy)); }
+      for (let i = 0; i < pos.count; i++) { const dxx = pos.getX(i) - cxL, dyy = pos.getY(i) - cyL; const d = Math.hypot(dxx, dyy) / maxR; pos.setZ(i, pos.getZ(i) + amt * (1 - d * d)); }
+      pos.needsUpdate = true; geo.computeVertexNormals();
+    };
+    const domeH = 8;
+
     const holePaths: THREE.Path[] = (props.holes || []).map((h: any) => {
       const [hx, hy] = S(CX + h.x, c.cy + h.y);
       const p = new THREE.Path();
@@ -317,20 +384,22 @@ export default function Racquet3D(props: {
       return p;
     });
 
-    const frontGeo = new THREE.ExtrudeGeometry(shapeOf(fpts, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
+    const frontGeo = new THREE.ExtrudeGeometry(shapeOf(foutline, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
     setFaceUV(frontGeo);
-    const frontPlate = new THREE.Mesh(frontGeo, [faceMat, foamMat]);
-    frontPlate.position.z = T / 2 - tp;
+    if (curved) domePlate(frontGeo, domeH);
+    const frontPlate = new THREE.Mesh(frontGeo, [faceMat, uni ? faceMat : foamMat]);
+    frontPlate.position.z = ((uni || curved) ? 19 : T / 2) - tp;   // uniform/curved head = 38mm thick (matches throat)
     group.add(frontPlate);
 
-    const backGeo = new THREE.ExtrudeGeometry(shapeOf(fpts, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
+    const backGeo = new THREE.ExtrudeGeometry(shapeOf(foutline, holePaths), { depth: tp, bevelEnabled: false, steps: 1 });
     setFaceUV(backGeo);
-    const backPlate = new THREE.Mesh(backGeo, [faceMat, foamMat]);
-    backPlate.position.z = -T / 2;
+    if (curved) domePlate(backGeo, -domeH);
+    const backPlate = new THREE.Mesh(backGeo, [faceMat, uni ? faceMat : foamMat]);
+    backPlate.position.z = (uni || curved) ? -19 : -T / 2;
     group.add(backPlate);
 
     // dark inner core sitting a little behind the face, so holes look deep
-    const foamGeo = new THREE.ExtrudeGeometry(shapeOf(fpts), { depth: Tfoam, bevelEnabled: false, steps: 1 });
+    const foamGeo = new THREE.ExtrudeGeometry(shapeOf(foutline), { depth: Tfoam, bevelEnabled: false, steps: 1 });
     const foam = new THREE.Mesh(foamGeo, foamMat);
     foam.position.z = -Tfoam / 2 - 2;
     group.add(foam);
@@ -346,16 +415,24 @@ export default function Racquet3D(props: {
     // Solid frame ring — ONE full-depth band around the head with lightly beveled
     // front/back edges. No recessed lead groove: the whole profile is a single clean
     // frame edge, matching the throat rails (which are already solid).
-    const FD = T + 8;             // full frame depth (38)
-    const frameRingGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: FD, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 24, steps: 1 });
-    const frameRing = new THREE.Mesh(frameRingGeo, frameMat);
-    frameRing.position.z = -FD / 2;
-    group.add(frameRing);
+    // In uniform-head style there is NO separate frame ring: the head plates already
+    // cover the whole head and the rim is skinned with the face texture below. Curved
+    // (barrel) profile also skips the flat extrude ring — a bulging swept shell below
+    // replaces it so the mid-depth is wider than the face.
+    if (!uni && !curved && !leadOn) {
+      const FD = T + 8;             // full frame depth (38)
+      const fbev = epE === "rounded" ? (curved ? 9 : 6) : epE === "sharp" ? 0.8 : 3;   // edge-profile bevel
+      const fseg = epE === "rounded" ? 6 : epE === "sharp" ? 1 : 4;
+      const frameRingGeo = new THREE.ExtrudeGeometry(shapeOf(head, [pathOf(fpts)]), { depth: FD, bevelEnabled: true, bevelThickness: fbev, bevelSize: fbev, bevelSegments: fseg, curveSegments: 24, steps: 1 });
+      const frameRing = new THREE.Mesh(frameRingGeo, frameMat);
+      frameRing.position.z = -FD / 2;
+      group.add(frameRing);
+    }
 
     // lead-tape channel: a thin recolourable band running around the frame
     const leadMat: THREE.Material = glossy
-      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
-      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      ? new THREE.MeshPhysicalMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.2, metalness: 0.55, clearcoat: 0.8, clearcoatRoughness: 0.15, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })
+      : new THREE.MeshStandardMaterial({ color: new THREE.Color(props.leadChannel || "#c9c9c9"), roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
     leadMatRef.current = leadMat;
     // an optional image wrapped around the channel (patterned lead-tape look)
     const leadCanvas = document.createElement("canvas");
@@ -405,9 +482,16 @@ export default function Racquet3D(props: {
             img.src = it.href;
           }
           if (cached.loaded) {
-            const dw = (it.baseW || 100) * (it.scale || 1) * 2.1, dh = (it.baseH || 100) * (it.scale || 1) * 2.1;
+            // Fill the WHOLE strip at NATURAL aspect (no lengthwise stretch): the strip
+            // maps its long perimeter far more coarsely than its ~11mm width, so scale the
+            // tile width to the strip's real proportions. Size zooms; it always fills.
+            lctx.setTransform(1, 0, 0, 1, 0, 0);
+            const iw = cached.img.width || 1, ih = cached.img.height || 1;
+            let perim = 0; for (let pi = 0; pi < head.length; pi++) { const a = head[pi], b = head[(pi + 1) % head.length]; perim += Math.hypot(b[0] - a[0], b[1] - a[1]); }
+            const stripW = 11; // strip width in model units (ZT-ZB)
+            const tileH = ch, tileW = Math.max(8, (iw / ih) * stripW * cw / (perim || 1) * (it.scale || 1));
             lctx.globalAlpha = it.opacity != null ? it.opacity : 1;
-            try { lctx.drawImage(cached.img, -dw / 2, -dh / 2, dw, dh); } catch (e) { /* tainted */ }
+            for (let x = -tileW; x < cw + tileW; x += tileW) { try { lctx.drawImage(cached.img, x, 0, tileW, tileH); } catch (e) { /* tainted */ } }
           }
         }
         lctx.restore();
@@ -419,7 +503,10 @@ export default function Racquet3D(props: {
 
     // ---- throat + grip ----
     const zc = 0;
-    const beamDepth = T + 8;
+    // Uniform head is a solid 38mm face; keep the inner beams thinner so they tuck
+    // BEHIND the face slab (occluded where they meet the head) instead of z-fighting
+    // and bleeding onto the face. Framed keeps full depth (frame ring covers the top).
+    const beamDepth = uni ? 24 : T + 8;
     const AL = S(head[75][0], head[75][1]);
     const AR = S(head[45][0], head[45][1]);
     const gripTopL = S(CX - 24, 486);
@@ -454,13 +541,15 @@ export default function Racquet3D(props: {
       const topIn: [number, number] = [A[0] - nx * w, A[1] - ny * w];
       const botIn: [number, number] = [G[0] - nx * w, G[1] - ny * w];
       const botOut: [number, number] = [G[0] + nx * w, G[1] + ny * w];
+      const rt = Math.min(r, len * 0.4);   // top-outer fillet reach (along the outer edge)
       const sh = new THREE.Shape();
-      sh.moveTo(topOut[0], topOut[1]);
-      sh.lineTo(topIn[0], topIn[1]);
+      sh.moveTo(topIn[0], topIn[1]);
       sh.lineTo(botIn[0], botIn[1]);
-      sh.lineTo(botOut[0] - nx * rb, botOut[1] - ny * rb);                                   // stop short of the corner
-      sh.quadraticCurveTo(botOut[0], botOut[1], botOut[0] - ux * ru, botOut[1] - uy * ru);   // round only this corner
-      sh.lineTo(topOut[0], topOut[1]);
+      sh.lineTo(botOut[0] - nx * rb, botOut[1] - ny * rb);                                   // stop short of the bottom corner
+      sh.quadraticCurveTo(botOut[0], botOut[1], botOut[0] - ux * ru, botOut[1] - uy * ru);   // round bottom-outer corner
+      sh.lineTo(topOut[0] + ux * rt, topOut[1] + uy * rt);                                   // up the outer edge, short of the top
+      sh.quadraticCurveTo(topOut[0], topOut[1], topOut[0] - nx * rt, topOut[1] - ny * rt);   // round top-outer corner
+      sh.lineTo(topIn[0], topIn[1]);
       sh.closePath();
       const geo = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false });
       const m = new THREE.Mesh(geo, mat);
@@ -468,8 +557,11 @@ export default function Racquet3D(props: {
       group.add(m);
     };
 
-    roundedRail(AL, gripTopL, 13, T + 8, 17, -1, frameMat);
-    roundedRail(AR, gripTopR, 13, T + 8, 17, 1, frameMat);
+    // Uniform head: tuck the rails a touch behind the 38mm head so the head OCCLUDES the
+    // junction cleanly (no z-fight flicker, no throat edge poking over the face).
+    const railDepth = uni ? 34 : T + 8;
+    roundedRail(AL, gripTopL, 13, railDepth, 17, -1, frameMat);
+    roundedRail(AR, gripTopR, 13, railDepth, 17, 1, frameMat);
 
     // ---- lead-tape channel: ONE continuous ribbon that runs up the left throat
     // rail, around the head (over the top), and back down the right rail. It sits
@@ -481,20 +573,24 @@ export default function Racquet3D(props: {
       const withThroat = !!props.leadThroat;
       const headS: [number, number][] = head.map((p) => S(p[0], p[1]));
       const path: [number, number][] = [];
-      if (withThroat) path.push([gripTopL[0], gripTopL[1]]);
-      // head arc the LONG way (over the top): index 75 (lower-left) -> 0 (top) -> 45 (lower-right)
-      for (let k = 0; k <= 120; k++) {
-        const idx = (75 + k) % 120;
-        path.push(headS[idx]);
-        if (idx === 45) break;
+      if (withThroat) {
+        // optional: also run down both throat rails and over the top of the head
+        path.push([gripTopL[0], gripTopL[1]]);
+        for (let k = 0; k <= 120; k++) { const idx = (75 + k) % 120; path.push(headS[idx]); if (idx === 45) break; }
+        path.push([gripTopR[0], gripTopR[1]]);
+      } else {
+        // default: a closed strip wrapping ALL THE WAY AROUND the head (incl. 6 o'clock)
+        for (let k = 0; k <= 120; k++) path.push(headS[k % 120]);
       }
-      if (withThroat) path.push([gripTopR[0], gripTopR[1]]);
 
       const C: [number, number] = [0, CY0 - c.cy];
       // OUT/IN are negative so the channel surface sits INSIDE the frame's outer
       // edge — recessed into the milled groove. (On the throat rails the large
       // baseOff below lifts it back out so it stays visible on the box rails.)
-      const OUT = -4, IN = -7, ZT = 7, ZB = -7, REP = 1;
+      // Nest the strip INSIDE the milled groove: just above the recessed floor and within
+      // the lips, so it reads as a genuine sunken channel for any profile/shape.
+      const _floorOff = (rFloor - 1) * 13;   // groove floor offset beyond the head edge
+      const OUT = _floorOff + 1.5, IN = _floorOff - 1.5, ZT = Zg - 1.3, ZB = -(Zg - 1.3), REP = 1;
       const NP = path.length;
       const nrm: [number, number][] = [];
       for (let i = 0; i < NP; i++) {
@@ -536,7 +632,12 @@ export default function Racquet3D(props: {
       rib.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
       rib.setIndex(idxs);
       rib.computeVertexNormals();
-      void rib; // lead strip removed — frame art wraps the whole profile instead
+      if ((props as any).leadStrip) {
+        const leadMesh = new THREE.Mesh(rib, leadMat); // lead strip — own colour + image, wraps the head profile
+        leadMesh.renderOrder = 8; // always the TOP layer, never hidden by the frame image
+        group.add(leadMesh);
+        redrawLead();
+      }
       // The head has a milled groove that recesses the ribbon; the box throat rails do
       // NOT, so the ribbon there gets buried. When the channel runs onto the throat,
       // lay a lead strip down the MIDDLE of each rail's OUTER SIDE EDGE (the profile
@@ -611,11 +712,44 @@ export default function Racquet3D(props: {
       (edgeTexture as any).colorSpace = THREE.SRGBColorSpace;
       edgeTexture.anisotropy = 8;
       edgeTexRef.current = edgeTexture;
-      const edgeMat: any = new THREE.MeshStandardMaterial({ map: edgeTexture, transparent: true, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+      // Uniform: the rim IS the solid head skin (opaque, writes depth) — no see-through.
+      // Framed: it's a transparent overlay on the frame, so keep it blended.
+      const edgeMat: any = new THREE.MeshStandardMaterial({ map: edgeTexture, transparent: !uni, roughness: glossy ? 0.2 : 0.7, metalness: 0.05, side: THREE.DoubleSide, depthWrite: uni, polygonOffset: !uni, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
 
       const redrawEdge = () => {
         const P = propsRef.current;
         ectx.clearRect(0, 0, EW, EH);
+        if (uni) {
+          // Uniform head: the 38mm edge mirrors the FACE skin — base colour first, then
+          // the face image tiled full-height around the perimeter (crisp, not stretched).
+          ectx.fillStyle = P.face || "#242430";
+          ectx.fillRect(0, 0, EW, EH);
+          (P.layers || []).filter((l: any) => l && (l.side || "face") === "face" && l.href).forEach((it: any) => {
+            let cached = imgCacheRef.current.get(it.href);
+            if (!cached) {
+              const img = new Image(); img.crossOrigin = "anonymous";
+              cached = { img, loaded: false };
+              imgCacheRef.current.set(it.href, cached);
+              img.onload = () => { cached!.loaded = true; redrawEdgeRef.current && redrawEdgeRef.current(); };
+              img.src = it.href;
+            }
+            if (cached.loaded) {
+              // Match the FACE cover-scale exactly: same world-units-per-image-pixel as
+              // the face bake (RES === PPU === 5), so pattern features are identical size.
+              const iw = cached.img.width || 1, ih = cached.img.height || 1;
+              const sc = Math.max(sW / iw, sH / ih) * Math.max(1, it.scale || 1);
+              const tileW = Math.max(8, iw * sc * PPU);
+              const tileH = Math.max(8, ih * sc * PPU);
+              const oy = (EH - tileH) / 2;   // centre the slice across the 38mm depth
+              ectx.save();
+              ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
+              try { for (let x = -tileW; x < EW + tileW; x += tileW) ectx.drawImage(cached.img, x, oy, tileW, tileH); } catch (e) { /* tainted */ }
+              ectx.restore();
+            }
+          });
+          edgeTexture.needsUpdate = true;
+          return;
+        }
         (P.layers || []).filter((l: any) => l && (l.side || "face") === "profile").forEach((it: any) => {
           const u = (it.y - 48) / 464;
           if (it.type === "text") {
@@ -640,14 +774,15 @@ export default function Racquet3D(props: {
               img.src = it.href;
             }
             if (cached.loaded) {
-              // Frame images WRAP the whole cross-section: fill the full canvas height
-              // (front face -> outer rim/profile -> back face). Size sets how far it
-              // wraps around the perimeter; Move Y sets where around the frame it sits.
-              const dw = (it.baseW || 100) * (it.scale || 1) * PPU;
-              const cxp = u * EW;
+              // Frame images TILE around the whole frame, filling the full cross-section
+              // height (front -> rim/profile -> back). Aspect is preserved (no stretch),
+              // it always fills, and Size just zooms the pattern.
+              const bw = it.baseW || 100, bh = it.baseH || 100;
+              const tileH = EH;
+              const tileW = Math.max(8, tileH * (bw / bh) * (it.scale || 1));
               ectx.save();
               ectx.globalAlpha = it.opacity != null ? it.opacity : 1;
-              try { ectx.drawImage(cached.img, cxp - dw / 2, 0, dw, EH); } catch (e) { /* tainted */ }
+              try { for (let x = -tileW; x < EW + tileW; x += tileW) ectx.drawImage(cached.img, x, 0, tileW, tileH); } catch (e) { /* tainted */ }
               ectx.restore();
             }
           }
@@ -662,37 +797,78 @@ export default function Racquet3D(props: {
       // So frame art covers the faces AND the profile side of the racquet — the whole
       // external frame. v runs across the section: 0 = front inner, 0.5 = outer rim,
       // 1 = back inner. A normal-sized image fills v and skins the whole section.
-      const Zf = T / 2 + 8;   // proud of the frame front/back
+      const Zf = (uni || curved) ? 19 : T / 2 + 8;   // uniform/curved = 38mm deep (matches throat); framed proud
       // cross-section [radial r (0=inner face edge, 1=outer edge), z]. The rim points
       // bulge OUTWARD past r=1 so the art sits PROUD of the frame's beveled outer edge
       // (otherwise the solid frame occludes it and the art only shows on the faces).
-      const cs: [number, number][] = [ [0, Zf], [1, Zf], [1.2, Zf * 0.5], [1.3, 0], [1.2, -Zf * 0.5], [1, -Zf], [0, -Zf] ];
+      // Framed: full C-section (front annulus -> proud rim -> back). Uniform: just a
+      // rounded rim hugging the head edge (r~1), since the head plates already cover
+      // the faces — this wraps the face texture over the rounded edge, flush.
+      // Uniform rim shape follows the Edge profile setting: rounded = full curved bulge
+      // (Viper), sharp = flat vertical wall with crisp corners (diamond), standard = a
+      // gentle round. All keep r≈1 at the face so the silhouette/area is unchanged.
+      const uniCs: [number, number][] = epE === "rounded"
+        ? (curved
+            ? [ [0.9, Zf], [1.16, Zf * 0.7], [1.24, Zf * 0.32], [1.27, 0], [1.24, -Zf * 0.32], [1.16, -Zf * 0.7], [0.9, -Zf] ]
+            : [ [1, Zf], [1.13, Zf * 0.62], [1.18, 0], [1.13, -Zf * 0.62], [1, -Zf] ])
+        : epE === "sharp"
+        ? [ [1, Zf], [1.05, Zf - 1.5], [1.05, -(Zf - 1.5)], [1, -Zf] ]
+        : [ [1, Zf], [1.05, Zf * 0.5], [1.06, 0], [1.05, -Zf * 0.5], [1, -Zf] ];
+      // With the lead channel ON, mill a real groove into the cross-section: rise to a
+      // lip at z=+/-Zg, drop to the recessed floor, run the floor across the band, rise
+      // to the far lip. The lead strip nests in this open channel (never occluded).
+      const grooveCs: [number, number][] = [
+        [uni ? 1 : 0, Zf], [1, Zf * 0.86],
+        [rBulge, Zg + 2.5], [rBulge, Zg],
+        [rFloor, Zg - 0.4], [rFloor, -(Zg - 0.4)],
+        [rBulge, -Zg], [rBulge, -(Zg + 2.5)],
+        [1, -Zf * 0.86], [uni ? 1 : 0, -Zf],
+      ];
+      const cs: [number, number][] = leadOn
+        ? grooveCs
+        : (uni
+            ? uniCs
+            : (curved
+                ? [ [0, Zf], [1, Zf * 0.86], [1.35, Zf * 0.42], [1.42, 0], [1.35, -Zf * 0.42], [1, -Zf * 0.86], [0, -Zf] ]
+                : [ [0, Zf], [1, Zf], [1.3, Zf - 3], [1.3, -(Zf - 3)], [1, -Zf], [0, -Zf] ]));
       const CSN = cs.length;
-      {
+      // The bottom of the head ring (between the two rail junctions, above the throat
+      // beams) — the main path only wraps rail->over-the-top->rail, so skin it too.
+      const bottomArc: { in: [number, number]; out: [number, number] }[] = [];
+      for (let idx = 45; idx <= 75; idx++) bottomArc.push({ in: S(fpts[idx][0], fpts[idx][1]), out: S(head[idx][0], head[idx][1]) });
+      const addSkin = (pts: { in: [number, number]; out: [number, number] }[], mat: THREE.Material, planar: boolean) => {
+        const m = pts.length; if (m < 2) return;
+        const cum: number[] = [0];
+        for (let i = 1; i < m; i++) cum[i] = cum[i - 1] + Math.hypot(pts[i].out[0] - pts[i - 1].out[0], pts[i].out[1] - pts[i - 1].out[1]);
+        const tot = cum[m - 1] || 1;
         const epos: number[] = [], euv: number[] = [], eidx: number[] = [];
-        for (let i = 0; i < fN; i++) {
-          const P = fpath[i];
-          const dx = P.out[0] - P.in[0], dy = P.out[1] - P.in[1];
-          const u = ecum[i] / etot;
+        for (let i = 0; i < m; i++) {
+          const P = pts[i], dx = P.out[0] - P.in[0], dy = P.out[1] - P.in[1], uu = cum[i] / tot;
           for (let k = 0; k < CSN; k++) {
             const r = cs[k][0], z = cs[k][1];
-            epos.push(P.in[0] + dx * r, P.in[1] + dy * r, z);
-            euv.push(u, k / (CSN - 1));
+            const vx = P.in[0] + dx * r, vy = P.in[1] + dy * r;
+            epos.push(vx, vy, z);
+            if (planar) { const pxx = vx + CX, pyy = CY0 - vy; euv.push((pxx - sminX) / sW, (pyy - sminY) / sH); }
+            else euv.push(uu, k / (CSN - 1));
           }
         }
-        for (let i = 0; i < fN - 1; i++) {
-          for (let k = 0; k < CSN - 1; k++) {
-            const a = i * CSN + k, b = i * CSN + k + 1, c = (i + 1) * CSN + k + 1, d = (i + 1) * CSN + k;
-            eidx.push(a, b, c, a, c, d);
-          }
-        }
+        for (let i = 0; i < m - 1; i++) for (let k = 0; k < CSN - 1; k++) { const a = i * CSN + k, b = i * CSN + k + 1, c = (i + 1) * CSN + k + 1, d = (i + 1) * CSN + k; eidx.push(a, b, c, a, c, d); }
         const eg = new THREE.BufferGeometry();
         eg.setAttribute("position", new THREE.Float32BufferAttribute(epos, 3));
         eg.setAttribute("uv", new THREE.Float32BufferAttribute(euv, 2));
-        eg.setIndex(eidx);
-        eg.computeVertexNormals();
-        group.add(new THREE.Mesh(eg, edgeMat));
-      }
+        eg.setIndex(eidx); eg.computeVertexNormals();
+        group.add(new THREE.Mesh(eg, mat));
+      };
+      // Frame art wraps ONLY the head ring — the frame AROUND THE FACE, all the way to the
+      // 6 o'clock bottom — and NOT the throat rails, which carry their own throat art. This
+      // keeps the frame image from distorting the throat shape.
+      const headRing: { in: [number, number]; out: [number, number] }[] = [];
+      for (let idx = 0; idx <= 120; idx++) { const j = idx % 120; headRing.push({ in: S(fpts[j][0], fpts[j][1]), out: S(head[j][0], head[j][1]) }); }
+      void fpath; void bottomArc;
+      // Curved (barrel) framed profile: a bulging swept shell in the FRAME colour replaces
+      // the flat extrude ring, so the mid-depth (lead-strip line) sits WIDER than the face.
+      if (!uni && (curved || leadOn)) addSkin(headRing, frameMat, false);
+      addSkin(headRing, edgeMat, false);
     }
 
     const yT = -46;
@@ -796,57 +972,57 @@ export default function Racquet3D(props: {
       // across the rail's depth, and running its full length. Both rails share the same
       // throat texture, so a logo/text appears mirrored on each rail's edge and stays
       // visible from any rotation instead of floating in the open throat.
-      const Zt = (T + 8) / 2;   // rail depth half (~19)
-      const rw = 6.5;           // rail half-width (rail is 13 wide)
-      const OUTP = 1.2;         // sit a hair proud of the rail's outer face
-      // cross-section across the wrap: [in-plane offset, z]; u runs front(0) -> back(1).
-      // Corners sit AT the rail's outer edge (rw) and its FULL depth (+/-Zt) so the strip
-      // truly wraps front face -> outer face -> back face and never bleeds sideways past
-      // the rail silhouette.
-      const _po = OUTP; // (kept for reference)
-      const cs: [number, number][] = [
-        [-rw + 0.6, Zt + 0.5],       // front face, near inner edge — a hair PROUD of the face
-        [rw + 0.3, Zt + 0.5],        // front-outer corner, proud (kills z-fighting speckle)
-        [rw + 0.3, -(Zt + 0.5)],     // back-outer corner
-        [-rw + 0.6, -(Zt + 0.5)],    // back face, near inner edge
-      ];
-      const CSN = cs.length;
-      const buildRailWrap = (A: number[], G: number[], outerSign: number) => {
+      const rw = 6.5;              // rail half-width (rail is 13 wide)
+      const Zt = uni ? 17 : (T + 8) / 2;   // rail depth half (uniform tucks behind the head)
+      // Skin each rail with a ribbon that wraps front -> outer edge -> back and runs the
+      // rail's full length. The OUTER offset eases to the centreline over the top and
+      // bottom fillets (matching the rounded rail solid), so the image follows the exact
+      // rounded corners with no black gaps or overhang. The cross-section wrap gives the
+      // profile (outer edge) a real band of the image — full-res, never streaky.
+      const buildRailSkin = (A: number[], G: number[], outerSign: number) => {
         const dx = G[0] - A[0], dy = G[1] - A[1];
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;   // along the rail (A -> G)
         let nx = -uy, ny = ux;                 // in-plane normal
         if (Math.sign(nx) !== Math.sign(outerSign)) { nx = -nx; ny = -ny; }
-        const NS = 44;
-        const tpos: number[] = [], tuv: number[] = [], tidx: number[] = [];
+        const rt = Math.min(17, len * 0.4);   // top-outer fillet reach (along the length)
+        const ru = Math.min(17, len * 0.5);   // bottom-outer fillet reach (along the length)
+        const NS = 56, CS = 4;
+        const pos: number[] = [], uv: number[] = [], idx: number[] = [];
         for (let s = 0; s <= NS; s++) {
-          const t = s / NS;
-          const bx = A[0] + (G[0] - A[0]) * t, by = A[1] + (G[1] - A[1]) * t;
-          for (let k = 0; k < CSN; k++) {
-            const o = cs[k][0], z = cs[k][1];
-            tpos.push(bx + nx * o, by + ny * o, z);
-            // flip the wrap U on the right rail so its art reads the same way as the
-            // left rail (not mirror-reversed) when the frame is turned around.
-            tuv.push(outerSign > 0 ? 1 - k / (CSN - 1) : k / (CSN - 1), t);
+          const d = (s / NS) * len;            // distance from A (top) along the rail
+          const ow = rw + 0.3;                  // outer offset base — a hair proud (no z-fight)
+          let oo = ow;                          // eases in over the fillets
+          if (d < rt) { const p = d / rt; oo = ow * Math.sqrt(Math.max(0, 1 - (1 - p) * (1 - p))); }
+          else if (d > len - ru) { const p = (len - d) / ru; oo = ow * Math.sqrt(Math.max(0, 1 - (1 - p) * (1 - p))); }
+          const bx = A[0] + ux * d, by = A[1] + uy * d;
+          const Zp = Zt + 0.3;                  // sit proud of the rail solid (kills flicker)
+          const csPts: [number, number][] = [
+            [-rw, Zp],     // front-inner (reaches the rail inner edge, full)
+            [oo, Zp],      // front-outer (follows the rounded corner)
+            [oo, -Zp],     // back-outer
+            [-rw, -Zp],    // back-inner
+          ];
+          for (let k = 0; k < CS; k++) {
+            const o = csPts[k][0], z = csPts[k][1];
+            pos.push(bx + nx * o, by + ny * o, z);
+            uv.push(outerSign > 0 ? 1 - k / (CS - 1) : k / (CS - 1), s / NS);
           }
         }
-        for (let s = 0; s < NS; s++) {
-          for (let k = 0; k < CSN - 1; k++) {
-            const a = s * CSN + k, b = s * CSN + k + 1, cc = (s + 1) * CSN + k + 1, d = (s + 1) * CSN + k;
-            tidx.push(a, b, cc, a, cc, d);
-          }
+        for (let s = 0; s < NS; s++) for (let k = 0; k < CS - 1; k++) {
+          const a = s * CS + k, b = s * CS + k + 1, c = (s + 1) * CS + k + 1, dd = (s + 1) * CS + k;
+          idx.push(a, b, c, a, c, dd);
         }
-        const tg = new THREE.BufferGeometry();
-        tg.setAttribute("position", new THREE.Float32BufferAttribute(tpos, 3));
-        tg.setAttribute("uv", new THREE.Float32BufferAttribute(tuv, 2));
-        tg.setIndex(tidx);
-        tg.computeVertexNormals();
-        const m = new THREE.Mesh(tg, throatMat);
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+        g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+        g.setIndex(idx); g.computeVertexNormals();
+        const m = new THREE.Mesh(g, throatMat);
         group.add(m);
         pickTargets.push(m); // selectable/draggable in 3D
       };
-      buildRailWrap(AL, gripTopL, -1);
-      buildRailWrap(AR, gripTopR, 1);
+      buildRailSkin(AL, gripTopL, -1);
+      buildRailSkin(AR, gripTopR, 1);
     }
 
     // start the grip a touch higher and gently flare its top out to meet the rails, so
@@ -910,6 +1086,16 @@ export default function Racquet3D(props: {
       return out;
     };
     (window as any).__pala3D = { capturePNG, captureAngles };
+    // Expose the baked FLAT textures — the true unwrapped print artwork per surface.
+    (window as any).__palaArt = () => {
+      const u = (cv: any) => { try { return cv && cv.toDataURL ? cv.toDataURL("image/png") : null; } catch (e) { return null; } };
+      return {
+        face: u(canvas), faceBox: [sminX, sminY, sW, sH],
+        edge: u(edgeTexRef.current && edgeTexRef.current.image),
+        throat: u(throatTexRef.current && throatTexRef.current.image),
+        lead: leadOn ? u(leadTexRef.current && leadTexRef.current.image) : null,
+      };
+    };
 
     // ---- pointer interaction: grab a logo to move it on the face, or click to edit holes ----
     let downXY: number[] | null = null;

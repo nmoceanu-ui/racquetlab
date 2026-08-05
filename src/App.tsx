@@ -11,6 +11,9 @@ import {
 import { saveBuild, loadBuild, updateBuildByCode } from "./lib/builds";
 import { supabaseConfigured, supabase } from "./lib/supabase";
 import { analytics } from "./lib/analytics"; import Racquet3D from "./Racquet3D"; import { layerBox, layerHandlesSVG, computeHandleDrag } from "./layerFX";
+import RacquetDesigner from "./PaintShop";
+import { SPEC_VERSION, buildToSpec } from "./racquetSpec";
+import FlowCockpit from "./FlowCockpit";
 // Factory brief tracks: best-performance / best-value / market-gap / innovation
 
 // ---------------------------------------------------------------------------
@@ -110,7 +113,13 @@ const SHAPES = [
   { id: "teardrop", label: "Teardrop (Hybrid)", balanceRange: "medium, typically 25.4–26.2cm", sweetSpot: "Medium, shifted slightly toward tip — typically 20–28mm radius", power: 4, control: 4, forgiveness: 3, note: "A geometric compromise — narrower at the base (throat) and wider at the tip — shifting mass slightly upward from round while keeping a wider midsection than diamond. Balance point between the two extremes. Sweet spot shifts slightly higher in the face, matching where most padel smashes actually contact the face. Swingweight moderate — easier to accelerate than diamond, heavier-feeling than round. Twistweight still reasonable — the wide midsection prevents the extreme face narrowing of a pure diamond, keeping some twistweight for mishit forgiveness. Most commercially versatile shape — majority of intermediate and advanced padel racquets globally. Advanced players who primarily play baseline control rallies often find teardrop satisfying: the power uplift versus round is significant while the control penalty versus diamond is modest.", bestFor: "Intermediate to advanced players, all-court play, the most commercially versatile specification" },
   { id: "diamond", label: "Diamond", balanceRange: "high, typically 26.3–27.5cm (from butt)", sweetSpot: "Small, positioned high in the face — typically 14–22mm radius", power: 5, control: 2, forgiveness: 1, note: "Diamond tapers sharply from widest point toward both tip and throat, concentrating mass at the top of the face. Highest balance point and highest swingweight — maximum smash power by the parallel-axis theorem. Sweet spot migrates toward the tip (where mass concentration is highest) and becomes small. Off-center contact causes significant face rotation because narrow midsection reduces twistweight — a diamond's resistance to face twist on mishit is substantially lower per gram than round or teardrop. The playing experience: hitting the sweet spot is explosive and rewarding. Missing it by even 10mm produces an arm-jarring deflection. This is a feature not a flaw for elite players — precision demand enforces technique discipline and the reward for clean contact is maximum. Coello, Galán, Lebrón, and Chingotto all use diamond because at their precision level the sweet spot miss-rate is low enough that the power ceiling benefit dominates.", bestFor: "Advanced players with consistent high-technique contact, attacking/finishing play styles, professional level" },
   { id: "diamond-wide", label: "Wide-Body Diamond", balanceRange: "high, typically 26.0–27.2cm", sweetSpot: "Medium-small, positioned high but laterally wider than standard diamond — ~18–26mm radius", power: 5, control: 3, forgiveness: 2, note: "Wider-than-standard diamond cross-section — maintaining the diamond's high balance point and mass-toward-tip principle but with broader face (typically 260–270mm vs standard 255mm). Wider body increases twistweight — moment of inertia about long axis scales with face width squared, so even 5mm width increase produces meaningful (~4%) improvement in twistweight. Directly translates to better forgiveness on off-axis hits while power character is preserved. Sweet spot is broader laterally. Addresses the primary complaint about diamonds — the narrow sweet spot — while retaining the signature power ceiling. A genuine market gap: standard diamonds are abundant, wide-body diamonds are essentially nonexistent commercially in 2026. FIP maximum face width is 26cm — verify specific competition rules.", bestFor: "Advanced players wanting diamond power with more structural forgiveness, players transitioning from teardrop to diamond" },
+  { id: "round-angular", label: "Round — angular", balanceRange: "low (closer to handle, typically 24.0–25.2cm)", sweetSpot: "Large, centered — typically 25–35mm radius", power: 2, control: 5, forgiveness: 5, note: "Same face area, mass distribution, and playing characteristics as the Round — the difference is a chamfered, straight-cut angular edge silhouette (appearance / construction only). Scores identically to the Round.", bestFor: "Players who want the round's forgiving, control-oriented feel with a sharper, angular look" },
+  { id: "diamond-angular", label: "Diamond — angular", balanceRange: "high, typically 26.3–27.5cm (from butt)", sweetSpot: "Small, positioned high in the face — typically 14–22mm radius", power: 5, control: 2, forgiveness: 1, note: "Same face area, mass-toward-tip distribution, and playing characteristics as the Diamond — the difference is a sharper, more angular edge silhouette (appearance / construction only). Scores identically to the Diamond.", bestFor: "Attacking players who want the diamond's power ceiling with a crisper, angular look" },
 ];
+// Angular variants are appearance-only chamfers of a base shape: identical face area and
+// mass, so they must SCORE like their base. baseShapeId collapses them for every physics/
+// geometry site; the raw id is kept only for silhouette rendering (headOutlinePath, Paint Shop).
+const baseShapeId = (s: string): string => s === "round-angular" ? "round" : s === "diamond-angular" ? "diamond" : s;
 
 const BRIDGE_TYPES = [
   { id: "open", label: "Open Bridge", note: "Throat area contains one or more composite struts spanning a gap rather than being filled solid. Reduces material and weight in throat zone, lowering center of mass slightly toward handle and reducing overall weight. Aerodynamically, an open bridge offers marginally less resistance on downswing — air passes through the gap. With fewer throat cross-sections carrying torsional load, transmits slightly less torsional rigidity from handle to head — some players describe this as more 'wrist feel' or 'touch' because the connection is slightly less rigid. Specific strut geometry (number, orientation, cross-section) determines structural properties within the open bridge category." },
@@ -181,6 +190,7 @@ const BEAM_ORIENTATIONS = [
 // boundary), reused here so the mass model's "head is wider in the
 // middle, narrower at the tip" shape matches what's actually drawn.
 function headWidthProfileAt(t: number, shape: string): number {
+  shape = baseShapeId(shape);
   if (shape === "round") return Math.sin(t * Math.PI) * 0.92 + 0.06;
   if (shape === "diamond") return t < 0.32 ? (t / 0.32) * 0.94 : 0.94 - ((t - 0.32) / 0.68) * 0.5;
   if (shape === "diamond-wide") return t < 0.30 ? (t / 0.30) * 0.98 : 0.98 - ((t - 0.30) / 0.70) * 0.45; // wider peak and slower taper than standard diamond — the defining geometric difference
@@ -544,6 +554,7 @@ const LEGACY_BUCKET_HOLE_COUNT: Record<string, number> = { none: 0, minimal: 5, 
 const LEGACY_BUCKET_GRID_PITCH_MM: Record<string, number> = { none: 0, minimal: 32, low: 18, standard: 14, high: 11.5 };
 
 function generateLegacyHoleGrid(bucketId: string, patternId: string, shape: string): HolePoint[] {
+  shape = baseShapeId(shape);
   const count = LEGACY_BUCKET_HOLE_COUNT[bucketId] ?? 55;
   if (count === 0) return [];
   const pitchMm = LEGACY_BUCKET_GRID_PITCH_MM[bucketId] ?? 14;
@@ -614,6 +625,7 @@ function racquetHasPorts(note?: string): boolean {
   return n.includes("air port") || n.includes("air-port") || n.includes("airport") || n.includes("double-size hole") || n.includes("double size hole") || n.includes("oversize");
 }
 function inFaceShape(shape: string, x: number, y: number): boolean {
+  shape = baseShapeId(shape);
   const dist = Math.sqrt(x * x + y * y);
   if (shape === "round") return dist < 0.9;
   if (shape === "diamond" || shape === "diamond-wide") return (Math.abs(x) + Math.abs(y * 1.05)) < 0.9;
@@ -674,7 +686,7 @@ function perfRhombus(shape: string): HolePoint[] {
 // single uniform grid so no racquet gets an engineered advantage.
 function racquetHoleLayout(r: any): HolePoint[] {
   if (!r) return perfGrid("teardrop", 46);
-  const shape: string = r.shapeId || "teardrop";
+  const shape: string = baseShapeId(r.shapeId || "teardrop");
   const note: string = (r.note || "").toLowerCase();
   if (racquetHasPorts(r.note)) return perfGrid(shape, 40, true);
   if (/concentric|circular hole|ring pattern|round hole pattern/.test(note)) return perfRings(shape);
@@ -791,6 +803,7 @@ function leadTapeGramsForTargetSW(racquet, posFromButtCm, targetSW) {
 }
 
 function computeSweetSpotAndStability({ shape, balanceCm, widthMm, thicknessMm, weightG, core, face, frame, bridgeId, beamOrientation, beamCount, holes, holeDiameterMm, topY, headHeight, halfWidth }) {
+  shape = baseShapeId(shape);
   const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
   const balanceShift = ((balanceCm - 25.5) / 1.5) * 0.07;
   const yFrac = Math.max(0.22, Math.min(0.62, baseYFrac - balanceShift));
@@ -3753,6 +3766,25 @@ function headOutlinePath(shape, cx, topY, halfWidthMax, headHeight, sideProfile?
   const straightness = sideProfile === "straight" ? 0.82 : sideProfile === "soft-straight" ? 0.45 : 0;
   const ww = halfWidthMax, t = topY, b = topY + headHeight;
   const wrap = (d: string) => straightenBezierPath(d, straightness);
+  if (shape === "round-angular") {
+    // Round envelope with chamfered, straight-cut edges (octagonal silhouette).
+    const A: [number, number][] = [
+      [cx - ww * 0.42, t], [cx + ww * 0.42, t],
+      [cx + ww, t + headHeight * 0.29], [cx + ww, t + headHeight * 0.71],
+      [cx + ww * 0.42, b], [cx - ww * 0.42, b],
+      [cx - ww, t + headHeight * 0.71], [cx - ww, t + headHeight * 0.29],
+    ];
+    return wrap(roundedPolyBezier(A, ww * 0.10));
+  }
+  if (shape === "diamond-angular") {
+    // Diamond envelope with sharper, straight-cut corners.
+    const A: [number, number][] = [
+      [cx - ww * 0.62, t + headHeight * 0.03], [cx + ww * 0.62, t + headHeight * 0.03],
+      [cx + ww * 1.0, t + headHeight * 0.34], [cx + ww * 0.86, t + headHeight * 0.65], [cx + ww * 0.40, t + headHeight * 0.99],
+      [cx - ww * 0.40, t + headHeight * 0.99], [cx - ww * 0.86, t + headHeight * 0.65], [cx - ww * 1.0, t + headHeight * 0.34],
+    ];
+    return wrap(roundedPolyBezier(A, ww * 0.08));
+  }
   if (shape === "round") {
     const mid = t + headHeight * 0.5;
     return wrap(`M ${cx} ${t} C ${cx+ww*0.74} ${t}, ${cx+ww} ${t+headHeight*0.22}, ${cx+ww} ${mid} C ${cx+ww} ${b-headHeight*0.22}, ${cx+ww*0.74} ${b}, ${cx} ${b} C ${cx-ww*0.74} ${b}, ${cx-ww} ${b-headHeight*0.22}, ${cx-ww} ${mid} C ${cx-ww} ${t+headHeight*0.22}, ${cx-ww*0.74} ${t}, ${cx} ${t} Z`);
@@ -3837,132 +3869,6 @@ const PROFILE_CORE_TINT = { "eva-soft":"#E8E4D8","eva-medium":"#DFDAC9","eva-har
 // RACQUET SVG COMPONENTS
 // ---------------------------------------------------------------------------
 
-function RacquetDesigner({ shapeId, bridgeId, beamOrientation, beamCount, design, setDesign }: { shapeId: string; bridgeId?: string; beamOrientation?: string; beamCount?: number; design: any; setDesign: (u:any)=>void }) {
-  const D = design || {};
-  const face = D.face || "#242430", frame = D.frame || "#101015", throatC = D.throatC || "#c0472a", grip = D.grip || "#e9e3d4", accent = D.accent || "#e0b34a", pattern = D.pattern || "solid", layers = (D.layers||[]).filter((l:any)=>l);
-  const setFace = (v:any) => setDesign((d:any)=>({ ...d, face:v }));
-  const setFrame = (v:any) => setDesign((d:any)=>({ ...d, frame:v }));
-  const setThroatC = (v:any) => setDesign((d:any)=>({ ...d, throatC:v }));
-  const setGrip = (v:any) => setDesign((d:any)=>({ ...d, grip:v }));
-  const setAccent = (v:any) => setDesign((d:any)=>({ ...d, accent:v }));
-  const setPattern = (v:any) => setDesign((d:any)=>({ ...d, pattern:v }));
-  const setLayers = (fn:any) => setDesign((d:any)=>({ ...d, layers: typeof fn==="function" ? fn(d.layers||[]) : fn }));
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState<{x:number;y:number}>({ x: 0, y: 0 });
-  const [selId, setSelId] = useState<number|null>(null); const [view] = useState<"face" | "profile" | "3d">("3d");
-  const wrapRef = useRef<HTMLDivElement|null>(null);
-  const dragRef = useRef<any>(null); useEffect(() => { const el = wrapRef.current; if (!el) return; const h = (e: WheelEvent) => { e.preventDefault(); setZoom((z) => Math.max(0.5, Math.min(4, z * (e.deltaY < 0 ? 1.08 : 0.92)))); }; el.addEventListener("wheel", h, { passive: false }); return () => el.removeEventListener("wheel", h); }, []);
-  useEffect(() => { if (typeof document !== "undefined" && !document.getElementById("pd-fonts")) { const l = document.createElement("link"); l.id = "pd-fonts"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600&family=Playfair+Display:wght@700&family=Pacifico&family=Barlow+Condensed:wght@600&display=swap"; document.head.appendChild(l); } }, []);
-  const BG = "#EDE8DC", CX = 340, HT = 486;
-  const CFG: any = { round:{cy:224,rx:170,ry:186,n:2.5,nb:0.05,nt:0.05}, teardrop:{cy:214,rx:166,ry:188,n:2.2,nb:0.30,nt:0.04}, diamond:{cy:220,rx:170,ry:190,n:3.0,nb:0.42,nt:-0.06} };
-  const FONTS: any[] = [["'Barlow Condensed',sans-serif","Barlow Condensed"],["Anton,sans-serif","Anton"],["Oswald,sans-serif","Oswald"],["'Playfair Display',serif","Playfair"],["Pacifico,cursive","Pacifico"],["Impact,sans-serif","Impact"],["'Courier New',monospace","Mono"]];
-  const shape = (D.paintShape === "round" || D.paintShape === "teardrop" || D.paintShape === "diamond") ? D.paintShape : (shapeId === "round" ? "round" : (shapeId === "diamond" || shapeId === "diamond-wide") ? "diamond" : "teardrop");
-  const throatType = (D.paintThroat === "closed" || D.paintThroat === "vertical" || D.paintThroat === "diagonal" || D.paintThroat === "horizontal") ? D.paintThroat : (bridgeId === "closed" ? "closed" : beamOrientation === "diagonal" ? "diagonal" : beamOrientation === "horizontal" ? "horizontal" : "vertical");
-  const beams = Math.max(1, Math.min(3, (D.paintBeams || beamCount || 2)));
-  const shade = (hex:string,p:number) => { let c=hex.replace("#",""); if(c.length===3)c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; let r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16); const f=p<0?0:255,t=Math.abs(p); r=Math.round((f-r)*t+r);g=Math.round((f-g)*t+g);b=Math.round((f-b)*t+b); return "#"+[r,g,b].map(x=>("0"+x.toString(16)).slice(-2)).join(""); };
-  const esc = (t:string) => (t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const genPts = (dx:number,dy:number) => { const c=CFG[shape]; const rx=c.rx-dx, ry=c.ry-dy, out:any[]=[]; for(let i=0;i<48;i++){ const th=-Math.PI/2+2*Math.PI*i/48; const ct=Math.cos(th),st=Math.sin(th); const ex=(ct<0?-1:1)*Math.pow(Math.abs(ct),2/c.n); const ey=(st<0?-1:1)*Math.pow(Math.abs(st),2/c.n); let f=1; if(st>0)f=1-c.nb*st; else f=1-c.nt*(-st); out.push([CX+rx*f*ex, c.cy+ry*ey]); } return out; };
-  const crPath = (p:any[]) => { const n=p.length; let d="M"+p[0][0].toFixed(1)+" "+p[0][1].toFixed(1); for(let i=0;i<n;i++){ const p0=p[(i-1+n)%n],p1=p[i],p2=p[(i+1)%n],p3=p[(i+2)%n]; d+=" C"+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+" "+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+" "+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+" "+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+" "+p2[0].toFixed(1)+" "+p2[1].toFixed(1); } return d+"Z"; };
-  const presetHoles = (pr:string) => { let rows:any[]=[[-70,8],[-42,10],[-14,10],[16,10],[44,10],[74,8]]; if(pr==="dense")rows=[[-84,10],[-62,12],[-40,12],[-18,12],[4,12],[26,12],[48,12],[70,12],[90,10]]; else if(pr==="sparse")rows=[[-56,5],[-24,7],[8,7],[40,5]]; else if(pr==="diamond")rows=[[-74,3],[-52,5],[-30,7],[-8,9],[14,9],[36,7],[58,5],[78,3]]; const pts:any[]=[]; for(const rr of rows){ const nn=rr[1]; const span=(nn-1)*22; for(let i=0;i<nn;i++){ pts.push({x:-span/2+i*22, y:rr[0]}); } } return pts; }; const holesTop = (cy:number) => { let out=""; const hr=(D.holeR!=null?D.holeR:5.6); const pr=D.holePreset||"grid"; let rows:any[]=[[-70,8],[-42,10],[-14,10],[16,10],[44,10],[74,8]]; if(pr==="dense")rows=[[-84,10],[-62,12],[-40,12],[-18,12],[4,12],[26,12],[48,12],[70,12],[90,10]]; else if(pr==="sparse")rows=[[-56,5],[-24,7],[8,7],[40,5]]; else if(pr==="diamond")rows=[[-74,3],[-52,5],[-30,7],[-8,9],[14,9],[36,7],[58,5],[78,3]]; const hpts=Array.isArray(D.holes)?D.holes:presetHoles(pr); for(let hi=0;hi<hpts.length;hi++){ const xx=CX+hpts[hi].x, yy=cy+hpts[hi].y; out+='<circle data-hole="'+hi+'" cx="'+xx+'" cy="'+yy+'" r="'+hr+'" fill="'+BG+'"/><circle cx="'+xx+'" cy="'+(yy+0.7)+'" r="'+hr+'" fill="none" stroke="#000" stroke-width="1.5" opacity="0.28"/>'; } return out; };
-  const armStr = (a:any,side:number) => { const ax=a[0],ay=a[1]; const hx=CX+side*17,hix=CX+side*3; const iax=ax-side*22,iay=ay+2; const ox1=ax+(hx-ax)*0.34-side*3,oy1=ay+(HT-ay)*0.34,ox2=ax+(hx-ax)*0.68-side*2,oy2=ay+(HT-ay)*0.68; const ix1=iax+(hix-iax)*0.68-side*2,iy1=iay+(HT-iay)*0.68,ix2=iax+(hix-iax)*0.34-side*3,iy2=iay+(HT-iay)*0.34; return '<path d="M'+ax.toFixed(1)+' '+ay.toFixed(1)+' C'+ox1.toFixed(1)+' '+oy1.toFixed(1)+' '+ox2.toFixed(1)+' '+oy2.toFixed(1)+' '+hx+' '+HT+' L'+hix+' '+HT+' C'+ix1.toFixed(1)+' '+iy1.toFixed(1)+' '+ix2.toFixed(1)+' '+iy2.toFixed(1)+' '+iax.toFixed(1)+' '+iay.toFixed(1)+' Z" fill="url(#pd_frG)"/>'; };
-  const bridgeStr = (aL:any,aR:any) => { const wy0=Math.min(aL[1],aR[1])-2,wy1=HT+8,my=(wy0+wy1)/2; const sw=throatType==="diagonal"?6:7; const bc=(idx)=>((D.beamColors&&D.beamColors[idx])||throatC); if(throatType==="vertical"){ let b=""; for(let i=0;i<beams;i++){ const fr=beams===1?0.5:i/(beams-1); const xt=CX-16+fr*32, xb=CX-6+fr*12, cq=CX-22+fr*44; b+='<path d="M'+xt.toFixed(1)+' '+wy0.toFixed(1)+' Q'+cq.toFixed(1)+' '+my.toFixed(1)+' '+xb.toFixed(1)+' '+wy1.toFixed(1)+'" stroke="'+bc(i)+'" stroke-width="'+sw+'" fill="none" stroke-linecap="round"/>'; } return b; } if(throatType==="diagonal"){ let b=""; const n2=Math.max(1,beams); const tlx=aL[0]+18, trx=aR[0]-18, ty=Math.max(aL[1],aR[1])+6; for(let k=0;k<n2;k++){ const o=(k-(n2-1)/2)*6; b+='<path d="M'+(tlx+o).toFixed(1)+' '+ty.toFixed(1)+' L'+(CX+6+o).toFixed(1)+' '+wy1.toFixed(1)+'" stroke="'+bc(k)+'" stroke-width="'+sw+'" stroke-linecap="round"/>'; b+='<path d="M'+(trx-o).toFixed(1)+' '+ty.toFixed(1)+' L'+(CX-6-o).toFixed(1)+' '+wy1.toFixed(1)+'" stroke="'+bc(k)+'" stroke-width="'+sw+'" stroke-linecap="round"/>'; } return b; } if(throatType==="horizontal"){ let b=''; for(let i=0;i<beams;i++){ const yy=beams===1?my:(wy0+18+i*((wy1-wy0-36)/Math.max(1,beams-1))); const t=(yy-wy0)/(wy1-wy0); const lx=(aL[0]+22)+((CX-3)-(aL[0]+22))*t-2, rx=(aR[0]-22)+((CX+3)-(aR[0]-22))*t+2; b+='<path d="M'+lx.toFixed(1)+' '+yy.toFixed(1)+' Q'+CX+' '+(yy-3).toFixed(1)+' '+rx.toFixed(1)+' '+yy.toFixed(1)+'" stroke="'+bc(i)+'" stroke-width="8" fill="none" stroke-linecap="round"/>'; } return b; } return ""; };
-  const layerStr = () => { let out=""; layers.filter((l:any)=>{const _sd=(l.side||"face");return view==="profile"?_sd==="profile":_sd!=="profile";}).forEach((it:any) => { const _fx=(it.sx==null?1:it.sx),_fy=(it.sy==null?1:it.sy),_kx=(it.skx||0),_ky=(it.sky||0);const tr=' transform="translate('+it.x+' '+it.y+') rotate('+it.rot+') skewX('+_kx+') skewY('+_ky+') scale('+_fx+' '+_fy+') translate('+(-it.x)+' '+(-it.y)+')"'; out+='<g data-layer="'+it.id+'" style="cursor:move">'; if(it.type==="text"){ const w=Math.max(24,(it.text||"").length*it.size*0.62),hh=it.size*1.25; out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-it.size*0.82)+'" width="'+w+'" height="'+hh+'" fill="transparent"'+tr+'/>'; out+='<text x="'+it.x+'" y="'+it.y+'" text-anchor="middle" font-family="'+it.font+'" font-size="'+it.size+'" fill="'+it.color+'"'+tr+' style="pointer-events:none">'+esc(it.text)+'</text>'; if(it.id===selId) out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-it.size*0.82)+'" width="'+w+'" height="'+hh+'" rx="3" fill="none" stroke="#2f7cff" stroke-width="1.5" stroke-dasharray="5 4"'+tr+' style="pointer-events:none"/>'; } else { const w=it.baseW*it.scale,hh=it.baseH*it.scale; out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-hh/2)+'" width="'+w+'" height="'+hh+'" fill="transparent"'+tr+'/>'; out+='<g transform="translate('+it.x+' '+it.y+') rotate('+it.rot+') scale('+it.scale+')" opacity="'+it.opacity+'"><image href="'+it.href+'" x="'+(-it.baseW/2)+'" y="'+(-it.baseH/2)+'" width="'+it.baseW+'" height="'+it.baseH+'" preserveAspectRatio="xMidYMid meet" style="pointer-events:none"/></g>'; if(it.id===selId) out+='<rect x="'+(it.x-w/2)+'" y="'+(it.y-hh/2)+'" width="'+w+'" height="'+hh+'" rx="3" fill="none" stroke="#2f7cff" stroke-width="1.5" stroke-dasharray="5 4"'+tr+' style="pointer-events:none"/>'; } if(it.id===selId){out+=layerHandlesSVG(it);} out+='</g>'; }); return out; };
-  const buildProfileSVG = () => { const camS = zoom, tx = CX * (1 - camS) + pan.x, ty = 360 * (1 - camS) + pan.y; return `<svg id="pdsvg" viewBox="0 0 680 720" width="100%" style="display:block;cursor:grab;touch-action:none;user-select:none"><g transform="translate(${tx.toFixed(1)} ${ty.toFixed(1)}) scale(${camS})"><rect x="322" y="48" width="36" height="464" rx="18" fill="${frame}"/><rect x="332" y="60" width="16" height="348" rx="8" fill="${face}"/><rect x="325" y="54" width="7" height="360" rx="3" fill="rgba(255,255,255,0.12)"/><rect x="326" y="500" width="28" height="156" rx="12" fill="${grip}"/><g stroke="rgba(0,0,0,0.12)" stroke-width="2"><line x1="326" y1="520" x2="354" y2="530"/><line x1="326" y1="544" x2="354" y2="554"/><line x1="326" y1="568" x2="354" y2="578"/><line x1="326" y1="592" x2="354" y2="602"/><line x1="326" y1="616" x2="354" y2="626"/><line x1="326" y1="640" x2="354" y2="650"/></g><rect x="330" y="650" width="20" height="12" rx="3" fill="#101015"/><clipPath id="pd_pfr"><rect x="322" y="48" width="36" height="464" rx="18"/></clipPath>${D.sideImg?('<g clip-path="url(#pd_pfr)"><image href="'+D.sideImg+'" x="322" y="48" width="36" height="464" preserveAspectRatio="none"/></g>'):''}<g clip-path="url(#pd_pfr)">${layerStr()}</g><g clip-path="url(#pd_pfr)"><rect x="336" y="56" width="8" height="398" rx="4" fill="#c9c9c9"/>${D.leadImg?('<image href="'+D.leadImg+'" x="336" y="56" width="8" height="398" preserveAspectRatio="none"/>'):''}<rect x="335" y="55" width="10" height="400" rx="5" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.2"/></g></g></svg>`; }; const buildSVG = () => { if (view === "profile") return buildProfileSVG();
-    const c=CFG[shape], cy=c.cy;
-    const head=genPts(0,0), fpts=genPts(13,13);
-    const headD=crPath(head), faceD=crPath(fpts);
-    const aR=head[18], aL=head[30];
-    const camS=zoom, tx=CX*(1-camS)+pan.x, ty=360*(1-camS)+pan.y;
-    const faceFillId = pattern==="gradient" ? "url(#pd_pf)" : face;
-    let overlay="";
-    if(pattern==="split") overlay+='<rect x="150" y="'+cy+'" width="380" height="260" fill="'+accent+'" clip-path="url(#pd_fc)"/>';
-    if(pattern==="stripes") overlay+='<rect x="150" y="40" width="380" height="380" fill="url(#pd_stp)" clip-path="url(#pd_fc)"/>';
-    if(pattern==="halo") overlay+='<circle cx="340" cy="'+cy+'" r="96" fill="none" stroke="'+accent+'" stroke-width="13" clip-path="url(#pd_fc)"/><circle cx="340" cy="'+cy+'" r="60" fill="none" stroke="'+accent+'" stroke-width="8" opacity="0.7" clip-path="url(#pd_fc)"/>';
-    let wrap="";
-    for(let i=0;i<9;i++){ const yy=HT+18+i*18; wrap+='<line x1="326" y1="'+yy+'" x2="354" y2="'+(yy+9)+'"/>'; }
-    let closedT="";
-    if(throatType==="closed"){ const wy0=Math.max(aL[1],aR[1])+14; closedT='<path d="M'+(aL[0]+22)+' '+wy0+' L'+(CX-3)+' '+HT+' L'+(CX+3)+' '+HT+' L'+(aR[0]-22)+' '+wy0+' Z" fill="'+throatC+'"/>'; }
-    return '<svg id="pdsvg" viewBox="0 0 680 720" width="100%" style="display:block;cursor:grab;touch-action:none;user-select:none">'
-      +'<defs><clipPath id="pd_fc"><path d="'+faceD+'"/></clipPath><clipPath id="pd_rq"><path d="'+faceD+'"/><path d="M'+(CX-66)+' '+(cy+c.ry-30)+' L'+(CX+66)+' '+(cy+c.ry-30)+' L'+(CX+22)+' '+(HT-4)+' L'+(CX-22)+' '+(HT-4)+' Z"/></clipPath>'
-      +'<linearGradient id="pd_frG" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="'+shade(frame,0.30)+'"/><stop offset="0.5" stop-color="'+frame+'"/><stop offset="1" stop-color="'+shade(frame,-0.35)+'"/></linearGradient>'
-      +'<linearGradient id="pd_faG" x1="0.1" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="'+shade(face,0.16)+'"/><stop offset="0.45" stop-color="'+face+'"/><stop offset="1" stop-color="'+shade(face,-0.22)+'"/></linearGradient>'
-      +'<linearGradient id="pd_pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+accent+'"/><stop offset="1" stop-color="'+face+'"/></linearGradient>'
-      +'<pattern id="pd_stp" width="30" height="30" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="'+face+'"/><rect width="15" height="30" fill="'+accent+'"/></pattern>'
-      +'<radialGradient id="pd_sheen" cx="0.34" cy="0.24" r="0.6"><stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/><stop offset="0.55" stop-color="#ffffff" stop-opacity="0.03"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
-      +'<filter id="pd_shf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>'+'<filter id="pd_wh"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0"/></filter><mask id="pd_thm" maskUnits="userSpaceOnUse" x="0" y="0" width="680" height="720"><rect width="680" height="720" fill="#000"/><path d="'+faceD+'" fill="#fff"/><g filter="url(#pd_wh)">'+armStr(aL,-1)+armStr(aR,1)+bridgeStr(aL,aR)+closedT+'</g></mask></defs>'
-      +'<rect x="0" y="0" width="680" height="720" fill="'+BG+'"/>'
-      +'<g transform="translate('+tx.toFixed(1)+' '+ty.toFixed(1)+') scale('+camS+')">'
-     
-      +armStr(aL,-1)+armStr(aR,1)+bridgeStr(aL,aR)+closedT
-      +'<rect x="326" y="'+(HT-6)+'" width="28" height="200" rx="12" fill="'+grip+'"/>'
-      +'<g stroke="rgba(0,0,0,0.14)" stroke-width="2">'+wrap+'</g>'
-      +'<rect x="322" y="'+(HT+190)+'" width="36" height="12" rx="5" fill="'+shade(frame,-0.2)+'"/>'
-      +'<path d="'+headD+'" fill="url(#pd_frG)"/>'
-      +'<path d="'+faceD+'" fill="url(#pd_faG)"/><path d="'+faceD+'" fill="'+faceFillId+'" fill-opacity="'+(pattern==="gradient"?1:0.55)+'"/>'
-      +overlay
-      +'<path d="'+faceD+'" fill="url(#pd_sheen)"/><path d="'+faceD+'" fill="none" stroke="'+shade(face,-0.5)+'" stroke-width="2.5" opacity="0.5"/>'
-      +'<g mask="url(#pd_thm)">'+layerStr()+'</g>'+'<g clip-path="url(#pd_rq)" opacity="0">'+layerStr()+'</g>'
-      +'<g clip-path="url(#pd_fc)">'+holesTop(cy)+'</g>'
-      +'</g></svg>';
-  };
-  const toRoot = (e:any) => { const svgEl:any = wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return {x:0,y:0}; const p=svgEl.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const r=p.matrixTransform(svgEl.getScreenCTM().inverse()); return {x:r.x,y:r.y}; };
-  const onDown = (e:any) => { const p=toRoot(e); if(D.editHoles){ const _hh=e.target.closest&&e.target.closest("[data-hole]"); if(_hh){ const _hi=+_hh.getAttribute("data-hole"); setDesign((d:any)=>({...d, holes:(Array.isArray(d.holes)?d.holes:presetHoles(d.holePreset||"grid")).filter((_:any,i:number)=>i!==_hi)})); return; } const _cyy=CFG[shape].cy; setDesign((d:any)=>({...d, holes:[...(Array.isArray(d.holes)?d.holes:presetHoles(d.holePreset||"grid")), {x:Math.round(p.x-CX), y:Math.round(p.y-_cyy)}]})); return; } const _hn=e.target.closest&&e.target.closest("[data-h]");if(_hn){const _hid=+_hn.getAttribute("data-hl");const _hit=layers.find((l:any)=>l.id===_hid);const _hb=layerBox(_hit);setSelId(_hid);dragRef.current={mode:"handle",id:_hid,handle:_hn.getAttribute("data-h"),sx:p.x,sy:p.y,ox:_hit.x,oy:_hit.y,rot:_hit.rot||0,fsx:(_hit.sx==null?1:_hit.sx),fsy:(_hit.sy==null?1:_hit.sy),skx:_hit.skx||0,sky:_hit.sky||0,hw:_hb.hw,hh:_hb.hh};return;}const g=e.target.closest && e.target.closest("[data-layer]"); if(g){ const id=+g.getAttribute("data-layer"); const it=layers.find((l:any)=>l.id===id); setSelId(id); dragRef.current={mode:"layer",id,sx:p.x,sy:p.y,ox:it.x,oy:it.y}; } else { setSelId(null); dragRef.current={mode:"pan",sx:p.x,sy:p.y,px:pan.x,py:pan.y}; } try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){} };
-  const onMove = (e:any) => { const d=dragRef.current; if(!d) return; const p=toRoot(e); if(d.mode==="handle"){const _u=computeHandleDrag(d,p,zoom);setLayers((ls:any[])=>ls.map((l:any)=>l.id===d.id?{...l,..._u}:l));return;} if(d.mode==="layer"){ if(view==="profile"){ setLayers((ls:any[])=>ls.map((l:any)=>{ if(l.id!==d.id) return l; let _px=Math.max(328,Math.min(352,Math.round(d.ox+(p.x-d.sx)/zoom))), _py=Math.max(70,Math.min(498,Math.round(d.oy+(p.y-d.sy)/zoom))); return {...l,x:_px,y:_py}; })); return; } const _c=CFG[shape], _fB=_c.cy+_c.ry, _fT=_c.cy-_c.ry; setLayers((ls:any[])=>ls.map((l:any)=>{ if(l.id!==d.id) return l; let _nx=Math.round(d.ox+(p.x-d.sx)/zoom), _ny=Math.round(d.oy+(p.y-d.sy)/zoom); _ny=Math.max(_fT+8, Math.min(HT-14, _ny)); let _hf; if(_ny<=_fB){ const _fp=genPts(10,10); _hf=26; for(let _i=0;_i<_fp.length;_i++){ const _a=_fp[_i], _b=_fp[(_i+1)%_fp.length]; if((_a[1]-_ny)*(_b[1]-_ny)<=0 && _a[1]!==_b[1]){ const _xx=_a[0]+(_b[0]-_a[0])*((_ny-_a[1])/(_b[1]-_a[1])); const _hw=Math.abs(_xx-CX); if(_hw>_hf) _hf=_hw; } } _hf=_hf-6; } else { const _tt=Math.max(0,Math.min(1,(_ny-_fB)/((HT-14)-_fB))); _hf=54-(54-16)*_tt; } _nx=Math.max(CX-_hf, Math.min(CX+_hf, _nx)); return {...l, x:_nx, y:_ny}; })); } else { setPan({x:d.px+(p.x-d.sx),y:d.py+(p.y-d.sy)}); } };
-  const onUp = (e:any) => { dragRef.current=null; try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_e){} };
-  const addText = () => { const id=(layers.reduce((mx:number,l:any)=>Math.max(mx,l.id||0),0)+1); const _tg=(D.paintTarget)||(view==="profile"?"profile":"face"); const _pf=_tg==="profile"; setLayers((ls:any[])=>[...ls,{id,type:"text",text:"New text",x:340,y:_pf?250:(_tg==="throat"?430:150),font:"'Barlow Condensed',sans-serif",size:_pf?20:30,color:"#ffffff",rot:_pf?90:0,side:_tg}]); setSelId(id); };
-  const addImage = (e:any) => { const f=e.target.files && e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=(ev:any)=>{ const img=new Image(); img.onload=()=>{ const m=Math.max(img.width,img.height)||1; const base=140/m; const id=(layers.reduce((mx:number,l:any)=>Math.max(mx,l.id||0),0)+1); setLayers((ls:any[])=>[{id,type:"image",href:ev.target.result,baseW:Math.round(img.width*base),baseH:Math.round(img.height*base),x:340,y:((D.paintTarget||(view==="profile"?"profile":"face"))==="throat"?430:(view==="profile"?260:230)),scale:(view==="profile"?3.2:1),rot:0,opacity:1,side:(D.paintTarget||(view==="profile"?"profile":"face"))},...ls]); setSelId(id); }; img.src=ev.target.result; }; rd.readAsDataURL(f); e.target.value=""; };
-  const sel:any = selId!=null ? layers.find((l:any)=>l&&l.id===selId) : null;
-  const upd = (patch:any) => setLayers((ls:any[])=>ls.map((l:any)=>l&&l.id===selId?{...l,...patch}:l));
-  const del = () => { setLayers((ls:any[])=>ls.filter((l:any)=>l.id!==selId)); setSelId(null); };
-  const download = () => { const _cv3d:any=wrapRef.current && wrapRef.current.querySelector("canvas"); if(view==="3d" && _cv3d){ try{ const a=document.createElement("a"); a.download="racquet.png"; a.href=_cv3d.toDataURL("image/png"); a.click(); }catch(_e){} return; } const svgEl:any=wrapRef.current && wrapRef.current.querySelector("#pdsvg"); if(!svgEl) return; const s=new XMLSerializer().serializeToString(svgEl); const blob=new Blob(['<?xml version="1.0"?>'+s],{type:"image/svg+xml"}); const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ const cv=document.createElement("canvas"); cv.width=1020; cv.height=1080; const ctx:any=cv.getContext("2d"); ctx.fillStyle=BG; ctx.fillRect(0,0,1020,1080); ctx.drawImage(img,0,0,1020,1080); URL.revokeObjectURL(url); try{ const a=document.createElement("a"); a.download="palalab-racquet.png"; a.href=cv.toDataURL("image/png"); a.click(); }catch(_e){} }; img.src=url; };
-  const lbl:any={fontSize:11,color:"#8A8578",fontFamily:"Inter, sans-serif",display:"flex",flexDirection:"column",gap:6,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600};
-  const fld:any={width:"100%",marginTop:2,padding:"10px 12px",borderRadius:12,border:"1px solid rgba(0,0,0,0.12)",background:"#fff",color:"#18181B",fontFamily:"Inter, sans-serif",fontSize:13,cursor:"pointer"};
-  const col:any={width:36,height:36,padding:0,border:"2px solid #EDE8DC",borderRadius:"50%",background:"transparent",cursor:"pointer",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"};
-  const btn:any={padding:"9px 16px",borderRadius:999,border:"1px solid rgba(0,0,0,0.16)",background:"#fff",color:"#1A1A1A",fontFamily:"Inter, sans-serif",fontWeight:600,letterSpacing:"0.02em",fontSize:12,cursor:"pointer"};
-  return (
-    <div className="pd-ctl" style={{ display:"flex", flexDirection:"column", gap:12, maxHeight:"calc(100vh - 120px)", overflowY:"auto", overflowX:"hidden", paddingRight:6 }}><style>{`#pdsvg{max-height:46vh;width:auto;max-width:100%;margin:0 auto;display:block} .pd-ctl input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;background:#D4CCB8;outline:none} .pd-ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#1A5C2A;border:2px solid #EDE8DC;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer} .pd-ctl input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#1A5C2A;border:2px solid #EDE8DC;cursor:pointer} .pd-ctl label{letter-spacing:.02em} .pd-ctl>*{flex-shrink:0} .beam-dot::-webkit-color-swatch-wrapper{padding:0} .beam-dot::-webkit-color-swatch{border-radius:50%;border:none} .pd-ctl{background:#FCFBF8;border:1px solid rgba(0,0,0,0.06);border-radius:16px;padding:16px} .pd-ctl select:hover,.pd-ctl button:hover{border-color:rgba(0,0,0,0.3)} .pd-ctl input[type=color]::-webkit-color-swatch-wrapper{padding:0} .pd-ctl input[type=color]::-webkit-color-swatch{border-radius:50%;border:none}`}</style>
-      <div ref={wrapRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ position:"sticky", top:8, zIndex:5, background:BG, borderRadius:14, overflow:"hidden", boxShadow:"0 6px 24px rgba(0,0,0,0.08)", border:"1px solid rgba(0,0,0,0.06)" }} >{view==="3d" ? <div style={{width:"100%"}} onPointerDown={(e)=>e.stopPropagation()} onPointerMove={(e)=>e.stopPropagation()} onPointerUp={(e)=>e.stopPropagation()}><Racquet3D leadChannel={D.leadChannel||"#c9c9c9"} editHoles={D.editHoles} setDesign={setDesign} selId={selId} setSelId={setSelId} zoom={zoom} finish={D.finish||"matte"} shape={shape} throatType={throatType} beams={beams} face={face} frame={frame} throatC={throatC} grip={grip} accent={accent} pattern={pattern} layers={layers} beamColors={D.beamColors||[]} holes={Array.isArray(D.holes)?D.holes:presetHoles(D.holePreset||"grid")} holeR={D.holeR!=null?D.holeR:5.6} leadImg={D.leadImg} leadThroat={D.leadThroat} sideImg={D.sideImg} /></div> : <div style={{width:"100%"}} dangerouslySetInnerHTML={{ __html: buildSVG() }} />}</div>
-      <div style={{ fontSize:12, color:"#7A7268", fontFamily:"Inter, sans-serif" }}>Throat: {throatType==="closed"?"closed bridge":throatType==="vertical"?(beams+" vertical"):throatType==="diagonal"?"X-brace":"horizontal beams"} — from the build. Drag any text or logo to place it; click it to edit.</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr",gap:8}}><label style={lbl}>Face shape<select value={(D.paintShape as string) || shape} onChange={(e) => setDesign((d: any) => ({ ...d, paintShape: e.target.value }))} style={fld}><option value="round">Round</option><option value="teardrop">Teardrop</option><option value="diamond">Diamond</option></select></label><label style={lbl}>Throat<select value={throatType} onChange={(e) => setDesign((d: any) => ({ ...d, paintThroat: e.target.value }))} style={fld}><option value="closed">Closed bridge</option><option value="vertical">Vertical beams</option><option value="diagonal">X-brace</option><option value="horizontal">Horizontal beams</option></select></label><label style={lbl}>Beams<select value={String(beams)} onChange={(e) => setDesign((d: any) => ({ ...d, paintBeams: Number(e.target.value) }))} style={fld}><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label></div><div style={{display:"flex",alignItems:"center",gap:10,margin:"6px 0 2px"}}><span style={{fontSize:12,color:"#7A7268",fontFamily:"Inter, sans-serif"}}>Beam colors</span>{Array.from({length:beams}).map((_,i)=>(<input key={"bc"+i} className="beam-dot" type="color" title={"Beam "+(i+1)} value={(D.beamColors&&D.beamColors[i])||throatC} onChange={(e)=>setDesign((d)=>{const arr=[...(d.beamColors||[])]; arr[i]=e.target.value; return {...d,beamColors:arr};})} style={{width:30,height:30,borderRadius:"50%",border:"2px solid #EDE8DC",boxShadow:"0 1px 4px rgba(0,0,0,0.25)",padding:0,cursor:"pointer",background:"transparent"}}/>))}</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><label style={lbl}>Perforation<select value={D.holePreset||"grid"} onChange={(e)=>setDesign((d)=>({...d,holePreset:e.target.value}))} style={fld}><option value="grid">Standard</option><option value="dense">Dense</option><option value="sparse">Sparse</option><option value="diamond">Diamond</option></select></label><label style={lbl}>Hole size<input type="range" min="4" max="8" step="0.2" value={D.holeR!=null?D.holeR:5.6} onChange={(e)=>setDesign((d)=>({...d,holeR:Number(e.target.value)}))} style={{width:"100%",marginTop:8}}/></label></div><div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0 6px",flexWrap:"wrap"}}><label style={{fontSize:12,color:"#7A7268",fontFamily:"Inter, sans-serif",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}><input type="checkbox" checked={!!D.editHoles} onChange={(e)=>setDesign((d)=>({...d,editHoles:e.target.checked,holes:(e.target.checked&&!Array.isArray(d.holes))?presetHoles(d.holePreset||"grid"):d.holes}))}/>Edit holes — click to add / remove</label><button type="button" onClick={()=>setDesign((d)=>{const nd={...d}; delete nd.holes; return nd;})} style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:"1px solid rgba(0,0,0,0.15)",background:"#EDE8DC",cursor:"pointer",color:"#1A5C2A"}}>Reset</button></div><label style={lbl}>Face pattern<select value={pattern} onChange={e=>setPattern(e.target.value)} style={fld}><option value="solid">Solid</option><option value="gradient">Gradient</option><option value="split">Split</option><option value="stripes">Stripes</option><option value="halo">Halo</option></select></label><label style={lbl}>Finish<select value={D.finish||"matte"} onChange={e=>setDesign((d:any)=>({...d, finish:e.target.value}))} style={fld}><option value="matte">Matte</option><option value="gloss">Gloss</option></select></label>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(84px, 1fr))", gap:10 }}>
-        <label style={lbl}>Face<input type="color" value={face} onChange={e=>setFace(e.target.value)} style={col} /></label>
-        <label style={lbl}>Frame<input type="color" value={frame} onChange={e=>setFrame(e.target.value)} style={col} /></label>
-        <label style={lbl}>Throat<input type="color" value={throatC} onChange={e=>setThroatC(e.target.value)} style={col} /></label>
-        <label style={lbl}>Grip<input type="color" value={grip} onChange={e=>setGrip(e.target.value)} style={col} /></label>
-        <label style={lbl}>Accent<input type="color" value={accent} onChange={e=>setAccent(e.target.value)} style={col} /></label><label style={lbl}>Lead<input type="color" value={D.leadChannel||"#c9c9c9"} onChange={e=>setDesign((d:any)=>({...d, leadChannel:e.target.value}))} style={col} /></label><button type="button" onClick={()=>setDesign((d:any)=>({...d,leadThroat:!D.leadThroat}))} style={{gridColumn:"1 / -1",justifySelf:"start",display:"inline-flex",alignItems:"center",gap:8,padding:"6px 12px",borderRadius:999,border:"1px solid "+(D.leadThroat?"#1A5C2A":"rgba(0,0,0,0.16)"),background:D.leadThroat?"#EAF3EC":"#fff",color:"#4A4A44",fontFamily:"Inter, sans-serif",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",marginTop:6}}><span style={{position:"relative",display:"inline-block",width:30,height:16,borderRadius:999,background:D.leadThroat?"#1A5C2A":"#d8d3c8"}}><span style={{position:"absolute",top:2,left:D.leadThroat?16:2,width:12,height:12,borderRadius:999,background:"#fff",boxShadow:"0 1px 2px rgba(0,0,0,0.3)"}}/></span>Lead channel on throat</button>
-      </div>
-      <div style={{ display:"flex", flexWrap:"wrap", gap:10, alignItems:"center", padding:"10px", background:"#F2EFE7", borderRadius:10 }}>
-        <label style={{fontSize:11,color:"#8A8578",fontWeight:600,marginRight:2}}>Add to</label><select value={D.paintTarget||"face"} onChange={e=>setDesign((d:any)=>({...d,paintTarget:e.target.value}))} style={{...btn,cursor:"pointer"}}><option value="face">Face</option><option value="throat">Throat</option><option value="profile">Frame</option></select><button type="button" onClick={addText} style={btn}>+ Add text</button>
-        <label style={{ ...btn, display:"inline-flex", alignItems:"center", gap:6 }}>+ Add image<input type="file" accept="image/*" onChange={addImage} style={{ display:"none" }} /></label>
-        {sel && <button type="button" onClick={del} style={{ ...btn, borderColor:"#B0361E", color:"#B0361E" }}>Delete selected</button>}
-      </div>
-      {layers.length>0 && (<div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:170,overflowY:"auto",border:"1px solid rgba(0,0,0,0.08)",borderRadius:10,padding:6,background:"#fff"}}>{layers.slice().reverse().map((l:any)=>(<div key={l.id} onClick={()=>setSelId(l.id)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6,padding:"6px 8px",borderRadius:8,cursor:"pointer",background:l&&l.id===selId?"#EAF3EC":"transparent",border:l&&l.id===selId?"1px solid #1A5C2A":"1px solid transparent"}}><span style={{fontSize:12,color:"#4A4A44",fontFamily:"Inter, sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{l.type==="text"?(l.text||"New text"):"Image"}<span style={{color:"#9A958A",fontSize:10}}>{"  ·  "+(l.side==="profile"?"Frame":l.side==="lead"?"Lead strip":l.side==="throat"?"Throat":"Face")}</span></span><button type="button" title="Bring forward" onClick={(e:any)=>{e.stopPropagation();setLayers((ls:any[])=>{const i=ls.findIndex((x:any)=>x.id===l.id);if(i<0||i>=ls.length-1)return ls;const n=ls.slice();const t=n[i];n[i]=n[i+1];n[i+1]=t;return n;});}} style={{fontSize:11,color:"#6b6459",background:"none",border:"none",cursor:"pointer",flex:"0 0 auto",padding:"0 2px"}}>▲</button><button type="button" title="Send back" onClick={(e:any)=>{e.stopPropagation();setLayers((ls:any[])=>{const i=ls.findIndex((x:any)=>x.id===l.id);if(i<=0)return ls;const n=ls.slice();const t=n[i];n[i]=n[i-1];n[i-1]=t;return n;});}} style={{fontSize:11,color:"#6b6459",background:"none",border:"none",cursor:"pointer",flex:"0 0 auto",padding:"0 2px"}}>▼</button><button type="button" title="Delete" onClick={(e:any)=>{e.stopPropagation();setLayers((ls:any[])=>ls.filter((x:any)=>x.id!==l.id));if(selId===l.id)setSelId(null);}} style={{fontSize:12,color:"#B0361E",background:"none",border:"none",cursor:"pointer",flex:"0 0 auto",padding:"0 2px"}}>✕</button></div>))}</div>)}{sel && (()=>{const it=sel;const isT=it.side==="throat",isL=it.side==="lead",isE=it.side==="profile";const xa=(isE||isL)?324:160,xb=(isE||isL)?356:520,ya=isT?405:50,yb=isT?490:((isE||isL)?510:500),showX=!isT&&!isL;return (<div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 4px 2px"}}>{showX && <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,color:"#7A7268",width:52}}>Move X</span><input type="range" min={xa} max={xb} value={it.x} onChange={e=>upd({x:+e.target.value})} style={{flex:1}} /></div>}<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:12,color:"#7A7268",width:52}}>Move Y</span><input type="range" min={ya} max={yb} value={it.y} onChange={e=>upd({y:+e.target.value})} style={{flex:1}} /></div></div>);})()}{sel && sel.type==="text" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          <input type="text" value={sel.text} onChange={e=>upd({text:e.target.value})} placeholder="Your text" style={fld} />
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-            <label style={lbl}>Font<select value={sel.font} onChange={e=>upd({font:e.target.value})} style={fld}>{FONTS.map((f:any,i:number)=><option key={i} value={f[0]}>{f[1]}</option>)}</select></label>
-            <label style={lbl}>Color<input type="color" value={sel.color} onChange={e=>upd({color:e.target.value})} style={col} /></label>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={80} value={sel.size} onChange={e=>upd({size:+e.target.value})} style={{ flex:1 }} /></div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Rotate</span><input type="range" min={-90} max={90} value={sel.rot} onChange={e=>upd({rot:+e.target.value})} style={{ flex:1 }} /></div>
-        </div>
-      )}
-      {sel && sel.type==="image" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Size</span><input type="range" min={10} max={900} value={Math.round(sel.scale*100)} onChange={e=>upd({scale:(+e.target.value)/100})} style={{ flex:1 }} /></div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Rotate</span><input type="range" min={-180} max={180} value={sel.rot} onChange={e=>upd({rot:+e.target.value})} style={{ flex:1 }} /></div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}><span style={{ fontSize:12, color:"#7A7268", width:44 }}>Opacity</span><input type="range" min={10} max={100} value={Math.round(sel.opacity*100)} onChange={e=>upd({opacity:(+e.target.value)/100})} style={{ flex:1 }} /></div>
-        </div>
-      )}
-      <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:12 }}>
-        <span style={{ fontSize:12, color:"#7A7268" }}>Zoom</span>
-        <input type="range" min={60} max={260} value={Math.round(zoom*100)} onChange={e=>setZoom((+e.target.value)/100)} style={{ flex:1, minWidth:120 }} />
-        <button type="button" onClick={()=>{ setZoom(1); setPan({x:0,y:0}); }} style={btn}>Reset view</button>
-        <button type="button" onClick={download} style={btn}>Download PNG</button><button onClick={()=>{try{const api=(window as any).__pala3D;if(!api||!api.captureAngles)return;const shots=api.captureAngles();if(!shots||!shots.length)return;const cols=2,cw=560,chh=600,pad=14,lab=26;const rows=Math.ceil(shots.length/cols);const cvs=document.createElement("canvas");cvs.width=cols*cw+pad*(cols+1);cvs.height=rows*(chh+lab)+pad*(rows+1);const g:any=cvs.getContext("2d");g.fillStyle="#EDEADE";g.fillRect(0,0,cvs.width,cvs.height);g.fillStyle="#3a352c";g.font="600 16px Inter,system-ui,sans-serif";g.textAlign="center";let done=0;shots.forEach((s:any,i:number)=>{const im=new Image();im.onload=()=>{const r=Math.floor(i/cols),c=i%cols;const x=pad+c*(cw+pad),y=pad+r*(chh+lab+pad);const ar=(im.width/im.height)||1;let dw=cw,dh=cw/ar;if(dh>chh){dh=chh;dw=chh*ar;}g.drawImage(im,x+(cw-dw)/2,y+(chh-dh)/2,dw,dh);g.fillText((s.name||"").toUpperCase(),x+cw/2,y+chh+18);done++;if(done===shots.length){const a=document.createElement("a");a.download="racquet-angles.png";a.href=cvs.toDataURL("image/png");a.click();}};im.src=s.url;});}catch(_e){}}} style={btn}>Capture angles</button>
-      </div>
-    </div>
-  );
-}
 
 function RacquetProfile({ shape, faceId, coreObj, frameObj, thicknessMm, widthMm, lengthMm, holes, gripShapeId, edgeProfile, leadChannel = true }) {
   const STROKE = "#2A2620"; // darker, higher-contrast outline (was #4A4540, too faint)
@@ -8005,7 +7911,8 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
           // has shape in scope, not the full material/dimension stack —
           // but shape alone gets the position correct for round, diamond,
           // and teardrop within a few percent of the fully-refined value.)
-          const baseYFrac = shape === "round" ? 0.56 : (shape === "diamond" || shape === "diamond-wide") ? 0.36 : 0.48;
+          const _bShape = baseShapeId(shape);
+          const baseYFrac = _bShape === "round" ? 0.56 : (_bShape === "diamond" || _bShape === "diamond-wide") ? 0.36 : 0.48;
           // baseYFrac is expressed 0(top)..1(bottom) of the head height in
           // the full spec-view coordinate system; convert to this canvas's
           // -1..1-from-center convention used by hole coordinates.
@@ -8305,6 +8212,7 @@ export default function App() {
     setShareStatus("saving");
     setShareError(null);
     const spec = {
+      schemaVersion: SPEC_VERSION,
       shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design,
@@ -8343,6 +8251,7 @@ export default function App() {
     if (!loadedCode) return;
     setUpdateStatus("saving");
     const spec = {
+      schemaVersion: SPEC_VERSION,
       shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile,
       bridgeId, beamCount, beamOrientation, holes, holeDiameterMm,
       lengthMm, widthMm, thicknessMm, weightG, balanceCm, gripCircMm, dampening, stiffnessAdj, counterweightG, handleLengthMm, coreGradient, design,
@@ -8815,6 +8724,17 @@ export default function App() {
   // ---- VIEW CONTENT ----
   const viewContent = (
     <div>
+      {/* Persistent Build → Design → Export cockpit: self-completing readiness checklist
+          over the shared RacquetSpec. Assembled from live build state; presentational only.
+          Manufacturer mode only — it's a factory-handoff tool (matches the Paint Shop tab). */}
+      {mode === "manufacturer" && (
+        <div style={{ padding: "12px 16px 0" }}>
+          <FlowCockpit
+            spec={buildToSpec({ shapeId, coreId, faceId, frameId, surfaceId, gripId, gripShapeId, edgeProfile, sideProfile, bridgeId, beamCount, beamOrientation, holes, holeDiameterMm, lengthMm, widthMm, thicknessMm, weightG, balanceCm, handleLengthMm, design })}
+            hasArtwork={(design.layers || []).some((l: any) => l && l.type === "image")}
+          />
+        </div>
+      )}
       {/* View mode toggle */}
       <div style={{ display:"flex", gap:6, padding:"12px 16px" }}>
         {[{id:"diagram",label:"Spec View"},{id:"illustration",label:"Illustration"},{id:"profile",label:"Profile"}, ...(mode === "manufacturer" ? [{id:"design",label:"Paint Shop"}] : [])].map(m => (
@@ -8834,7 +8754,7 @@ export default function App() {
       <div style={{ margin:"0 16px", borderRadius:12, overflow:"hidden", border:"1.5px solid #D4CCB8", background: diagramMode === "illustration" ? "radial-gradient(ellipse at 38% 28%, #E8E2D4, #C8C0B0)" : "#F5F2EB" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"16px 8px" }}>
           <div style={{ width: diagramMode === "profile" || diagramMode === "design" ? "100%" : 220 }}>
-            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} bridgeId={bridgeId} beamOrientation={beamOrientation} beamCount={beamCount} design={design} setDesign={setDesign} />) : diagramMode === "profile" ? (
+            {diagramMode === "design" ? (<RacquetDesigner shapeId={shapeId} bridgeId={bridgeId} beamOrientation={beamOrientation} beamCount={beamCount} holes={holes} holeDiameterMm={holeDiameterMm} design={design} setDesign={setDesign} />) : diagramMode === "profile" ? (
               <RacquetProfile shape={shapeId} faceId={faceId} coreObj={core} frameObj={frame} thicknessMm={thicknessMm} widthMm={widthMm} lengthMm={lengthMm} holes={holes} gripShapeId={gripShapeId} edgeProfile={edgeProfile}/>
             ) : diagramMode === "illustration" ? (
               <RacquetIllustration3D {...diagramProps} />

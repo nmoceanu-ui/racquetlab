@@ -453,7 +453,9 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
 }
 function scoreSpec(g) {
   g = g || {};
-  const shp = SHAPES.find((s) => s.id === g.shapeId) || SHAPES.find((s) => s.id === "teardrop");
+  // Angular variants are appearance-only chamfers; they score exactly like their base shape.
+  const _shapeId = g.shapeId === "round-angular" ? "round" : g.shapeId === "diamond-angular" ? "diamond" : g.shapeId;
+  const shp = SHAPES.find((s) => s.id === _shapeId) || SHAPES.find((s) => s.id === "teardrop");
   const cor = CORE_MATERIALS.find((c) => c.id === g.coreId) || CORE_MATERIALS.find((c) => c.id === "eva-medium");
   const fac = FACE_MATERIALS.find((f) => f.id === g.faceId) || FACE_MATERIALS.find((f) => f.id === "carbon-12k");
   const frm = FRAME_MATERIALS.find((f) => f.id === g.frameId) || FRAME_MATERIALS.find((f) => f.id === "hybrid-frame");
