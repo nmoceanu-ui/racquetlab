@@ -50,9 +50,9 @@ export default function PlayerProfileWidget() {
   );
 
   return (
-    <div style={{ position: "fixed", right: 18, bottom: "calc(90px + env(safe-area-inset-bottom))", zIndex: 46, fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ position: "fixed", left: 18, bottom: "calc(84px + env(safe-area-inset-bottom))", zIndex: 46, fontFamily: "Inter, system-ui, sans-serif" }}>
       {open && (
-        <div style={{ position: "absolute", right: 0, bottom: 74, width: 288, background: "#12293a", border: "1px solid rgba(255,255,255,0.11)", borderRadius: 16, padding: 18, boxShadow: "0 16px 48px rgba(0,0,0,0.5)" }}>
+        <div style={{ position: "absolute", left: 0, bottom: 74, width: 288, maxWidth: "calc(100vw - 36px)", background: "#12293a", border: "1px solid rgba(255,255,255,0.11)", borderRadius: 16, padding: 18, boxShadow: "0 16px 48px rgba(0,0,0,0.5)" }}>
           {phase === "archetype" && (<>
             <div style={{ fontSize: 15.5, fontWeight: 700, color: "#eef6fb", marginBottom: 12, textAlign: "center" }}>What do you swing now?</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

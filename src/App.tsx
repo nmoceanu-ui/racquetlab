@@ -9199,15 +9199,10 @@ export default function App() {
         .spin { animation: forja-spin 0.8s linear infinite; }
       `}</style>
 
-      {/* Player front door: the Basin overlays the builder body until dismissed.
-          Header (z-50) stays above it; "Build your own" / "Open build" dismiss it. */}
-      {showBasin && (
-        <div style={{ position: "fixed", left: 0, right: 0, top: 57, bottom: 0, zIndex: 40, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
-          {basinScreen}
-        </div>
-      )}
+      {/* Player front door = the Basin, rendered IN-FLOW below the sticky header via the
+          content-grid / mobile-scroll swaps (so the header stays pinned). Re-entry when dismissed. */}
       {mode === "player" && !playerDiscover && (
-        <button type="button" onClick={() => setPlayerDiscover(true)} style={{ position: "fixed", left: 16, bottom: "calc(84px + env(safe-area-inset-bottom))", zIndex: 45, padding: "10px 14px", borderRadius: 999, border: "none", background: "#2c6d9c", color: "#fff", fontWeight: 700, fontSize: 12.5, boxShadow: "0 4px 16px rgba(0,0,0,0.3)", cursor: "pointer" }}>✦ Find your racquet</button>
+        <button type="button" onClick={() => setPlayerDiscover(true)} style={{ position: "fixed", left: 16, bottom: "calc(158px + env(safe-area-inset-bottom))", zIndex: 45, padding: "10px 14px", borderRadius: 999, border: "none", background: "#2c6d9c", color: "#fff", fontWeight: 700, fontSize: 12.5, boxShadow: "0 4px 16px rgba(0,0,0,0.3)", cursor: "pointer" }}>✦ Find your racquet</button>
       )}
       {/* Floating 3-click questionnaire — player-mode, always accessible; tunes the Basin. */}
       {mode === "player" && <PlayerProfileWidget />}
@@ -9316,7 +9311,7 @@ export default function App() {
 
       {/* ── TABLET LAYOUT (md+) ── */}
       <div style={{ maxWidth:1024, margin:"0 auto" }} className="md-layout">
-        <div style={{ display:"grid" }} className="content-grid">
+        {showBasin ? basinScreen : (<div style={{ display:"grid" }} className="content-grid">
 
           {/* Desktop: two-column */}
           <style>{`
@@ -9367,13 +9362,13 @@ export default function App() {
             </div>
           </div>
 
-        </div>
+        </div>)}
       </div>
 
       {/* ── MOBILE LAYOUT ── */}
       {/* Mobile main scroll area */}
       <div className="mobile-only main-scroll" style={{ paddingBottom:"calc(72px + env(safe-area-inset-bottom))", WebkitOverflowScrolling:"touch" }}>
-        {tabContent[activeTab]}
+        {showBasin ? basinScreen : tabContent[activeTab]}
       </div>
 
       {/* Bottom nav (mobile only).
