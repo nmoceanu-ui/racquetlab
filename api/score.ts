@@ -501,3 +501,7 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: "scoring_failed", detail: String((e && e.message) || e) }), { status: 500, headers: CORS });
   }
 }
+
+// Server-only exports so sibling edge functions (e.g. basin-solve) can reuse the engine
+// without duplicating the trade-secret tables. NOT imported by client code.
+export { scoreSpec, CORE_MATERIALS, FACE_MATERIALS, FRAME_MATERIALS, SURFACE_TEXTURES, GRIP_MATERIALS, SHAPES };

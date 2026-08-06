@@ -1481,3 +1481,6 @@ export default async function handler(req) {
   }));
   return new Response(JSON.stringify({ count: slim.length, racquets: slim }), { status: 200, headers: CORS });
 }
+
+// Server-only export so the Basin solver can score the closest stock frame.
+export { MARKET_RACQUETS };

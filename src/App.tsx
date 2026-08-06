@@ -14,6 +14,8 @@ import { analytics } from "./lib/analytics"; import Racquet3D from "./Racquet3D"
 import RacquetDesigner from "./PaintShop";
 import { SPEC_VERSION, buildToSpec } from "./racquetSpec";
 import FlowCockpit from "./FlowCockpit";
+import BasinPool from "./BasinPool";
+import PlayerProfileWidget from "./PlayerProfileWidget";
 // Factory brief tracks: best-performance / best-value / market-gap / innovation
 
 // ---------------------------------------------------------------------------
@@ -356,7 +358,7 @@ const ADMIN_EMAILS = ["n.moceanu@gmail.com"]; // owner override — always full 
 const STRIPE_LINKS: Record<string, string> = { pro: "", factory: "" }; // paste Stripe Payment Link URLs to enable checkout
 function UpgradeModal({ plan, onClose }: { plan: "pro" | "factory"; onClose: () => void }) {
   const plans: any = {
-    pro: { name: "Pro", price: "$12", period: "/mo", tag: "For players", features: ["Unlimited saved builds", "Reverse-solver simulations", "Compare builds side-by-side", "Export specs to PDF", "Everything in Free"] },
+    pro: { name: "Pro", price: "$12", period: "/mo", tag: "For players", features: ["The Basin — personalized racquet recommendations", "Full custom-build solver: find your ideal spec", "Open any solved build in the builder", "Unlimited saved builds + compare side-by-side", "Export specs to PDF", "Everything in Free"] },
     factory: { name: "Factory", price: "$49", period: "/mo", tag: "For manufacturers & brands", features: ["Everything in Pro", "Factory brief + production specs", "Manufacturing notes on every material", "OEM cost + retail estimates", "FTO / QC guidance", "Reverse-solve to material combinations"] },
   };
   const p = plans[plan];
@@ -8059,6 +8061,7 @@ function HolePlacementCanvas({ shape, holes, onHolesChange, onUndo, canUndo, hol
 
 export default function App() {
   const [mode, setMode] = useState<"player"|"manufacturer">("player");
+  const [playerDiscover, setPlayerDiscover] = useState(true);  // player-mode front door = the Basin
   const [tier, setTier] = useState<"free"|"pro"|"factory">("free");
   const [upgradePlan, setUpgradePlan] = useState<null | "pro" | "factory">(null);
   useEffect(() => {
@@ -9143,6 +9146,44 @@ export default function App() {
     scores: scoresContent,
   };
 
+  // Load a Basin-solved build into the builder state, then drop into the builder.
+  const handleOpenBuild = (spec: any) => {
+    if (!spec) return;
+    if (typeof spec.shapeId === "string") setShapeId(spec.shapeId);
+    if (typeof spec.coreId === "string") setCoreId(spec.coreId);
+    if (typeof spec.faceId === "string") setFaceId(spec.faceId);
+    if (typeof spec.frameId === "string") setFrameId(spec.frameId);
+    if (typeof spec.surfaceId === "string") setSurfaceId(spec.surfaceId);
+    if (typeof spec.gripId === "string") setGripId(spec.gripId);
+    if (typeof spec.bridgeId === "string") setBridgeId(spec.bridgeId);
+    if (typeof spec.beamOrientation === "string") setBeamOrientation(spec.beamOrientation);
+    if (typeof spec.beamCount === "number") setBeamCount(spec.beamCount);
+    if (typeof spec.thicknessMm === "number") setThicknessMm(spec.thicknessMm);
+    if (typeof spec.weightG === "number") setWeightG(spec.weightG);
+    if (typeof spec.balanceCm === "number") setBalanceCm(spec.balanceCm);
+    if (typeof spec.holeDiameterMm === "number") setHoleDiameterMm(spec.holeDiameterMm);
+    if (typeof spec.edgeProfile === "string") setEdgeProfile(spec.edgeProfile);
+    if (typeof spec.sideProfile === "string") setSideProfile(spec.sideProfile);
+    if (spec.origin && typeof spec.origin === "object") setDesign((d: any) => ({ ...d, origin: spec.origin }));
+    setPlayerDiscover(false);
+    setActiveTab("view");
+  };
+  const showBasin = mode === "player" && playerDiscover;
+  const basinScreen = (
+    <div style={{ background: "#0e2233", minHeight: "100%", padding: "18px 16px", boxSizing: "border-box" }}>
+      <div style={{ maxWidth: 820, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: "#eef6fb", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>FIND YOUR RACQUET</div>
+            <div style={{ fontSize: 12, color: "#9fb4c0", marginTop: 2 }}>Aim for your game in the pool — we'll find the build that gets you there, delivered clean.</div>
+          </div>
+          <button type="button" onClick={() => setPlayerDiscover(false)} style={{ padding: "9px 14px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.25)", background: "transparent", color: "#cfe1ec", fontWeight: 700, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" }}>Build your own →</button>
+        </div>
+        <BasinPool onOpenBuild={handleOpenBuild} canSolve={tier !== "free"} onRequirePaid={() => setUpgradePlan("pro")} />
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ fontFamily:"Inter, system-ui, sans-serif", background:"#F0EBE0", minHeight:"100dvh", color:"#18181B" }}>
       <style>{`
@@ -9157,6 +9198,19 @@ export default function App() {
         @keyframes forja-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .spin { animation: forja-spin 0.8s linear infinite; }
       `}</style>
+
+      {/* Player front door: the Basin overlays the builder body until dismissed.
+          Header (z-50) stays above it; "Build your own" / "Open build" dismiss it. */}
+      {showBasin && (
+        <div style={{ position: "fixed", left: 0, right: 0, top: 57, bottom: 0, zIndex: 40, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+          {basinScreen}
+        </div>
+      )}
+      {mode === "player" && !playerDiscover && (
+        <button type="button" onClick={() => setPlayerDiscover(true)} style={{ position: "fixed", left: 16, bottom: "calc(84px + env(safe-area-inset-bottom))", zIndex: 45, padding: "10px 14px", borderRadius: 999, border: "none", background: "#2c6d9c", color: "#fff", fontWeight: 700, fontSize: 12.5, boxShadow: "0 4px 16px rgba(0,0,0,0.3)", cursor: "pointer" }}>✦ Find your racquet</button>
+      )}
+      {/* Floating 3-click questionnaire — player-mode, always accessible; tunes the Basin. */}
+      {mode === "player" && <PlayerProfileWidget />}
 
       {/* ── HEADER ── */}
       <header style={{ background:"#FFFFFF", borderBottom:"1.5px solid #D4CCB8", position:"sticky", top:0, zIndex:50 }}>
