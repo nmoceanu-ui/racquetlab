@@ -9311,30 +9311,31 @@ export default function App() {
 
       {/* ── TABLET LAYOUT (md+) ── */}
       <div style={{ maxWidth:1024, margin:"0 auto" }} className="md-layout">
-        {showBasin ? basinScreen : (<div style={{ display:"grid" }} className="content-grid">
-
-          {/* Desktop: two-column */}
-          <style>{`
-            @media (min-width: 768px) {
-              .content-grid { grid-template-columns: 380px 1fr !important; min-height: calc(100dvh - 57px); }
-              .left-col { border-right: 1px solid rgba(0,0,0,0.05); overflow-y: auto; height: calc(100dvh - 57px); position: sticky; top: 57px; }
-              .right-col { padding: 0; display: flex; flex-direction: column; }
-              .bottom-nav { display: none !important; }
-              .mobile-only { display: none !important; }
-              .desktop-right-tabs { display: flex !important; }
-              .main-scroll { padding-bottom: 24px !important; }
-            }
-            @media (max-width: 767px) {
-              .content-grid { grid-template-columns: 1fr !important; }
-              .left-col { display: none !important; }
-              .right-col { display: none !important; }
-              .desktop-right-tabs { display: none !important; }
-              .header-row { flex-wrap: wrap; }
-              .header-actions { flex: 1 1 100%; justify-content: space-between; margin-top: 8px; }
-              .install-label { display: none; }
-              .mobile-hide { display: none !important; }
-            }
-          `}</style>
+        {/* Responsive rules live OUTSIDE the basin/grid swap so they always apply (the Basin
+            front door replaces the grid, and previously took these rules down with it). */}
+        <style>{`
+          @media (min-width: 768px) {
+            .content-grid { grid-template-columns: 380px 1fr !important; min-height: calc(100dvh - 57px); }
+            .left-col { border-right: 1px solid rgba(0,0,0,0.05); overflow-y: auto; height: calc(100dvh - 57px); position: sticky; top: 57px; }
+            .right-col { padding: 0; display: flex; flex-direction: column; }
+            .bottom-nav { display: none !important; }
+            .mobile-only { display: none !important; }
+            .desktop-right-tabs { display: flex !important; }
+            .main-scroll { padding-bottom: 24px !important; }
+          }
+          @media (max-width: 767px) {
+            .content-grid { grid-template-columns: 1fr !important; }
+            .left-col { display: none !important; }
+            .right-col { display: none !important; }
+            .desktop-right-tabs { display: none !important; }
+            .header-row { flex-wrap: wrap; }
+            .header-actions { flex: 1 1 100%; justify-content: space-between; margin-top: 8px; }
+            .install-label { display: none; }
+            .mobile-hide { display: none !important; }
+            .md-basin { display: none !important; }
+          }
+        `}</style>
+        {showBasin ? (<div className="md-basin">{basinScreen}</div>) : (<div style={{ display:"grid" }} className="content-grid">
 
           {/* Left col: build sections (desktop only) */}
           <div className="left-col" style={{ padding:"8px 0" }}>
