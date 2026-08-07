@@ -11,10 +11,29 @@ export const config = { runtime: "edge" };
 
 const ids = (a: any[]) => a.map((x) => x.id);
 const CORES = ids(CORE_MATERIALS), FACES = ids(FACE_MATERIALS), FRAMES = ids(FRAME_MATERIALS), SURF = ids(SURFACE_TEXTURES), GRIPS = ids(GRIP_MATERIALS);
-// The solver only recommends commercially real frames — the experimental ones
-// (hollow tubular, honeycomb-reinforced, two-piece clamshell) are manufacturer R&D,
-// not something a player can go buy, so they're excluded from build suggestions.
-const SOLVE_FRAMES = FRAME_MATERIALS.filter((f: any) => !f.experimental).map((f: any) => f.id);
+// The solver only recommends commercially real, use-appropriate parts. The manual
+// builder still exposes everything — these exclusions ONLY constrain auto-suggestions,
+// so the Basin can't "cheat" by reaching for a material that scores well but that no
+// player can actually buy or that's mis-used. Reasons inline.
+const EXCLUDE_CORES = new Set([
+  "two-piece-cassette-core",   // experimental R&D construction, not a stock core
+]);
+const EXCLUDE_FACES = new Set([
+  "kevlar-reinforced",         // frame-reinforcement fiber — shreds when perforated as a face
+  "carbon-ud",                 // pure UD face panels are commercially unexplored
+  "basalt-face",               // essentially unused in padel — good on paper, not a real buy
+]);
+const EXCLUDE_FRAMES = new Set([
+  "basalt-frame",              // essentially unused commercially in padel
+]);
+const EXCLUDE_SURF = new Set([
+  "hybrid-texture",            // uncommon two-zone finish, not a stock option
+]);
+const SOLVE_CORES = CORES.filter((id) => !EXCLUDE_CORES.has(id));
+const SOLVE_FACES = FACES.filter((id) => !EXCLUDE_FACES.has(id));
+const SOLVE_SURF = SURF.filter((id) => !EXCLUDE_SURF.has(id));
+// Frames: drop experimental R&D frames AND commercially-unused ones.
+const SOLVE_FRAMES = FRAME_MATERIALS.filter((f: any) => !f.experimental && !EXCLUDE_FRAMES.has(f.id)).map((f: any) => f.id);
 const SHAPES3 = ["round", "teardrop", "diamond"];
 const THROATS: [string, string][] = [["closed", "vertical"], ["open", "vertical"], ["open", "diagonal"], ["open", "horizontal"]];
 const HOLES = Array.from({ length: 50 }, (_, i) => ({ x: Math.cos(i) * 0.4, y: Math.sin(i * 1.3) * 0.5 }));
@@ -81,7 +100,7 @@ function cost(o: any, T: any, b?: any) {
 // ---- the inverse search ------------------------------------------------------------
 function solveFull(T: any) {
   let b: any = { shape: "teardrop", core: "eva-medium", face: "carbon-12k", frame: "carbon-frame", surf: "rough", grip: GRIPS[0], bridge: "open", beam: "vertical", beams: 2, thick: 36, weight: 365, balance: 26 };
-  const dims: any = { shape: SHAPES3, core: CORES, face: FACES, frame: SOLVE_FRAMES, surf: SURF, grip: GRIPS, throat: [0, 1, 2, 3], beams: [1, 2, 3], thick: [30, 32, 34, 36, 38], weight: [350, 358, 365, 372], balance: [25, 25.6, 26.2, 26.8] };
+  const dims: any = { shape: SHAPES3, core: SOLVE_CORES, face: SOLVE_FACES, frame: SOLVE_FRAMES, surf: SOLVE_SURF, grip: GRIPS, throat: [0, 1, 2, 3], beams: [1, 2, 3], thick: [30, 32, 34, 36, 38], weight: [350, 358, 365, 372], balance: [25, 25.6, 26.2, 26.8] };
   for (let pass = 0; pass < 6; pass++) {
     for (const k in dims) {
       let bestv: any = null, bestc = cost(forward(b), T, b);

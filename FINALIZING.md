@@ -20,5 +20,16 @@ Deferred polish to revisit when the app is near-complete. These are deliberate
   solver now only searches commercially real frames (`SOLVE_FRAMES` excludes the
   `experimental` ones). Verified across comfort / aggressive / beginner / control
   targets — every full-custom now returns a coherent, buildable carbon/hybrid frame.
-  Possible future polish: extend the same realism guard to faces (e.g. kevlar is a
-  frame-reinforcement material, not a full perforated face) — low priority.
+  Follow-up audit (48-target sweep) found the same class of "cheat" on the face and
+  surface axes: basalt-face (15/48), kevlar-reinforced-as-a-face (6/48), and the
+  hybrid-texture surface — all good on paper, none a real buy. Fixed with explicit
+  `EXCLUDE_*` sets (cores/faces/frames/surfaces) so the solver only builds from
+  commercially real, use-appropriate parts. Re-sweep: 0/48 flagged, 48/48 still hit
+  both targets. The manual builder still exposes every material — exclusions only
+  constrain auto-suggestions.
+
+- [ ] **Minor: solver always picks a smooth surface (and leans hard on carbon-18k).**
+  The cost function doesn't reward spin, so smooth (highest power, no spin credit)
+  wins every target. Not a realism bug — smooth is a legit control/power choice — but
+  a spin-seeking player isn't served a textured face. If we add a spin dimension to
+  the target, add a spin term to `cost()`. Low priority.
