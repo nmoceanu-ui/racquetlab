@@ -10,6 +10,8 @@ import {
 } from "recharts";
 import { saveBuild, loadBuild, updateBuildByCode } from "./lib/builds";
 import { supabaseConfigured, supabase } from "./lib/supabase";
+import { sendCode, verifyCode, onAuthChange, getCurrentUser } from "./lib/auth";
+import { initPlayerSync } from "./lib/playerSync";
 import { analytics } from "./lib/analytics"; import Racquet3D from "./Racquet3D"; import { layerBox, layerHandlesSVG, computeHandleDrag } from "./layerFX";
 import RacquetDesigner from "./PaintShop";
 import { SPEC_VERSION, buildToSpec } from "./racquetSpec";
@@ -356,13 +358,41 @@ const SURFACE_OEM_COST_DELTA: Record<string, number> = {
 
 const ADMIN_EMAILS = ["n.moceanu@gmail.com"]; // owner override — always full (Factory) access, never gated
 const STRIPE_LINKS: Record<string, string> = { pro: "", factory: "" }; // paste Stripe Payment Link URLs to enable checkout
-function UpgradeModal({ plan, onClose }: { plan: "pro" | "factory"; onClose: () => void }) {
+function UpgradeModal({ plan, onClose, user, onSignedIn }: { plan: "pro" | "factory"; onClose: () => void; user: { id: string; email: string } | null; onSignedIn: (u: { id: string; email: string }) => void }) {
   const plans: any = {
     pro: { name: "Pro", price: "$12", period: "/mo", tag: "For players", features: ["The Basin — personalized racquet recommendations", "Full custom-build solver: find your ideal spec", "Open any solved build in the builder", "Unlimited saved builds + compare side-by-side", "Export specs to PDF", "Everything in Free"] },
     factory: { name: "Factory", price: "$49", period: "/mo", tag: "For manufacturers & brands", features: ["Everything in Pro", "Factory brief + production specs", "Manufacturing notes on every material", "OEM cost + retail estimates", "FTO / QC guidance", "Reverse-solve to material combinations"] },
   };
   const p = plans[plan];
   const link = STRIPE_LINKS[plan];
+  // Sign-in-then-subscribe: a logged-out user must verify their email (6-digit
+  // OTP) before we hand them to checkout, so the subscription lands on a real
+  // account. Once signed in (or if auth isn't configured) we show the CTA.
+  const needsSignIn = supabaseConfigured && !user;
+  const [step, setStep] = useState<"email" | "code">("email");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)", background: "#FBF9F3", fontSize: 15, color: "#2A2621", outline: "none", boxSizing: "border-box" };
+  const btnStyle: React.CSSProperties = { display: "block", width: "100%", textAlign: "center", background: "#1A5C2A", color: "#F0EBE0", padding: "12px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.05em", textTransform: "uppercase", fontSize: 15, opacity: busy ? 0.6 : 1 };
+
+  const doSend = async () => {
+    setErr(""); setBusy(true);
+    const r = await sendCode(email);
+    setBusy(false);
+    if (!r.ok) { setErr(r.error || "Couldn't send the code. Try again."); return; }
+    setStep("code");
+  };
+  const doVerify = async () => {
+    setErr(""); setBusy(true);
+    const r = await verifyCode(email, code);
+    if (!r.ok) { setBusy(false); setErr(r.error || "That code didn't work. Try again."); return; }
+    const u = await getCurrentUser();
+    setBusy(false);
+    if (u) onSignedIn(u); // hands the modal to the checkout step (also picked up by onAuthChange)
+  };
+
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(20,25,20,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
       <div style={{ background: "#F0EBE0", borderRadius: 16, maxWidth: 420, width: "100%", padding: 24, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
@@ -377,9 +407,35 @@ function UpgradeModal({ plan, onClose }: { plan: "pro" | "factory"; onClose: () 
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
           {p.features.map((ft: string, i: number) => (<div key={i} style={{ display: "flex", gap: 8, fontSize: 13.5, color: "#4A4540" }}><span style={{ color: "#1A5C2A", fontWeight: 700 }}>✓</span>{ft}</div>))}
         </div>
-        {link
-          ? (<a href={link} target="_blank" rel="noopener noreferrer" style={{ display: "block", textAlign: "center", background: "#1A5C2A", color: "#F0EBE0", padding: "12px", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.05em", textTransform: "uppercase" }}>Upgrade to {p.name}</a>)
-          : (<div style={{ textAlign: "center", color: "#7A7268", fontSize: 12.5, padding: "12px", background: "rgba(0,0,0,0.03)", borderRadius: 10 }}>Checkout activating soon.</div>)}
+        {needsSignIn ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 12.5, color: "#6A6258", fontWeight: 600 }}>
+              {step === "email" ? "Sign in to continue — we'll email you a 6-digit code." : `Enter the code we sent to ${email}.`}
+            </div>
+            {step === "email" ? (
+              <>
+                <input type="email" inputMode="email" autoFocus placeholder="you@email.com" value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && email.trim()) doSend(); }} style={inputStyle} />
+                <button onClick={doSend} disabled={busy || !email.trim()} style={btnStyle}>{busy ? "Sending…" : "Send code"}</button>
+              </>
+            ) : (
+              <>
+                <input type="text" inputMode="numeric" autoFocus placeholder="6-digit code" value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  onKeyDown={(e) => { if (e.key === "Enter" && code.length >= 4) doVerify(); }} style={{ ...inputStyle, letterSpacing: "0.3em", textAlign: "center", fontSize: 20 }} />
+                <button onClick={doVerify} disabled={busy || code.length < 4} style={btnStyle}>{busy ? "Verifying…" : "Verify & continue"}</button>
+                <button onClick={() => { setStep("email"); setCode(""); setErr(""); }} style={{ border: "none", background: "none", color: "#7A7268", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Use a different email</button>
+              </>
+            )}
+            {err && <div style={{ color: "#B4402A", fontSize: 12 }}>{err}</div>}
+          </div>
+        ) : link ? (
+          <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: "block", textAlign: "center", background: "#1A5C2A", color: "#F0EBE0", padding: "12px", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.05em", textTransform: "uppercase" }}>Upgrade to {p.name}</a>
+        ) : (
+          <div style={{ textAlign: "center", color: "#7A7268", fontSize: 12.5, padding: "12px", background: "rgba(0,0,0,0.03)", borderRadius: 10 }}>Checkout activating soon.</div>
+        )}
+        {user && !needsSignIn && <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "#9A9288" }}>Signed in as {user.email}</div>}
         <div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: "#9A9288" }}>Cancel anytime.</div>
       </div>
     </div>
@@ -8064,19 +8120,27 @@ export default function App() {
   const [playerDiscover, setPlayerDiscover] = useState(true);  // player-mode front door = the Basin
   const [tier, setTier] = useState<"free"|"pro"|"factory">("free");
   const [upgradePlan, setUpgradePlan] = useState<null | "pro" | "factory">(null);
+  const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
   useEffect(() => {
     if (!supabaseConfigured) return;
     let cancelled = false;
-    (async () => {
+    // React to sign-in AND sign-out: keep authUser + tier in sync so a user who
+    // signs in mid-session (e.g. through the paywall) immediately gets their tier.
+    const applyUser = async (user: { id: string; email: string } | null) => {
+      if (cancelled) return;
+      setAuthUser(user);
+      if (!user) { setTier("free"); return; }
+      if (ADMIN_EMAILS.includes((user.email || "").toLowerCase())) { setTier("factory"); return; }
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        if (ADMIN_EMAILS.includes((user.email || "").toLowerCase())) { if (!cancelled) setTier("factory"); return; }
         const { data } = await supabase.from("subscriptions").select("tier,status").eq("user_id", user.id).maybeSingle();
-        if (!cancelled && data && data.status === "active" && (data.tier === "pro" || data.tier === "factory")) setTier(data.tier);
+        if (!cancelled) setTier(data && data.status === "active" && (data.tier === "pro" || data.tier === "factory") ? data.tier : "free");
       } catch (_e) {}
-    })();
-    return () => { cancelled = true; };
+    };
+    getCurrentUser().then(applyUser);
+    const unsub = onAuthChange(applyUser);
+    // Sync the Basin profile + check-ins to the account whenever auth changes.
+    const stopSync = initPlayerSync();
+    return () => { cancelled = true; unsub(); stopSync(); };
   }, []);
   const [activeTab, setActiveTab] = useState<"home"|"find"|"build"|"view"|"scores">(
     () => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("b")) ? "view" : "home"
@@ -9278,7 +9342,7 @@ export default function App() {
               : "Save & Share (soon)"}
           </button>
 
-          {upgradePlan && <UpgradeModal plan={upgradePlan} onClose={() => setUpgradePlan(null)} />}
+          {upgradePlan && <UpgradeModal plan={upgradePlan} onClose={() => setUpgradePlan(null)} user={authUser} onSignedIn={setAuthUser} />}
           {/* Mode toggle */}
           <div className={(activeTab === "build" || activeTab === "find") ? "" : "mobile-hide"} style={{ display:"flex", gap:4, background:"rgba(0,0,0,0.04)", padding:3, borderRadius:8, border:"1px solid rgba(0,0,0,0.05)" }}>
             {[{id:"player",label:"Player",icon:<User size={12}/>},{id:"manufacturer",label:"Factory",icon:<Wrench size={12}/>}].map(m => (

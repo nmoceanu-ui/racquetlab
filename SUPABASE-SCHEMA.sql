@@ -31,3 +31,34 @@ create policy "Anyone can read a build by code"
 -- No update or delete policy is created, so those operations are
 -- blocked by default even with the public key — builds are immutable
 -- once saved, which is the right behavior for a shareable link.
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- player_state: cross-device sync for the Basin (player profile + check-ins)
+-- ─────────────────────────────────────────────────────────────────────────
+-- One row per signed-in user. `profile` mirrors the on-device player profile
+-- and `checkins` mirrors the session feel-history log. Unlike saved_builds,
+-- this IS personal, so RLS is scoped to the row owner (auth.uid()).
+create table if not exists player_state (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  profile jsonb not null default '{}'::jsonb,
+  checkins jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table player_state enable row level security;
+
+-- A user can only ever see and write their own row. auth.uid() is the signed-in
+-- user's id, so every policy pins user_id to it — no cross-user access.
+create policy "own player_state select"
+  on player_state for select
+  using (auth.uid() = user_id);
+
+create policy "own player_state insert"
+  on player_state for insert
+  with check (auth.uid() = user_id);
+
+create policy "own player_state update"
+  on player_state for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
