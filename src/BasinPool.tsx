@@ -11,6 +11,17 @@ const FACE_MOD: any = { fiberglass: 0.15, "carbon-3k": 0.40, "carbon-12k": 0.62,
 const CORE_HARD: any = { "eva-soft": 0.25, "foam-pe": 0.32, "eva-medium": 0.52, "hybrid-core": 0.62, "eva-hard": 0.80 };
 const SHAPE_AGG: any = { round: 0.12, teardrop: 0.52, diamond: 0.92, "diamond-wide": 0.80 };
 
+// The "loadout": one tap declares a priority and sets the target (style + power + how much
+// clean delivery to protect). Sliders are optional fine-tuning behind a toggle.
+const PRIORITIES: { id: string; label: string; sub: string; style: number; power: number; floor?: number }[] = [
+  { id: "power", label: "Power", sub: "finish points", style: 0.82, power: 0.86 },
+  { id: "control", label: "Control", sub: "placement", style: 0.22, power: 0.42 },
+  { id: "comfort", label: "Comfort", sub: "easy on the arm", style: 0.44, power: 0.48, floor: 0.76 },
+  { id: "allaround", label: "All-around", sub: "do it all", style: 0.50, power: 0.56 },
+];
+// power as a word, never a decimal
+const powerTier = (p: number) => (p < 35 ? "Touch" : p < 55 ? "All-court" : p < 75 ? "Powerful" : "Elite");
+
 const X0 = 30, X1 = 450, Y0 = 55, Y1 = 425;
 const fx = (x: number) => X0 + 20 + x * (X1 - X0 - 40);
 const fy = (y: number) => Y0 + 16 + y * (Y1 - Y0 - 32);
@@ -28,6 +39,8 @@ export default function BasinPool({ onOpenBuild, canSolve = true, onRequirePaid 
   const [solving, setSolving] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [priority, setPriority] = useState<string | null>(null);
+  const [showAdjust, setShowAdjust] = useState(false);
 
   // Reposition + retune the basin whenever the profile or a session check-in updates.
   useEffect(() => {
@@ -83,6 +96,11 @@ export default function BasinPool({ onOpenBuild, canSolve = true, onRequirePaid 
     setSolving(false);
   }
   function reset() { setResult(null); }
+  function pickPriority(pr: { id: string; style: number; power: number; floor?: number }) {
+    setStyle(Math.round(pr.style * 100)); setPower(Math.round(pr.power * 100));
+    if (pr.floor) setComfortFloor((c) => Math.max(c, pr.floor as number));  // Comfort protects clean delivery
+    setPriority(pr.id); reset();
+  }
 
   const tierLabel: any = { "closest-stock": "Closest stock frame", "minimal-custom": "One-change custom", "full-custom": "Full custom" };
   const font = "Inter, system-ui, sans-serif";
@@ -135,14 +153,32 @@ export default function BasinPool({ onOpenBuild, canSolve = true, onRequirePaid 
       </div>
 
       <div style={{ flex: "1 1 250px", minWidth: 240, display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: "#9fb4c0" }}>YOUR TARGET <span style={{ float: "right", fontWeight: 400, color: "#7d94a2" }}>{styleLabel} · {(power / 100).toFixed(2)} power</span></div>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#9fb4c0", display: "flex", justifyContent: "space-between" }}>Style <span>{styleLabel}</span></label>
-          <input type="range" min={0} max={100} value={style} onChange={(e) => { setStyle(+e.target.value); reset(); }} style={{ width: "100%", accentColor: "#4aa3d5" }} />
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1, color: "#9fb4c0" }}>WHAT MATTERS MOST? <span style={{ float: "right", fontWeight: 400, color: "#7d94a2" }}>{styleLabel} · {powerTier(power).toLowerCase()}</span></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {PRIORITIES.map((pr) => {
+            const on = priority === pr.id;
+            return (
+              <button key={pr.id} type="button" onClick={() => pickPriority(pr)} style={{ textAlign: "left", padding: "10px 12px", borderRadius: 11, cursor: "pointer", border: "1px solid " + (on ? "#4aa3d5" : "rgba(255,255,255,0.14)"), background: on ? "rgba(74,163,213,0.20)" : "rgba(255,255,255,0.05)", color: "#e8eef2", fontFamily: "inherit" }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{pr.label}</div>
+                <div style={{ fontSize: 10.5, color: "#9fb4c0" }}>{pr.sub}</div>
+              </button>
+            );
+          })}
         </div>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#9fb4c0", display: "flex", justifyContent: "space-between" }}>Power you chase <span>{(power / 100).toFixed(2)}</span></label>
-          <input type="range" min={0} max={100} value={power} onChange={(e) => { setPower(+e.target.value); reset(); }} style={{ width: "100%", accentColor: "#2c6d9c" }} />
+          <button type="button" onClick={() => setShowAdjust(!showAdjust)} style={{ background: "none", border: "none", color: "#8ea3b0", fontSize: 12, cursor: "pointer", padding: "2px 0", fontFamily: "inherit" }}>{showAdjust ? "▾ Fine-tune" : "▸ Fine-tune"}</button>
+          {showAdjust && (
+            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#9fb4c0", display: "flex", justifyContent: "space-between" }}>Style <span>{styleLabel}</span></label>
+                <input type="range" min={0} max={100} value={style} onChange={(e) => { setStyle(+e.target.value); setPriority(null); reset(); }} style={{ width: "100%", accentColor: "#4aa3d5" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#9fb4c0", display: "flex", justifyContent: "space-between" }}>Power <span>{powerTier(power)}</span></label>
+                <input type="range" min={0} max={100} value={power} onChange={(e) => { setPower(+e.target.value); setPriority(null); reset(); }} style={{ width: "100%", accentColor: "#2c6d9c" }} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* FREE teaser: where you sit + the market gap */}
