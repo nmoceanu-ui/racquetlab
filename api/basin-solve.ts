@@ -11,6 +11,10 @@ export const config = { runtime: "edge" };
 
 const ids = (a: any[]) => a.map((x) => x.id);
 const CORES = ids(CORE_MATERIALS), FACES = ids(FACE_MATERIALS), FRAMES = ids(FRAME_MATERIALS), SURF = ids(SURFACE_TEXTURES), GRIPS = ids(GRIP_MATERIALS);
+// The solver only recommends commercially real frames — the experimental ones
+// (hollow tubular, honeycomb-reinforced, two-piece clamshell) are manufacturer R&D,
+// not something a player can go buy, so they're excluded from build suggestions.
+const SOLVE_FRAMES = FRAME_MATERIALS.filter((f: any) => !f.experimental).map((f: any) => f.id);
 const SHAPES3 = ["round", "teardrop", "diamond"];
 const THROATS: [string, string][] = [["closed", "vertical"], ["open", "vertical"], ["open", "diagonal"], ["open", "horizontal"]];
 const HOLES = Array.from({ length: 50 }, (_, i) => ({ x: Math.cos(i) * 0.4, y: Math.sin(i * 1.3) * 0.5 }));
@@ -24,7 +28,7 @@ function forward(b: any) {
     bridgeId: b.bridge, beamOrientation: b.beam, beamCount: b.beams, holes: HOLES, holeDiameterMm: 9,
     weightG: b.weight, balanceCm: b.balance, widthMm: 255, thicknessMm: b.thick, edgeProfile: "standard", sideProfile: "round",
   }).scores;
-  return { power: s.power, comfort: s.comfort, control: s.control, sweet: s.sweetSpot, spin: s.spin };
+  return { power: s.power, comfort: s.comfort, control: s.control, sweet: s.sweetSpot, spin: s.spin, durability: s.durability };
 }
 function fipLegal(b: any) { return b.thick <= 38 && b.weight >= 340 && b.weight <= 385; }
 
@@ -36,32 +40,56 @@ const NORM = (() => {
     i++;
   }
   const rng = (k: string): [number, number] => [Math.min(...smp.map((s) => s[k])), Math.max(...smp.map((s) => s[k]))];
-  return { P: rng("power"), C: rng("comfort"), CT: rng("control") };
+  return { P: rng("power"), C: rng("comfort"), CT: rng("control"), D: rng("durability") };
 })();
-const nP = (v: number) => (v - NORM.P[0]) / ((NORM.P[1] - NORM.P[0]) || 1);
-const nC = (v: number) => (v - NORM.C[0]) / ((NORM.C[1] - NORM.C[0]) || 1);
-const nCt = (v: number) => (v - NORM.CT[0]) / ((NORM.CT[1] - NORM.CT[0]) || 1);
+// clamp to [0,1]: the NORM range is sampled over core×face only, so grip/other
+// dims can push a real build just past the sampled max (e.g. a damping grip took
+// comfort to 1.07). Clamp for now; widen the sampling as a finalizing detail.
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+const nP = (v: number) => clamp01((v - NORM.P[0]) / ((NORM.P[1] - NORM.P[0]) || 1));
+const nC = (v: number) => clamp01((v - NORM.C[0]) / ((NORM.C[1] - NORM.C[0]) || 1));
+const nCt = (v: number) => clamp01((v - NORM.CT[0]) / ((NORM.CT[1] - NORM.CT[0]) || 1));
+const nD = (v: number) => clamp01((v - NORM.D[0]) / ((NORM.D[1] - NORM.D[0]) || 1));
 // power-leaning + low relative control reads as aggressive; high control as defensive
 const styleNorm = (o: any) => Math.max(0, Math.min(1, 0.6 * nP(o.power) + 0.4 * (1 - nCt(o.control))));
 
-function cost(o: any, T: any) {
+// Durability floor: without it the solver treats a fiberglass frame as "free comfort"
+// and hands a serious player a fragile beginner frame just because it clears the
+// comfort floor by a hair. A durability floor makes the objective reflect how the
+// market actually builds a comfortable performance racquet — carbon frame + soft core
+// + damping, not a downgraded frame. Weighted below the comfort floor so it only
+// breaks ties once power/comfort are genuinely satisfied; never overrides them.
+const DUR_FLOOR = 0.55;   // normalized; ~carbon-frame territory
+// Frame-tier realism: a soft (entry) frame is only coherent on a comfort-first build.
+// On a performance target it's incoherent — durability alone can be rescued by a tough
+// face (kevlar), so we penalize a soft frame in proportion to how performance-leaning
+// the target is (low comfort floor = more performance = more penalty).
+const FRAME_STIFF: Record<string, number> = {};
+FRAME_MATERIALS.forEach((f: any) => { FRAME_STIFF[f.id] = f.stiffness; });
+const _fs = Object.values(FRAME_STIFF); const FS_MIN = Math.min(..._fs), FS_MAX = Math.max(..._fs);
+const frameStiffNorm = (id: string) => clamp01(((FRAME_STIFF[id] ?? 3) - FS_MIN) / ((FS_MAX - FS_MIN) || 1));
+function cost(o: any, T: any, b?: any) {
+  const durFloor = typeof T.durFloor === "number" ? T.durFloor : DUR_FLOOR;
+  const framePenalty = b ? 1.4 * Math.max(0, 1 - T.comfortFloor) * (1 - frameStiffNorm(b.frame)) : 0;
   return 5.0 * Math.max(0, T.power - nP(o.power))
     + 6.0 * Math.max(0, T.comfortFloor - nC(o.comfort))
-    + 1.5 * Math.abs(styleNorm(o) - T.style);
+    + 1.5 * Math.abs(styleNorm(o) - T.style)
+    + 2.5 * Math.max(0, durFloor - nD(o.durability))
+    + framePenalty;
 }
 
 // ---- the inverse search ------------------------------------------------------------
 function solveFull(T: any) {
-  let b: any = { shape: "teardrop", core: "eva-medium", face: "carbon-12k", frame: FRAMES[0], surf: "rough", grip: GRIPS[0], bridge: "open", beam: "vertical", beams: 2, thick: 36, weight: 365, balance: 26 };
-  const dims: any = { shape: SHAPES3, core: CORES, face: FACES, frame: FRAMES, surf: SURF, grip: GRIPS, throat: [0, 1, 2, 3], beams: [1, 2, 3], thick: [30, 32, 34, 36, 38], weight: [350, 358, 365, 372], balance: [25, 25.6, 26.2, 26.8] };
+  let b: any = { shape: "teardrop", core: "eva-medium", face: "carbon-12k", frame: "carbon-frame", surf: "rough", grip: GRIPS[0], bridge: "open", beam: "vertical", beams: 2, thick: 36, weight: 365, balance: 26 };
+  const dims: any = { shape: SHAPES3, core: CORES, face: FACES, frame: SOLVE_FRAMES, surf: SURF, grip: GRIPS, throat: [0, 1, 2, 3], beams: [1, 2, 3], thick: [30, 32, 34, 36, 38], weight: [350, 358, 365, 372], balance: [25, 25.6, 26.2, 26.8] };
   for (let pass = 0; pass < 6; pass++) {
     for (const k in dims) {
-      let bestv: any = null, bestc = cost(forward(b), T);
+      let bestv: any = null, bestc = cost(forward(b), T, b);
       for (const v of dims[k]) {
         const t = { ...b };
         if (k === "throat") { t.bridge = THROATS[v][0]; t.beam = THROATS[v][1]; } else t[k] = v;
         if (!fipLegal(t)) continue;
-        const c = cost(forward(t), T);
+        const c = cost(forward(t), T, t);
         if (c < bestc) { bestc = c; bestv = v; }
       }
       if (bestv !== null) { if (k === "throat") { b.bridge = THROATS[bestv][0]; b.beam = THROATS[bestv][1]; } else b[k] = bestv; }
@@ -73,7 +101,7 @@ function closestStock(T: any) {
   let best: any = null, bc = Infinity;
   for (const r of MARKET_RACQUETS) {
     const b = { shape: r.shapeId, core: r.coreId, face: r.faceId, frame: r.frameId, surf: r.surfaceId, grip: GRIPS[0], bridge: "open", beam: "vertical", beams: 2, thick: r.thicknessMm ?? 38, weight: r.weightG, balance: r.balanceCm };
-    const c = cost(forward(b), T);
+    const c = cost(forward(b), T, b);
     if (c < bc) { bc = c; best = { name: (r.brand || "") + " " + (r.model || ""), b }; }
   }
   return best;
