@@ -14,7 +14,7 @@ const SHAPE_AGG: any = { round: 0.12, teardrop: 0.52, diamond: 0.92, "diamond-wi
 // The "loadout": one tap declares a priority and sets the target (style + power + how much
 // clean delivery to protect). Sliders are optional fine-tuning behind a toggle.
 const PRIORITIES: { id: string; label: string; sub: string; style: number; power: number; floor?: number }[] = [
-  { id: "power", label: "Power", sub: "finish points", style: 0.82, power: 0.86 },
+  { id: "power", label: "Power", sub: "finish points", style: 0.82, power: 0.86, floor: 0.5 },
   { id: "control", label: "Control", sub: "placement", style: 0.22, power: 0.42 },
   { id: "comfort", label: "Comfort", sub: "easy on the arm", style: 0.44, power: 0.48, floor: 0.76 },
   { id: "allaround", label: "All-around", sub: "do it all", style: 0.50, power: 0.56 },

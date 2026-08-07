@@ -336,15 +336,29 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   // fraction of holes actually near the edge rather than a fixed label.
   if (edgeFrac > 0.5) add("sweetSpot", -1 * edgeFrac);
 
+  // POWER now flows the way physics does: a SWINGWEIGHT term (mass × head-heaviness — the
+  // parallel-axis smash lever, compounding when a frame is BOTH heavy and head-heavy) plus a
+  // TRAMPOLINE term (cubed thickness — the springboard). Weight/balance/thickness keep their
+  // control/comfort buckets; only the power path changed. (Length sits near the FIP max on
+  // essentially every frame and isn't in the catalog data, so it's omitted for now.)
+  {
+    const _w = weightG ?? 365, _bal = balanceCm ?? 25.5;
+    const _mN = Math.max(0, Math.min(1, (_w - 345) / 27));       // 345..372g -> 0..1
+    const _bN = Math.max(0, Math.min(1, (_bal - 24) / 3.5));     // 24..27.5cm -> 0..1
+    const _swIdx = Math.max(0, Math.min(1, 0.34 * _mN + 0.34 * _bN + 0.32 * (_mN * _bN)));
+    add("power", Math.max(1, Math.min(5, 1.3 + _swIdx * 3.1)));  // swingweight (mass far from axis)
+    // (trampoline / thickness->power is applied as a post-average delta below so it can
+    //  properly outweigh the thin-frame aero bonus, which real padel physics does not support.)
+  }
   if (weightG !== undefined) {
-    if (weightG >= 374) { add("power", 4); add("control", 2); add("comfort", 2); }
-    else if (weightG >= 362) { add("power", 3); add("control", 3); add("comfort", 3); }
-    else { add("power", 2); add("control", 4); add("comfort", 4); }
+    if (weightG >= 374) { add("control", 2); add("comfort", 2); }
+    else if (weightG >= 362) { add("control", 3); add("comfort", 3); }
+    else { add("control", 4); add("comfort", 4); }
   }
   if (balanceCm !== undefined) {
-    if (balanceCm >= 26.5) { add("power", 4); add("control", 2); }
-    else if (balanceCm >= 25.3) { add("power", 3); add("control", 3); }
-    else { add("power", 2); add("control", 4); }
+    if (balanceCm >= 26.5) { add("control", 2); }
+    else if (balanceCm >= 25.3) { add("control", 3); }
+    else { add("control", 4); }
   }
   if (widthMm !== undefined) {
     if (widthMm >= 250) add("sweetSpot", 4);
@@ -352,9 +366,9 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
     else add("sweetSpot", 2);
   }
   if (thicknessMm !== undefined) {
-    if (thicknessMm >= 37) { add("power", 3); add("comfort", 2); }
-    else if (thicknessMm >= 33) { add("power", 3); add("comfort", 3); }
-    else { add("power", 2); add("comfort", 4); }
+    if (thicknessMm >= 37) { add("comfort", 2); }
+    else if (thicknessMm >= 33) { add("comfort", 3); }
+    else { add("comfort", 4); }
   }
   const out: any = {};
   ["power","control","comfort","sweetSpot","durability","spin"].forEach(k => {
@@ -371,6 +385,11 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   const holeAeroBias = Math.max(0, Math.min(1, ((weightG ?? 365) - 355) / 20)) * Math.max(0, Math.min(1, ((balanceCm ?? 25.5) - 25.4) / 1.6));
   const holeAeroBonus = (Math.min(openPct, 20) / 20) * holeAeroBias * 0.9;
   out.power = Math.round(Math.min(5, out.power + holeAeroBonus) * 10) / 10;
+  // TRAMPOLINE — the primary thickness->power lever. A thicker profile is a stiffer
+  // springboard (cubed, like real bending stiffness). 38mm (the FIP-max reference) is
+  // neutral; thinner loses power. This intentionally outweighs the small thin-frame aero
+  // bonus below, so "aggressive" builds to 38mm (real power) rather than drifting thin.
+  { const _tr = Math.pow(Math.max(0, Math.min(1, (thicknessMm ?? 38) / 38)), 3); out.power = Math.round(Math.min(5, Math.max(1, out.power + (_tr - 1) * 0.9)) * 10) / 10; }
   // Frame-thickness aerodynamics. A thinner frame presents a smaller frontal
   // cross-section, so it cuts less air on the downswing → faster head speed →
   // more effective smash power. Like the hole/throat/edge aero, this only cashes
@@ -381,7 +400,7 @@ function computeScores({ shape, core, face, frame, surface, grip, bridgeId, beam
   // scaling to the 28mm structural floor. This is the signal that tells a factory
   // to go thinner for an attacking frame: swing speed, not touch.
   const thinFactor = Math.max(0, Math.min(1, (38 - (thicknessMm ?? 38)) / 10));
-  const thickAeroBonus = thinFactor * holeAeroBias * 0.6;
+  const thickAeroBonus = thinFactor * holeAeroBias * 0.2;  // minor swing-speed effect; the trampoline (above) is the real thickness->power lever
   out.power = Math.round(Math.min(5, out.power + thickAeroBonus) * 10) / 10;
   // Frame edge geometry (rounded ↔ sharp). Applied as small post-average
   // deltas so "standard" (the default, and every existing racquet) is exactly
