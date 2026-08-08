@@ -1,0 +1,5852 @@
+[
+  {
+    "id": "bullpadel-elite-w-gemma-triay-2025",
+    "brand": "Bullpadel",
+    "model": "Elite W Gemma Triay",
+    "year": 2025,
+    "status": "published",
+    "conflicts": [],
+    "shapeId": {
+      "value": "teardrop",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-adipower-multiweight-3-4-2025",
+    "brand": "Adidas",
+    "model": "Adipower Multiweight 3.4",
+    "year": 2025,
+    "status": "conflict",
+    "conflicts": [
+      "balanceCm"
+    ],
+    "shapeId": {
+      "value": "diamond",
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 360,
+        "max": 360
+      },
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "alternatives": {
+      "balanceCm": [
+        {
+          "value": 25.7,
+          "source": "brand",
+          "sourceUrl": "brand-official",
+          "confidence": "high",
+          "asOf": "2026-08-07"
+        },
+        {
+          "value": 26.9,
+          "source": "retailer",
+          "sourceUrl": "padelnuestro",
+          "confidence": "high",
+          "asOf": "2026-08-07"
+        },
+        {
+          "value": 26.9,
+          "source": "curated",
+          "confidence": "high",
+          "asOf": "2026-08-07"
+        }
+      ]
+    },
+    "balanceCm": {
+      "value": 25.7,
+      "source": "brand",
+      "sourceUrl": "brand-official",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-speed-motion-ari-sanchez-2025",
+    "brand": "Head",
+    "model": "Speed Motion Ari Sanchez",
+    "year": 2025,
+    "status": "published",
+    "conflicts": [],
+    "shapeId": {
+      "value": "teardrop",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "graphene",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "foam-pe",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "retailer",
+      "sourceUrl": "padelnuestro",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-vertex-04-w-2025",
+    "brand": "Bullpadel",
+    "model": "Vertex 04 W",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 358,
+        "max": 358
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-pearl-2025",
+    "brand": "Bullpadel",
+    "model": "Pearl",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-cross-it-light-3-4-2025",
+    "brand": "Adidas",
+    "model": "Cross IT Light 3.4",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.6,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-counter-viper-2025",
+    "brand": "Babolat",
+    "model": "Counter Viper",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 360,
+        "max": 360
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-wonder-2026",
+    "brand": "Bullpadel",
+    "model": "Wonder",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-vk10-quantum-3k-2025",
+    "brand": "Nox",
+    "model": "VK10 Quantum 3K",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "foam-pe",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 350,
+        "max": 350
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-beat-woman-2024",
+    "brand": "Siux",
+    "model": "Beat Woman",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 350,
+        "max": 350
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-carbon-force-lt-2024",
+    "brand": "Wilson",
+    "model": "Carbon Force LT",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 350,
+        "max": 350
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.6,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-at10-luxury-genius-18k-alum-2024",
+    "brand": "Nox",
+    "model": "AT10 Luxury Genius 18K Alum",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "3d-print",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-adipower-carbon-ctrl-3-4-2025",
+    "brand": "Adidas",
+    "model": "Adipower Carbon CTRL 3.4",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 360,
+        "max": 360
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-zephyr-2024",
+    "brand": "Head",
+    "model": "Zephyr",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "graphene",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "foam-pe",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 350,
+        "max": 350
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-trilogy-attack-5-2025",
+    "brand": "Siux",
+    "model": "Trilogy Attack 5",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "3d-print",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "royal-padel-whip-hybrid-2024",
+    "brand": "Royal Padel",
+    "model": "Whip Hybrid",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "hybrid-core",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "fiberglass-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "vibor-a-yarara-elite-24k-2024",
+    "brand": "Vibor-A",
+    "model": "Yarara Elite 24K",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.3,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "dunlop-inferno-carbon-evo-2024",
+    "brand": "Dunlop",
+    "model": "Inferno Carbon Evo",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "drop-shot-explorer-pro-6-0-2024",
+    "brand": "Drop Shot",
+    "model": "Explorer Pro 6.0",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "munich-ungravity-pro-2024",
+    "brand": "Munich",
+    "model": "Ungravity Pro",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wingpadel-w-sniper-carbon-2024",
+    "brand": "Wingpadel",
+    "model": "W. Sniper Carbon",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "enebe-vertika-tour-2024",
+    "brand": "Enebe",
+    "model": "Vertika Tour",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "vairo-trueno-2024",
+    "brand": "Vairo",
+    "model": "Trueno",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.7,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-ultimate-pro-smash-2025",
+    "brand": "Oxdog",
+    "model": "Ultimate Pro Smash",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 30,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-ultimate-pro",
+    "brand": "Oxdog",
+    "model": "Ultimate Pro",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-ultimate-tour-x",
+    "brand": "Oxdog",
+    "model": "Ultimate Tour X",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-ultimate-nxt-gen",
+    "brand": "Oxdog",
+    "model": "Ultimate NXT-GEN",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 35,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 345,
+        "max": 345
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-sense-pro",
+    "brand": "Oxdog",
+    "model": "Sense Pro",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "oxdog-pure-tour-x",
+    "brand": "Oxdog",
+    "model": "Pure Tour X",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-technical-viper-3-0-2026",
+    "brand": "Babolat",
+    "model": "Technical Viper 3.0",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-technical-viper-soft-3-0-2026",
+    "brand": "Babolat",
+    "model": "Technical Viper Soft 3.0",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.3,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-vertex-05-2026",
+    "brand": "Bullpadel",
+    "model": "Vertex 05",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-vertex-05-hybrid-2026",
+    "brand": "Bullpadel",
+    "model": "Vertex 05 Hybrid",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-at10-genius-12k-alum-xtrem-2026",
+    "brand": "Nox",
+    "model": "AT10 Genius 12K Alum Xtrem",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-at10-genius-18k-alum-2026",
+    "brand": "Nox",
+    "model": "AT10 Genius 18K Alum",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-at10-genius-attack-18k-alum-2026",
+    "brand": "Nox",
+    "model": "AT10 Genius Attack 18K Alum",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-ml10-pro-cup-ventus-control-2026",
+    "brand": "Nox",
+    "model": "ML10 Pro Cup / Ventus Control",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 24.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-x-hero-2026",
+    "brand": "Nox",
+    "model": "X-Hero",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 24,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "fiberglass-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-metalbone-2026",
+    "brand": "Adidas",
+    "model": "Metalbone",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 353,
+        "max": 353
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-metalbone-carbon-ctrl-2026",
+    "brand": "Adidas",
+    "model": "Metalbone Carbon CTRL",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 24.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-extreme-pro-2026",
+    "brand": "Head",
+    "model": "Extreme Pro",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 27,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "starvie-raptor-2026",
+    "brand": "StarVie",
+    "model": "Raptor +",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-bela-lt-v2-5-v3",
+    "brand": "Wilson",
+    "model": "Bela LT (V2.5/V3)",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 358,
+        "max": 358
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-bela-pro-v3",
+    "brand": "Wilson",
+    "model": "Bela Pro / V3",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-electra-pro-2026",
+    "brand": "Siux",
+    "model": "Electra Pro",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 362,
+        "max": 362
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-graphene-360-alpha-power-2-0",
+    "brand": "Head",
+    "model": "Graphene 360 Alpha Power 2.0",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "graphene",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-hack-04-2026",
+    "brand": "Bullpadel",
+    "model": "Hack 04",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "hybrid-core",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "3d-print",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-hack-04-hybrid-2026",
+    "brand": "Bullpadel",
+    "model": "Hack 04 Hybrid",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "hybrid-core",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "3d-print",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-neuron-02-2026",
+    "brand": "Bullpadel",
+    "model": "Neuron 02",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "hybrid-core",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-neuron-02-edge-2026",
+    "brand": "Bullpadel",
+    "model": "Neuron 02 Edge",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "hybrid-core",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-metalbone-hrd-2026",
+    "brand": "Adidas",
+    "model": "Metalbone HRD+",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 356,
+        "max": 356
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 27,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-coello-pro-2026",
+    "brand": "Head",
+    "model": "Coello Pro",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 27.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "auxetic-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-coello-motion-2026",
+    "brand": "Head",
+    "model": "Coello Motion",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "auxetic-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "starvie-astrum-2026",
+    "brand": "StarVie",
+    "model": "Astrum+",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "starvie-triton-2026",
+    "brand": "StarVie",
+    "model": "Triton+",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 372,
+        "max": 372
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.6,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-equation-soft-2026",
+    "brand": "Nox",
+    "model": "Equation Soft",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 362,
+        "max": 362
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-x-zero-2026",
+    "brand": "Nox",
+    "model": "X-Zero",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 358,
+        "max": 358
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 24.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-blade-v3-2026",
+    "brand": "Wilson",
+    "model": "Blade V3",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-blade-v3-ls-2026",
+    "brand": "Wilson",
+    "model": "Blade V3 LS",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 350,
+        "max": 350
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-diablo-2026",
+    "brand": "Siux",
+    "model": "Diablo",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "3d-print",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 372,
+        "max": 372
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-juan-lebr-n-2026",
+    "brand": "Babolat",
+    "model": "Juan Lebrón",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.6,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-speed-motion-2026",
+    "brand": "Head",
+    "model": "Speed Motion",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 362,
+        "max": 362
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "royal-padel-m27-poly-2026",
+    "brand": "Royal Padel",
+    "model": "M27 Poly",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "foam-pe",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "royal-padel-fury-2026",
+    "brand": "Royal Padel",
+    "model": "Fury",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-pegasus-control-2026",
+    "brand": "Siux",
+    "model": "Pegasus Control",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 360,
+        "max": 360
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "black-crown-piton-2026",
+    "brand": "Black Crown",
+    "model": "Piton",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "black-crown-hack-control-2026",
+    "brand": "Black Crown",
+    "model": "Hack Control",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 362,
+        "max": 362
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.3,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "varlion-summum-carbon-2026",
+    "brand": "Varlion",
+    "model": "Summum Carbon",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "varlion-bourne-cube-elbowcare-2026",
+    "brand": "Varlion",
+    "model": "Bourne Cube ElbowCare",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.3,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "hybrid-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "nox-at10-pro-cup-soft-2026",
+    "brand": "Nox",
+    "model": "AT10 Pro Cup Soft",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-gravity-pro-2024",
+    "brand": "Head",
+    "model": "Gravity Pro 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-gravity-motion-2024",
+    "brand": "Head",
+    "model": "Gravity Motion 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "head-flash-pro-2023",
+    "brand": "Head",
+    "model": "Flash Pro 2023",
+    "year": 2023,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 27,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-adipower-multiweight-3-3-2024",
+    "brand": "Adidas",
+    "model": "Adipower Multiweight 3.3 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 360,
+        "max": 360
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-cross-it-2024",
+    "brand": "Adidas",
+    "model": "Cross It 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "adidas-rx-series-2026",
+    "brand": "Adidas",
+    "model": "RX Series 2026",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-elite-2024",
+    "brand": "Bullpadel",
+    "model": "Elite 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-flow-2024",
+    "brand": "Bullpadel",
+    "model": "Flow 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "bullpadel-ionic-control-2024",
+    "brand": "Bullpadel",
+    "model": "Ionic Control 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-air-viper-2024",
+    "brand": "Babolat",
+    "model": "Air Viper 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-counter-viper-2024",
+    "brand": "Babolat",
+    "model": "Counter Viper 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "babolat-contact-2024",
+    "brand": "Babolat",
+    "model": "Contact 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 340,
+        "max": 340
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-ultra-pro-v2",
+    "brand": "Wilson",
+    "model": "Ultra Pro V2",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 356,
+        "max": 356
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "wilson-ultra-team-v2",
+    "brand": "Wilson",
+    "model": "Ultra Team V2",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 366,
+        "max": 366
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.1,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "fiberglass-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "starvie-metheora-2024",
+    "brand": "StarVie",
+    "model": "Metheora 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.5,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "starvie-basalto-pro-2024",
+    "brand": "StarVie",
+    "model": "Basalto Pro 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.3,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-trilogy-pro-5-2025",
+    "brand": "Siux",
+    "model": "Trilogy Pro 5 2025",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.1,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "siux-trilogy-elite-5-2025",
+    "brand": "Siux",
+    "model": "Trilogy Elite 5 2025",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "varlion-maxima-summum-prisma-soft-2024",
+    "brand": "Varlion",
+    "model": "Maxima Summum Prisma Soft 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 353,
+        "max": 353
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.7,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "varlion-lw-carbon-ti-2024",
+    "brand": "Varlion",
+    "model": "LW Carbon Ti 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "black-crown-special-2024",
+    "brand": "Black Crown",
+    "model": "Special 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 362,
+        "max": 362
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "dunlop-galactica-pro-2025",
+    "brand": "Dunlop",
+    "model": "Galactica Pro 2025",
+    "year": 2025,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "dunlop-boost-control-2-0-2024",
+    "brand": "Dunlop",
+    "model": "Boost Control 2.0 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 355,
+        "max": 355
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "drop-shot-conqueror-attack-2-0-2026",
+    "brand": "Drop Shot",
+    "model": "Conqueror Attack 2.0 2026",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 368,
+        "max": 368
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "vibor-a-black-mamba-pro-2-0-2026",
+    "brand": "Vibor-A",
+    "model": "Black Mamba PRO 2.0 2026",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "kuikma-pr990-hybrid-soft",
+    "brand": "Kuikma",
+    "model": "PR990 Hybrid Soft",
+    "year": 2026,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 367,
+        "max": 367
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.7,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "kombat-black-18k-2023",
+    "brand": "Kombat",
+    "model": "Black 18K 2023",
+    "year": 2023,
+    "status": "published",
+    "shapeId": {
+      "value": "diamond",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-18k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "rough",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 26.4,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "vairo-compact-signature-2023",
+    "brand": "Vairo",
+    "model": "Compact Signature 2023",
+    "year": 2023,
+    "status": "published",
+    "shapeId": {
+      "value": "round",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-12k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-hard",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 370,
+        "max": 370
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.2,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "enebe-aerox-7-2-carbon-reloaded-2024",
+    "brand": "Enebe",
+    "model": "Aerox 7.2 Carbon Reloaded 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "carbon-3k",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-medium",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 363,
+        "max": 363
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.8,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "carbon-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  },
+  {
+    "id": "mystica-legacy-hybrid-2024",
+    "brand": "Mystica",
+    "model": "Legacy Hybrid 2024",
+    "year": 2024,
+    "status": "published",
+    "shapeId": {
+      "value": "teardrop",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "thicknessMm": {
+      "value": 38,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "faceId": {
+      "value": "fiberglass",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "coreId": {
+      "value": "eva-soft",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "surfaceId": {
+      "value": "smooth",
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "weightG": {
+      "value": {
+        "min": 365,
+        "max": 365
+      },
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "balanceCm": {
+      "value": 25.7,
+      "source": "curated",
+      "confidence": "high",
+      "asOf": "2026-08-07"
+    },
+    "frameId": {
+      "value": "fiberglass-frame",
+      "source": "curated",
+      "confidence": "medium",
+      "asOf": "2026-08-07"
+    }
+  }
+]
